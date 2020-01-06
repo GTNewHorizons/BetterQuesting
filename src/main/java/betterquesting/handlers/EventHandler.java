@@ -1,6 +1,7 @@
 package betterquesting.handlers;
 
 import java.io.File;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.logging.log4j.Level;
 
@@ -62,7 +63,7 @@ public class EventHandler {
 	@SubscribeEvent
 	public void onWorldSave(WorldEvent.Save event) {
 		if (!event.world.isRemote && BQ_Settings.curWorldDir != null && event.world.provider.dimensionId == 0) {
-			JsonObject jsonQ = new JsonObject();
+			/*JsonObject jsonQ = new JsonObject();
 			QuestDatabase.writeToJson(jsonQ);
 			JsonIO.WriteToFile(new File(BQ_Settings.curWorldDir, "QuestDatabase.json"), jsonQ);
 
@@ -72,7 +73,42 @@ public class EventHandler {
 
 			JsonObject jsonPr = new JsonObject();
 			QuestDatabase.writeToJson_Progression(jsonPr);
-			JsonIO.WriteToFile(new File(BQ_Settings.curWorldDir, "QuestProgress.json"), jsonPr);
+			JsonIO.WriteToFile(new File(BQ_Settings.curWorldDir, "QuestProgress.json"), jsonPr);*/
+			counter.incrementAndGet();
+		}
+	}
+
+	public static AtomicInteger counter = new AtomicInteger(0);
+	public static SaveThread thread;
+	public static class SaveThread extends Thread {
+		public SaveThread() {
+			super("BQ-SaveThread");
+		}
+
+		@Override
+		public void run() {
+			while (BQ_Settings.curWorldDir != null) {
+				if (counter.get() >= 1) {
+					JsonObject jsonQ = new JsonObject();
+					QuestDatabase.writeToJson(jsonQ);
+					JsonIO.WriteToFile(new File(BQ_Settings.curWorldDir, "QuestDatabase.json"), jsonQ);
+
+					JsonObject jsonP = new JsonObject();
+					PartyManager.writeToJson(jsonP);
+					JsonIO.WriteToFile(new File(BQ_Settings.curWorldDir, "QuestingParties.json"), jsonP);
+
+					JsonObject jsonPr = new JsonObject();
+					QuestDatabase.writeToJson_Progression(jsonPr);
+					JsonIO.WriteToFile(new File(BQ_Settings.curWorldDir, "QuestProgress.json"), jsonPr);
+
+					counter.set(0);
+				}
+				try {
+					Thread.sleep(1000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
 		}
 	}
 
@@ -132,6 +168,9 @@ public class EventHandler {
 		}
 
 		PartyManager.readFromJson(j3);
+
+		thread = new SaveThread();
+		thread.start();
 
 		BetterQuesting.logger.log(Level.INFO, "Loaded " + QuestDatabase.questDB.size() + " quest instances and " + QuestDatabase.questLines.size() + " quest lines");
 	}
