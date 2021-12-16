@@ -8,6 +8,7 @@ import betterquesting.api.questing.IQuest;
 import betterquesting.api.questing.IQuest.RequirementType;
 import betterquesting.api.questing.IQuestLine;
 import betterquesting.api.questing.IQuestLineEntry;
+import betterquesting.api.storage.BQ_Settings;
 import betterquesting.api2.cache.QuestCache;
 import betterquesting.api2.client.gui.controls.PanelButtonQuest;
 import betterquesting.api2.client.gui.misc.GuiRectangle;
@@ -169,7 +170,11 @@ public class CanvasQuestLine extends CanvasScrolling
                             predicate = null;
                             break;
                         case IMPLICIT:
-                            predicate = (mx, my, partialTicks) -> questBtns.get(req.getID()).rect.contains(mx, my) || questBtns.get(quest.getID()).rect.contains(mx, my);
+                            if(BQ_Settings.showLines) {
+                                predicate = null;
+                            } else {
+                                predicate = (mx, my, partialTicks) -> questBtns.get(req.getID()).rect.contains(mx, my) || questBtns.get(quest.getID()).rect.contains(mx, my);
+                            }
                             break;
                         default:
                             // bail early

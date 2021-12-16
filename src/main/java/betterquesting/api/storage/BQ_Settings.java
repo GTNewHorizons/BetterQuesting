@@ -29,7 +29,7 @@ public class BQ_Settings
 	public static boolean zoomOutToCursor = false;
 
 	public static boolean claimAllConfirmation = true;
-
+	public static boolean showLines = false;
 	public static boolean lockTray = true;
 	public static boolean viewMode = false;
 	public static boolean viewModeBtn = false;
