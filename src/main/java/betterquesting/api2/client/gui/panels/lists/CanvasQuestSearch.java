@@ -62,7 +62,7 @@ public class CanvasQuestSearch extends CanvasSearch<QuestSearchEntry, QuestSearc
 
     @Override
     protected void queryMatches(QuestSearchEntry entry, String query, ArrayDeque<QuestSearchEntry> results) {
-        if (Objects.equals(query, "@complete")) {
+        if ("@complete".startsWith(query) && !query.equals("@")) {
             if (entry.getQuest().getValue().isComplete(questingUUID) && entry.getQuest().getValue().canClaim(player)) {
                 results.add(entry);
             }
