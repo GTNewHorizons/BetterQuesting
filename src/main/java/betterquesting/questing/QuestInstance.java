@@ -517,6 +517,7 @@ public class QuestInstance implements IQuest
             for(Entry<UUID, NBTTagCompound> entry : completeUsers.entrySet())
             {
                 if(entry.getValue() == null || entry.getKey() == null) continue;
+                if(users != null && !users.contains(entry.getKey())) continue;
                 NBTTagCompound tags = (NBTTagCompound)entry.getValue().copy();
                 tags.setString("uuid", entry.getKey().toString());
                 comJson.appendTag(tags);
