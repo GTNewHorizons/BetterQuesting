@@ -1,5 +1,6 @@
 package betterquesting.handlers;
 
+import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.events.DatabaseEvent;
 import betterquesting.api.events.DatabaseEvent.DBType;
 import betterquesting.api.properties.NativeProps;
@@ -19,6 +20,7 @@ import betterquesting.storage.NameCache;
 import betterquesting.storage.QuestSettings;
 import com.google.gson.JsonObject;
 import cpw.mods.fml.common.Loader;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.server.MinecraftServer;
@@ -26,9 +28,13 @@ import net.minecraftforge.common.MinecraftForge;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 
 public class SaveLoadHandler {
     public static SaveLoadHandler INSTANCE = new SaveLoadHandler();
@@ -39,6 +45,7 @@ public class SaveLoadHandler {
     private File
             fileDatabase = null,
             fileProgress = null,
+            dirProgress = null,
             fileParties = null,
             fileLives = null,
             fileNames = null;
@@ -77,6 +84,7 @@ public class SaveLoadHandler {
 
         fileDatabase = new File(BQ_Settings.curWorldDir, "QuestDatabase.json");
         fileProgress = new File(BQ_Settings.curWorldDir, "QuestProgress.json");
+        dirProgress = new File(BQ_Settings.curWorldDir, "QuestProgress");
         fileParties = new File(BQ_Settings.curWorldDir, "QuestingParties.json");
         fileLives = new File(BQ_Settings.curWorldDir, "LifeDatabase.json");
         fileNames = new File(BQ_Settings.curWorldDir, "NameCache.json");
@@ -110,7 +118,7 @@ public class SaveLoadHandler {
             allFutures.add(saveConfig());
         }
 
-        allFutures.add(saveProgress());
+        allFutures.addAll(saveProgress());
 
         allFutures.add(saveParties());
 
@@ -213,14 +221,22 @@ public class SaveLoadHandler {
     }
 
     private void loadProgress() {
-        JsonObject json = JsonHelper.ReadFromFile(fileProgress);
+        if (fileProgress.exists()) {
+            JsonObject json = JsonHelper.ReadFromFile(fileProgress);
 
-        if (legacyLoader == null) {
-            NBTTagCompound nbt = NBTConverter.JSONtoNBT_Object(json, new NBTTagCompound(), true);
-            QuestDatabase.INSTANCE.readProgressFromNBT(nbt.getTagList("questProgress", 10), false);
-        } else {
-            legacyLoader.readProgressFromJson(json);
+            if (legacyLoader == null) {
+                NBTTagCompound nbt = NBTConverter.JSONtoNBT_Object(json, new NBTTagCompound(), true);
+                QuestDatabase.INSTANCE.readProgressFromNBT(nbt.getTagList("questProgress", 10), false);
+            } else {
+                legacyLoader.readProgressFromJson(json);
+            }
         }
+
+        getPlayerProgressFiles().forEach(file-> {
+            JsonObject json = JsonHelper.ReadFromFile(file);
+            NBTTagCompound nbt = NBTConverter.JSONtoNBT_Object(json, new NBTTagCompound(), true);
+            QuestDatabase.INSTANCE.readProgressFromNBT(nbt.getTagList("questProgress", 10), true);
+        });
     }
 
     private void LoadParties() {
@@ -282,12 +298,10 @@ public class SaveLoadHandler {
         return JsonHelper.WriteToFile2(fileDatabase, out -> NBTConverter.NBTtoJSON_Compound(json, out, true));
     }
 
-    private Future<Void> saveProgress() {
-        NBTTagCompound json = new NBTTagCompound();
-
-        json.setTag("questProgress", QuestDatabase.INSTANCE.writeProgressToNBT(new NBTTagList(), null));
-
-        return JsonHelper.WriteToFile2(fileProgress, out -> NBTConverter.NBTtoJSON_Compound(json, out, true));
+    @SuppressWarnings("unchecked")
+    private List<Future<Void>> saveProgress() {
+        List<EntityPlayerMP> onlinePlayers = MinecraftServer.getServer().getConfigurationManager().playerEntityList;
+        return onlinePlayers.stream().map(QuestingAPI::getQuestingUUID).map(this::savePlayerProgress).collect(Collectors.toList());
     }
 
     private Future<Void> saveParties() {
@@ -312,6 +326,22 @@ public class SaveLoadHandler {
         json.setTag("lifeDatabase", LifeDatabase.INSTANCE.writeToNBT(new NBTTagCompound(), null));
 
         return JsonHelper.WriteToFile2(fileLives, out -> NBTConverter.NBTtoJSON_Compound(json, out, true));
+    }
+
+    public Future<Void> savePlayerProgress(UUID player) {
+        NBTTagCompound json = new NBTTagCompound();
+
+        json.setTag("questProgress", QuestDatabase.INSTANCE.writeProgressToNBT(new NBTTagList(), Collections.singletonList(player)));
+
+        return JsonHelper.WriteToFile2(new File(dirProgress, player.toString() + ".json"), out -> NBTConverter.NBTtoJSON_Compound(json, out, true));
+    }
+
+    private List<File> getPlayerProgressFiles() {
+        final File[] files = dirProgress.listFiles();
+        if (files == null) {
+            return new ArrayList<>();
+        }
+        return Arrays.stream(files).filter(f -> f.getName().endsWith(".json")).collect(Collectors.toList());
     }
 
 }

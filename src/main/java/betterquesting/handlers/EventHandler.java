@@ -298,6 +298,19 @@ public class EventHandler
             PartyManager.SyncPartyQuests(party.getValue(), false);
 	}
 	
+    @SubscribeEvent
+    public void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
+        if (event.player.worldObj.isRemote || MinecraftServer.getServer() == null || !(event.player instanceof EntityPlayerMP))
+            return;
+
+        if (!MinecraftServer.getServer().isDedicatedServer() && MinecraftServer.getServer().getServerOwner().equals(event.player.getGameProfile().getName())) {
+            return;
+        }
+
+        EntityPlayerMP mpPlayer = (EntityPlayerMP) event.player;
+        SaveLoadHandler.INSTANCE.savePlayerProgress(QuestingAPI.getQuestingUUID(mpPlayer));
+    }
+
 	@SubscribeEvent
 	public void onPlayerRespawn(PlayerRespawnEvent event)
 	{
