@@ -20,6 +20,7 @@ import betterquesting.storage.NameCache;
 import betterquesting.storage.QuestSettings;
 import com.google.gson.JsonObject;
 import cpw.mods.fml.common.Loader;
+import io.netty.util.internal.ConcurrentSet;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
@@ -29,8 +30,11 @@ import net.minecraftforge.common.MinecraftForge;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -52,6 +56,8 @@ public class SaveLoadHandler {
 
     private ILegacyLoader legacyLoader = null;
 
+    private final Set<UUID> dirtyPlayers = new ConcurrentSet<>();
+
     public boolean hasUpdate() {
         return this.hasUpdate;
     }
@@ -62,6 +68,14 @@ public class SaveLoadHandler {
 
     public void markDirty() {
         this.isDirty = true;
+    }
+
+    public void addDirtyPlayer(UUID player) {
+        dirtyPlayers.add(player);
+    }
+
+    public void addDirtyPlayer(Collection<UUID> players) {
+        dirtyPlayers.addAll(players);
     }
 
     public void loadDatabases(MinecraftServer server) {
@@ -232,7 +246,7 @@ public class SaveLoadHandler {
             }
         }
 
-        getPlayerProgressFiles().forEach(file-> {
+        getPlayerProgressFiles().forEach(file -> {
             JsonObject json = JsonHelper.ReadFromFile(file);
             NBTTagCompound nbt = NBTConverter.JSONtoNBT_Object(json, new NBTTagCompound(), true);
             QuestDatabase.INSTANCE.readProgressFromNBT(nbt.getTagList("questProgress", 10), true);
@@ -300,8 +314,13 @@ public class SaveLoadHandler {
 
     @SuppressWarnings("unchecked")
     private List<Future<Void>> saveProgress() {
+        HashSet<UUID> players = new HashSet<>(dirtyPlayers);
+
         List<EntityPlayerMP> onlinePlayers = MinecraftServer.getServer().getConfigurationManager().playerEntityList;
-        return onlinePlayers.stream().map(QuestingAPI::getQuestingUUID).map(this::savePlayerProgress).collect(Collectors.toList());
+        players.addAll(onlinePlayers.stream().map(QuestingAPI::getQuestingUUID).collect(Collectors.toList()));
+
+        dirtyPlayers.clear();
+        return players.stream().map(this::savePlayerProgress).collect(Collectors.toList());
     }
 
     private Future<Void> saveParties() {
