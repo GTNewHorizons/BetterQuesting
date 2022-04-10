@@ -1,6 +1,5 @@
 package betterquesting.handlers;
 
-import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.events.DatabaseEvent;
 import betterquesting.api.events.DatabaseEvent.DBType;
 import betterquesting.api.properties.NativeProps;
@@ -20,7 +19,7 @@ import betterquesting.storage.NameCache;
 import betterquesting.storage.QuestSettings;
 import com.google.gson.JsonObject;
 import cpw.mods.fml.common.Loader;
-import net.minecraft.entity.player.EntityPlayerMP;
+import io.netty.util.internal.ConcurrentSet;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.server.MinecraftServer;
@@ -29,8 +28,10 @@ import net.minecraftforge.common.MinecraftForge;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -52,6 +53,8 @@ public class SaveLoadHandler {
 
     private ILegacyLoader legacyLoader = null;
 
+    private final Set<UUID> dirtyPlayers = new ConcurrentSet<>();
+
     public boolean hasUpdate() {
         return this.hasUpdate;
     }
@@ -62,6 +65,14 @@ public class SaveLoadHandler {
 
     public void markDirty() {
         this.isDirty = true;
+    }
+
+    public void addDirtyPlayers(UUID... players) {
+        this.dirtyPlayers.addAll(Arrays.asList(players));
+    }
+
+    public void addDirtyPlayers(Collection<UUID> players) {
+        this.dirtyPlayers.addAll(players);
     }
 
     public void loadDatabases(MinecraftServer server) {
@@ -232,7 +243,7 @@ public class SaveLoadHandler {
             }
         }
 
-        getPlayerProgressFiles().forEach(file-> {
+        getPlayerProgressFiles().forEach(file -> {
             JsonObject json = JsonHelper.ReadFromFile(file);
             NBTTagCompound nbt = NBTConverter.JSONtoNBT_Object(json, new NBTTagCompound(), true);
             QuestDatabase.INSTANCE.readProgressFromNBT(nbt.getTagList("questProgress", 10), true);
@@ -298,10 +309,10 @@ public class SaveLoadHandler {
         return JsonHelper.WriteToFile2(fileDatabase, out -> NBTConverter.NBTtoJSON_Compound(json, out, true));
     }
 
-    @SuppressWarnings("unchecked")
     private List<Future<Void>> saveProgress() {
-        List<EntityPlayerMP> onlinePlayers = MinecraftServer.getServer().getConfigurationManager().playerEntityList;
-        return onlinePlayers.stream().map(QuestingAPI::getQuestingUUID).map(this::savePlayerProgress).collect(Collectors.toList());
+        final List<Future<Void>> futures = dirtyPlayers.stream().map(this::savePlayerProgress).collect(Collectors.toList());
+        dirtyPlayers.clear();
+        return futures;
     }
 
     private Future<Void> saveParties() {
