@@ -16,7 +16,6 @@ import betterquesting.api2.storage.DBEntry;
 import betterquesting.api2.storage.IDatabaseNBT;
 import betterquesting.api2.utils.ParticipantInfo;
 import betterquesting.core.BetterQuesting;
-import betterquesting.handlers.SaveLoadHandler;
 import betterquesting.questing.rewards.RewardStorage;
 import betterquesting.questing.tasks.TaskStorage;
 import betterquesting.storage.PropertyContainer;
@@ -385,12 +384,6 @@ public class QuestInstance implements IQuest
 	{
 	    synchronized(completeUsers)
         {
-            if(uuid == null) {
-                SaveLoadHandler.INSTANCE.addDirtyPlayer(completeUsers.keySet());
-            } else {
-                SaveLoadHandler.INSTANCE.addDirtyPlayer(uuid);
-            }
-
             if(fullReset)
             {
                 if(uuid == null)

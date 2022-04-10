@@ -138,8 +138,6 @@ public class NetQuestEdit
     // Serverside only
     public static void setQuestStates(int[] questIDs, boolean state, UUID targetID)
     {
-        SaveLoadHandler.INSTANCE.addDirtyPlayer(targetID);
-
         List<DBEntry<IQuest>> questList = QuestDatabase.INSTANCE.bulkLookup(questIDs);
 
         MinecraftServer server = FMLCommonHandler.instance().getMinecraftServerInstance();
