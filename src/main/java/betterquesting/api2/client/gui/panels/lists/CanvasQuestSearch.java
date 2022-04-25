@@ -34,7 +34,7 @@ public class CanvasQuestSearch extends CanvasSearch<QuestSearchEntry, QuestSearc
     private final UUID questingUUID;
 
     public CanvasQuestSearch(IGuiRect rect, EntityPlayer player) {
-        super(rect);
+        super(rect, true);
         this.player = player;
         questingUUID = QuestingAPI.getQuestingUUID(player);
     }
