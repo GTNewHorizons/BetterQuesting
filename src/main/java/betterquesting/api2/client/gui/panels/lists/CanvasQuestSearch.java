@@ -20,6 +20,7 @@ import betterquesting.misc.QuestSearchEntry;
 import betterquesting.questing.QuestDatabase;
 import betterquesting.questing.QuestLineDatabase;
 import net.minecraft.entity.player.EntityPlayer;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -81,7 +82,7 @@ public class CanvasQuestSearch extends CanvasSearch<QuestSearchEntry, QuestSearc
             for (DBEntry<ITask> task : entry.getQuest().getValue().getTasks().getEntries()) {
                 if (task.getValue().getTextsForSearch() == null) continue;
                 for (String text : task.getValue().getTextsForSearch()) {
-                    if (text.toLowerCase().contains(query)) {
+                    if (StringUtils.containsIgnoreCase(text, query)) {
                         results.add(entry);
                     }
                 }
