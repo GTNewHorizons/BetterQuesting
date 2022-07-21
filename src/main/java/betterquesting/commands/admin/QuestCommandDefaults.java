@@ -79,8 +79,14 @@ public class QuestCommandDefaults extends QuestCommandBase
 		
 		if(args[1].equalsIgnoreCase("save"))
 		{
+			boolean editMode = QuestSettings.INSTANCE.getProperty(NativeProps.EDIT_MODE);
+
 			NBTTagCompound base = new NBTTagCompound();
+			// Don't write editmode to json
+			QuestSettings.INSTANCE.setProperty(NativeProps.EDIT_MODE, false);
 			base.setTag("questSettings", QuestSettings.INSTANCE.writeToNBT(new NBTTagCompound()));
+			// And restore back
+			QuestSettings.INSTANCE.setProperty(NativeProps.EDIT_MODE, editMode);
 			base.setTag("questDatabase", QuestDatabase.INSTANCE.writeToNBT(new NBTTagList(), null));
 			base.setTag("questLines", QuestLineDatabase.INSTANCE.writeToNBT(new NBTTagList(), null));
 			base.setString("format", BetterQuesting.FORMAT);
