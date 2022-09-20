@@ -236,9 +236,17 @@ public class GuiScreenCanvas extends GuiScreen implements IScene
         if (keyCode == 14) { // BACKSPACE
             if (this.mc.currentScreen instanceof GuiScreenCanvas) {
                 GuiScreenCanvas canvas = (GuiScreenCanvas) mc.currentScreen;
-                if (canvas.parent != null) {
-                    mc.displayGuiScreen(canvas.parent);
-                }
+				boolean hasKeyAction = false;
+				for (IGuiPanel panel : canvas.getChildren()) {
+					if (panel.isEnabled() && panel.onKeyTyped(c, keyCode)) {
+						hasKeyAction = true;
+						break;
+					}
+				}
+				if (!hasKeyAction && canvas.parent != null) {
+					mc.displayGuiScreen(canvas.parent);
+				}
+				return;
             }
             return;
         }
