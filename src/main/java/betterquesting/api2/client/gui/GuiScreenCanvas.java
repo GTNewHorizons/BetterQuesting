@@ -220,21 +220,28 @@ public class GuiScreenCanvas extends GuiScreen implements IScene
 	@Override
     public void keyTyped(char c, int keyCode)
     {
-        if (keyCode == 1)
-        {
-        	if(this.isVolatile || this instanceof IVolatileScreen)
-        	{
-        	    openPopup(new PopChoice(QuestTranslation.translate("betterquesting.gui.closing_warning") + "\n\n" + QuestTranslation.translate("betterquesting.gui.closing_confirm"), PresetIcon.ICON_NOTICE.getTexture(), this::confirmClose, QuestTranslation.translate("gui.yes"), QuestTranslation.translate("gui.no")));
-        	} else
+		if (keyCode == 1) // ESCAPE
+		{
+			if(this.isVolatile || this instanceof IVolatileScreen)
+			{
+				openPopup(new PopChoice(QuestTranslation.translate("betterquesting.gui.closing_warning") + "\n\n" + QuestTranslation.translate("betterquesting.gui.closing_confirm"), PresetIcon.ICON_NOTICE.getTexture(), this::confirmClose, QuestTranslation.translate("gui.yes"), QuestTranslation.translate("gui.no")));
+			} else
 			{
 				this.mc.displayGuiScreen(null);
 				if(this.mc.currentScreen == null) this.mc.setIngameFocus();
 			}
-			
+
 			return;
-        }
-        
-        this.onKeyTyped(c, keyCode);
+		}
+		if (this.onKeyTyped(c, keyCode)) return;
+		if (keyCode == 14) { // BACKSPACE
+			if (this.mc.currentScreen instanceof GuiScreenCanvas) {
+				GuiScreenCanvas canvas = (GuiScreenCanvas) mc.currentScreen;
+				if (canvas.parent != null) {
+					mc.displayGuiScreen(canvas.parent);
+				}
+			}
+		}
     }
 	
 	@Override
