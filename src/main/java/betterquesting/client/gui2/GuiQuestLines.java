@@ -10,6 +10,7 @@ import betterquesting.api.questing.IQuest;
 import betterquesting.api.questing.IQuestLine;
 import betterquesting.api.questing.IQuestLineEntry;
 import betterquesting.api.storage.BQ_Settings;
+import betterquesting.api.utils.RenderUtils;
 import betterquesting.api2.cache.QuestCache;
 import betterquesting.api2.client.gui.GuiScreenCanvas;
 import betterquesting.api2.client.gui.controls.IPanelButton;
@@ -24,6 +25,7 @@ import betterquesting.api2.client.gui.misc.GuiAlign;
 import betterquesting.api2.client.gui.misc.GuiPadding;
 import betterquesting.api2.client.gui.misc.GuiRectangle;
 import betterquesting.api2.client.gui.misc.GuiTransform;
+import betterquesting.api2.client.gui.panels.CanvasEmpty;
 import betterquesting.api2.client.gui.panels.CanvasTextured;
 import betterquesting.api2.client.gui.panels.bars.PanelVScrollBar;
 import betterquesting.api2.client.gui.panels.content.PanelGeneric;
@@ -32,6 +34,7 @@ import betterquesting.api2.client.gui.panels.lists.CanvasHoverTray;
 import betterquesting.api2.client.gui.panels.lists.CanvasQuestLine;
 import betterquesting.api2.client.gui.panels.lists.CanvasScrolling;
 import betterquesting.api2.client.gui.popups.PopChoice;
+import betterquesting.api2.client.gui.popups.PopContextMenu;
 import betterquesting.api2.client.gui.resources.colors.GuiColorPulse;
 import betterquesting.api2.client.gui.resources.colors.GuiColorStatic;
 import betterquesting.api2.client.gui.resources.textures.GuiTextureColored;
@@ -49,6 +52,7 @@ import betterquesting.network.handlers.NetQuestAction;
 import betterquesting.questing.QuestDatabase;
 import betterquesting.questing.QuestLineDatabase;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraftforge.common.config.Configuration;
@@ -360,7 +364,34 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
 
         CanvasQuestLine oldCvQuest = cvQuest;
         cvQuest = new CanvasQuestLine(new GuiTransform(GuiAlign.FULL_BOX, new GuiPadding(0, 0, 0, 0), 0), 2);
+        CanvasEmpty cvQuestPopup = new CanvasEmpty(new GuiTransform(GuiAlign.FULL_BOX, new GuiPadding(0, 0, 0, 0), 0)) {
+            @Override
+            public boolean onMouseClick(int mx, int my, int click) {
+                if (cvQuest.getQuestLine() == null || !this.getTransform().contains(mx, my)) return false;
+                if (click == 1)
+                {
+                    FontRenderer fr = Minecraft.getMinecraft().fontRenderer;
+                    boolean questExistsUnderMouse = cvQuest.getButtonAt(mx, my) != null;
+
+                    if (questExistsUnderMouse) {
+                        int maxWidth = questExistsUnderMouse ? RenderUtils.getStringWidth(QuestTranslation.translate("betterquesting.btn.share_quest"), fr) : 0;
+
+                        PopContextMenu popup = new PopContextMenu(new GuiRectangle(mx, my, maxWidth + 12, questExistsUnderMouse ? 48 : 16), true);
+
+                        Runnable questSharer = () -> {
+                            mc.thePlayer.sendChatMessage("betterquesting.msg.sharequest:" + cvQuest.getButtonAt(mx, my).getStoredValue().getID());
+                            mc.displayGuiScreen(null);
+                        };
+                        popup.addButton(QuestTranslation.translate("betterquesting.btn.share_quest"), null, questSharer);
+                        openPopup(popup);
+                        return true;
+                    }
+                }
+                return false;
+            }
+        };
         cvFrame.addPanel(cvQuest);
+        cvFrame.addPanel(cvQuestPopup);
 
         if(selectedLine != null)
         {

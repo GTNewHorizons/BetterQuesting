@@ -22,6 +22,7 @@ import betterquesting.client.BQ_Keybindings;
 import betterquesting.client.gui2.GuiHome;
 import betterquesting.client.gui2.GuiQuestLines;
 import betterquesting.client.themes.ThemeRegistry;
+import betterquesting.commands.client.QuestCommandShow;
 import betterquesting.core.BetterQuesting;
 import betterquesting.network.handlers.NetBulkSync;
 import betterquesting.network.handlers.NetNameSync;
@@ -46,16 +47,19 @@ import cpw.mods.fml.common.gameevent.TickEvent.ServerTickEvent;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.event.ClickEvent;
+import net.minecraft.event.HoverEvent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraft.server.management.UserListBansEntry;
-import net.minecraft.util.ChatComponentText;
-import net.minecraft.util.IIcon;
+import net.minecraft.util.*;
+import net.minecraftforge.client.event.ClientChatReceivedEvent;
 import net.minecraftforge.client.event.TextureStitchEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.CommandEvent;
@@ -106,6 +110,56 @@ public class EventHandler
 			}
 		}
 	}
+
+    @SideOnly(Side.CLIENT)
+    @SubscribeEvent
+    public void onClientChatReceived(ClientChatReceivedEvent event)
+    {
+        if (event.message != null)
+        {
+            String text = event.message.getFormattedText();
+            int index = text.indexOf("betterquesting.msg.sharequest:");
+            if(index != -1)
+            {
+                int lastIndex = index + "betterquesting.msg.sharequest:".length();
+                int endIndex = lastIndex;
+                int questId = 0;
+                for(int i = lastIndex; i < text.length(); i++)
+                {
+                    int digit = Character.getNumericValue(text.charAt(i));
+                    if (digit < 0)
+                    {
+                        break;
+                    }
+                    endIndex++;
+                    questId = (questId * 10) + digit;
+                }
+                IQuest quest = QuestDatabase.INSTANCE.getValue(questId);
+                if(quest == null)
+                {
+                    event.message = new ChatComponentTranslation("betterquesting.msg.share_quest_invalid", String.valueOf(questId));
+                    return;
+                }
+                String questName = quest.getProperty(NativeProps.NAME);
+                IChatComponent translated = new ChatComponentTranslation("betterquesting.msg.share_quest", questId, questName);
+                IChatComponent newMessage = new ChatComponentText(text.substring(0, index) + translated.getFormattedText() + text.substring(endIndex));
+                ChatStyle newMessageStyle;
+                EntityPlayerSP player = Minecraft.getMinecraft().thePlayer;
+                if(QuestCache.isQuestShown(quest, QuestingAPI.getQuestingUUID(player), player))
+                {
+                    QuestCommandShow.sentViaClick = true;
+                    newMessageStyle = newMessage.getChatStyle()
+                            .setChatClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/bq_client show " + questId))
+                            .setChatHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ChatComponentTranslation("betterquesting.msg.share_quest_hover_text_success")));
+                } else
+                {
+                    newMessageStyle = newMessage.getChatStyle()
+                            .setChatHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ChatComponentTranslation("betterquesting.msg.share_quest_hover_text_failure")));
+                }
+                event.message = newMessage.setChatStyle(newMessageStyle);
+            }
+        }
+    }
     
     @SubscribeEvent
     public void onEntityJoin(EntityJoinWorldEvent event)

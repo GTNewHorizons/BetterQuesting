@@ -54,11 +54,11 @@ betterquesting.btn.claim_all=Claim All
 betterquesting.btn.zoom_fit=Zoom to Fit
 betterquesting.btn.lock_tray=Lock Tray
 betterquesting.btn.view_mode=View Mode
-betterquesting.btn.view_mode_btn=View Mode Button
 betterquesting.btn.always_draw_implicit=Always Draw Implicit Dependency
 betterquesting.btn.prereq_visbility.normal=Normal Visibility
 betterquesting.btn.prereq_visbility.implicit=Hidden unless hovering over or holding shift
 betterquesting.btn.prereq_visbility.hidden=Hidden regardless of user input
+betterquesting.btn.share_quest=Share to Chat
 
 betterquesting.home.exit=Exit
 betterquesting.home.quests=Quests
@@ -111,6 +111,10 @@ betterquesting.notice.update=Quest Updated
 betterquesting.notice.unlock=Quest Unlocked
 
 betterquesting.msg.heart_disabled=Hardcore lives are not enabled. Use "/bq_admin hardcore" to toggle it
+betterquesting.msg.share_quest=§b[Quest: #%d - %s§b]
+betterquesting.msg.share_quest_invalid=§cCannot view Quest %s
+betterquesting.msg.share_quest_hover_text_success=§aClick to View Quest
+betterquesting.msg.share_quest_hover_text_failure=§cQuest is Currently Inaccessible
 
 key.betterquesting.quests=Open Quests
 key.betterquesting.party=Party Manager
