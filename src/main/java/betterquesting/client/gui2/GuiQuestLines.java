@@ -195,7 +195,7 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
         txTitle.setColor(PresetColor.TEXT_HEADER.getColor());
         cvBackground.addPanel(txTitle);
 
-        completionText = new PanelTextBox(new GuiTransform(new Vector4f(0F, 0F, 0.5F, 0F), new GuiPadding(214, 12, 0, -24), 0), "");
+        completionText = new PanelTextBox(new GuiTransform(new Vector4f(0F, 0F, 0.5F, 0F), new GuiPadding(214, 12, -154, -24), 0), "");
         completionText.setColor(PresetColor.TEXT_HEADER.getColor());
         cvBackground.addPanel(completionText);
 
