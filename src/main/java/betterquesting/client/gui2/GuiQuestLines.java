@@ -489,6 +489,11 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
                 show = true;
             }
 
+            if(BQ_Settings.viewModeAllQuestLine)
+            {
+                unlocked = true;
+            }
+
             for(DBEntry<IQuestLineEntry> qID : ql.getEntries())
             {
                 IQuest q = QuestDatabase.INSTANCE.getValue(qID.getID());

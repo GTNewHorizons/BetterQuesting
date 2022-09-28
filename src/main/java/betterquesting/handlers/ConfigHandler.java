@@ -42,6 +42,7 @@ public class ConfigHandler
     
 		BQ_Settings.lockTray = config.getBoolean("Lock tray", Configuration.CATEGORY_GENERAL, false, "Is quest chapters list locked and opened on start.");
 		BQ_Settings.viewMode = config.getBoolean("View mode", Configuration.CATEGORY_GENERAL, false, "If true, user can view not-yet-unlocked quests that are not hidden or secret. This property can be changed by the GUI.");
+		BQ_Settings.viewModeAllQuestLine = config.getBoolean("View mode all quest line", Configuration.CATEGORY_GENERAL, true, "If true, view mode will display the quest line regardless of whether the quest line is unlocked yet.");
 		BQ_Settings.viewModeBtn = config.getBoolean("View mode button", Configuration.CATEGORY_GENERAL, false, "If true, show view mode button.");
 		BQ_Settings.alwaysDrawImplicit = config.getBoolean("Always draw implicit dependency", Configuration.CATEGORY_GENERAL, false, "If true, always draw implicit dependency. This property can be changed by the GUI");
 
