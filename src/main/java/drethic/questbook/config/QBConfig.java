@@ -1,11 +1,11 @@
 package drethic.questbook.config;
 
-import java.io.File;
-
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import drethic.questbook.logger.QBLogger;
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.common.config.Property;
+
+import java.io.File;
 
 public class QBConfig {
     public static Configuration qbconfig;

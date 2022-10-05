@@ -15,7 +15,7 @@ public enum FMLEventHandler {
 
     @SubscribeEvent
     public void onPlayerJoin(PlayerEvent.PlayerLoggedInEvent event) {
-        if (false == QBConfig.spawnWithBook) {
+        if (!QBConfig.spawnWithBook) {
             return;
         }
 
