@@ -28,5 +28,21 @@
   "useDependencyInformation": true,
   "requiredMods": ["betterquesting"],
   "dependencies": ["betterquesting", "NotEnoughItems"]
+},
+{
+  "modid": "questbook",
+  "name": "Better Questing Quest Book",
+  "description": "Quest book to open the quest GUI to reduce keybinding collisions.",
+  "version": "${modVersion}",
+  "mcversion": "1.7.10",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["Drethic"],
+  "credits": "Funwayguy for making Better Questing.",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": [
+    "betterquesting"
+  ]
 }
 ]

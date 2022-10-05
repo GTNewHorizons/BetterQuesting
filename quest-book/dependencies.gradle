@@ -1,5 +1,0 @@
-// Add your dependencies here
-
-dependencies {
-    compile 'com.github.GTNewHorizons:BetterQuesting:3.0.355-GTNH:dev'
-}
