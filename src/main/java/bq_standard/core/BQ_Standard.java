@@ -1,5 +1,6 @@
 package bq_standard.core;
 
+import betterquesting.core.BetterQuesting;
 import bq_standard.commands.BQS_Commands;
 import bq_standard.core.proxies.CommonProxy;
 import bq_standard.handlers.ConfigHandler;
@@ -30,7 +31,7 @@ import org.apache.logging.log4j.Logger;
 public class BQ_Standard {
     public static final String MODID = "bq_standard";
     public static final String NAME = "Standard Expansion";
-    public static final String VERSION = "GRADLETOKEN_VERSION";
+    public static final String VERSION = BetterQuesting.VERSION;
     public static final String PROXY = "bq_standard.core.proxies";
     public static final String CHANNEL = "BQ_STANDARD";
 
