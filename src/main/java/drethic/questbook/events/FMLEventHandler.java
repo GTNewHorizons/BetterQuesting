@@ -9,7 +9,6 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 
 public enum FMLEventHandler {
-
     INSTANCE;
     private static final String NBT_KEY = "questbook.firstjoin";
 

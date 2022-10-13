@@ -15,13 +15,15 @@ public class CommonProxy extends ServerProxy {
     @Override
     public void init(FMLInitializationEvent e) {
         super.init(e);
-        GameRegistry.addShapelessRecipe(new ItemStack(CB4BQ.BlockDLB), new ItemStack(Items.stick), new ItemStack(Blocks.dirt), new ItemStack(Blocks.gravel));
-        //GameRegistry.addShapelessRecipe(new ItemStack(BlockDLB), new ItemStack(BlockDSB));
-        //GameRegistry.addShapelessRecipe(new ItemStack(BlockDSB), new ItemStack(BlockHSB));
+        GameRegistry.addShapelessRecipe(
+                new ItemStack(CB4BQ.BlockDLB),
+                new ItemStack(Items.stick),
+                new ItemStack(Blocks.dirt),
+                new ItemStack(Blocks.gravel));
+        // GameRegistry.addShapelessRecipe(new ItemStack(BlockDLB), new ItemStack(BlockDSB));
+        // GameRegistry.addShapelessRecipe(new ItemStack(BlockDSB), new ItemStack(BlockHSB));
         GameRegistry.addShapelessRecipe(new ItemStack(CB4BQ.BlockDLB), new ItemStack(CB4BQ.BlockHSB));
         GameRegistry.addShapelessRecipe(new ItemStack(CB4BQ.BlockHSB), new ItemStack(CB4BQ.BlockREB));
         GameRegistry.addShapelessRecipe(new ItemStack(CB4BQ.BlockREB), new ItemStack(CB4BQ.BlockDLB));
-
     }
-
 }

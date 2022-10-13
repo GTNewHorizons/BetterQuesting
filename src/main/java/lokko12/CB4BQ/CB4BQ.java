@@ -10,9 +10,10 @@ import net.minecraft.block.Block;
 import org.apache.logging.log4j.LogManager;
 
 @Mod(
-        modid = "cb4bq", name = "Command Blocks for Better Questing", version = BetterQuesting.VERSION,
-        dependencies = "required-after:betterquesting"
-)
+        modid = "cb4bq",
+        name = "Command Blocks for Better Questing",
+        version = BetterQuesting.VERSION,
+        dependencies = "required-after:betterquesting")
 public class CB4BQ {
 
     public static Block BlockDLB = new BlockDLB();

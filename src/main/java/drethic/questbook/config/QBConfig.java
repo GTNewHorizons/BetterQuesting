@@ -2,10 +2,9 @@ package drethic.questbook.config;
 
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import drethic.questbook.logger.QBLogger;
+import java.io.File;
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.common.config.Property;
-
-import java.io.File;
 
 public class QBConfig {
     public static Configuration qbconfig;
@@ -23,11 +22,20 @@ public class QBConfig {
 
         qbconfig.addCustomCategoryComment(Configuration.CATEGORY_GENERAL, "General options for the Quest Book mod.");
 
-        spawnWithBook = configBoolOption(Configuration.CATEGORY_GENERAL, "spawnWithBook", false,
+        spawnWithBook = configBoolOption(
+                Configuration.CATEGORY_GENERAL,
+                "spawnWithBook",
+                false,
                 "Enable this option so new players will spawn with a Quest Book. Default: false");
-        disablePartyNotifications = configBoolOption(Configuration.CATEGORY_GENERAL, "disablePartyNotifications", false,
+        disablePartyNotifications = configBoolOption(
+                Configuration.CATEGORY_GENERAL,
+                "disablePartyNotifications",
+                false,
                 "[NYI]Disable party notifications.  Default: false");
-        disableQuestNotifications = configBoolOption(Configuration.CATEGORY_GENERAL, "disableQuestNotifications", false,
+        disableQuestNotifications = configBoolOption(
+                Configuration.CATEGORY_GENERAL,
+                "disableQuestNotifications",
+                false,
                 "[NYI]Disable quest notifications.  Default: false");
 
         qbconfig.save();
