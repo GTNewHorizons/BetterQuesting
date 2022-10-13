@@ -129,7 +129,7 @@ public class QuestRecipeHandler extends TemplateRecipeHandler {
     @Override
     public void drawExtras(int recipeIndex) {
         CachedQuestRecipe recipe = (CachedQuestRecipe) this.arecipes.get(recipeIndex);
-        String questTitle = UNDERLINE + getTextWithoutFormattingCodes(recipe.questName);
+        String questTitle = UNDERLINE + getTextWithoutFormattingCodes(QuestTranslation.translate(recipe.questName));
 
         int color;
         if (isMouseOverTitle(recipeIndex)) {
