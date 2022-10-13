@@ -10,11 +10,7 @@ import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import drethic.questbook.proxy.CommonProxy;
 
-@Mod(
-        modid = QuestBook.MODID,
-        name = QuestBook.MODNAME,
-        version = QuestBook.VERSION,
-        dependencies = "required-after:betterquesting@[2.0.190,)")
+@Mod(modid = QuestBook.MODID, name = QuestBook.MODNAME, version = QuestBook.VERSION, dependencies = "required-after:betterquesting@[2.0.190,)")
 public class QuestBook {
 
     public static final String MODID = "questbook";

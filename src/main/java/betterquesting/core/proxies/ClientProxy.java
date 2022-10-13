@@ -16,68 +16,71 @@ import betterquesting.misc.QuestResourcesFile;
 import betterquesting.misc.QuestResourcesFolder;
 import cpw.mods.fml.client.registry.RenderingRegistry;
 import cpw.mods.fml.common.ObfuscationReflectionHelper;
-import java.util.ArrayList;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.SimpleReloadableResourceManager;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.client.ClientCommandHandler;
 import net.minecraftforge.common.MinecraftForge;
 
-public class ClientProxy extends CommonProxy {
-    @Override
-    public boolean isClient() {
-        return true;
-    }
+import java.util.ArrayList;
 
-    @Override
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    public void registerHandlers() {
-        super.registerHandlers();
+public class ClientProxy extends CommonProxy
+{
+	@Override
+	public boolean isClient()
+	{
+		return true;
+	}
 
-        // TODO: Stencil bits are disabled by default in 1.7.10 and therefore cannot be used reliably for the GUIs
-        /*if(!Minecraft.getMinecraft().getFramebuffer().useDepth)
-        {
-        	if(!Minecraft.getMinecraft().getFramebuffer().enableStencil())
-        	{
-        		BetterQuesting.logger.error("[!] FAILED TO ENABLE STENCIL BUFFER. GUIS WILL BREAK! [!]");
-        	}
-        }*/
+	@Override
+	@SuppressWarnings({"unchecked", "rawtypes"})
+	public void registerHandlers()
+	{
+		super.registerHandlers();
 
-        MinecraftForge.EVENT_BUS.register(PEventBroadcaster.INSTANCE);
-        MinecraftForge.EVENT_BUS.register(new SceneController());
+		// TODO: Stencil bits are disabled by default in 1.7.10 and therefore cannot be used reliably for the GUIs
+		/*if(!Minecraft.getMinecraft().getFramebuffer().useDepth)
+		{
+			if(!Minecraft.getMinecraft().getFramebuffer().enableStencil())
+			{
+				BetterQuesting.logger.error("[!] FAILED TO ENABLE STENCIL BUFFER. GUIS WILL BREAK! [!]");
+			}
+		}*/
 
-        ExpansionLoader.INSTANCE.initClientAPIs();
+		MinecraftForge.EVENT_BUS.register(PEventBroadcaster.INSTANCE);
+		MinecraftForge.EVENT_BUS.register(new SceneController());
 
-        MinecraftForge.EVENT_BUS.register(new QuestNotification());
-        BQ_Keybindings.RegisterKeys();
+		ExpansionLoader.INSTANCE.initClientAPIs();
 
-        try {
-            ArrayList list = ObfuscationReflectionHelper.getPrivateValue(
-                    Minecraft.class, Minecraft.getMinecraft(), "defaultResourcePacks", "field_110449_ao");
-            QuestResourcesFolder qRes1 = new QuestResourcesFolder();
-            QuestResourcesFile qRes2 = new QuestResourcesFile();
-            list.add(qRes1);
-            list.add(qRes2);
-            ((SimpleReloadableResourceManager) Minecraft.getMinecraft().getResourceManager())
-                    .reloadResourcePack(qRes1); // Make sure the pack(s) are visible to everything
-            ((SimpleReloadableResourceManager) Minecraft.getMinecraft().getResourceManager())
-                    .reloadResourcePack(qRes2); // Make sure the pack(s) are visible to everything
-        } catch (Exception e) {
-            BetterQuesting.logger.error("Unable to install questing resource loaders", e);
-        }
+		MinecraftForge.EVENT_BUS.register(new QuestNotification());
+		BQ_Keybindings.RegisterKeys();
 
-        ToolboxRegistry.INSTANCE.registerToolTab(
-                new ResourceLocation(BetterQuesting.MODID, "main"), ToolboxTabMain.INSTANCE);
-    }
+		try
+		{
+			ArrayList list = ObfuscationReflectionHelper.getPrivateValue(Minecraft.class, Minecraft.getMinecraft(), "defaultResourcePacks", "field_110449_ao");
+			QuestResourcesFolder qRes1 = new QuestResourcesFolder();
+			QuestResourcesFile qRes2 = new QuestResourcesFile();
+			list.add(qRes1);
+			list.add(qRes2);
+			((SimpleReloadableResourceManager) Minecraft.getMinecraft().getResourceManager()).reloadResourcePack(qRes1); // Make sure the pack(s) are visible to everything
+			((SimpleReloadableResourceManager) Minecraft.getMinecraft().getResourceManager()).reloadResourcePack(qRes2); // Make sure the pack(s) are visible to everything
+		} catch(Exception e)
+		{
+			BetterQuesting.logger.error("Unable to install questing resource loaders", e);
+		}
 
-    @Override
-    public void registerRenderers() {
-        super.registerRenderers();
+		ToolboxRegistry.INSTANCE.registerToolTab(new ResourceLocation(BetterQuesting.MODID, "main"), ToolboxTabMain.INSTANCE);
+	}
 
-        RenderingRegistry.registerEntityRenderingHandler(EntityPlaceholder.class, new EntityPlaceholderRenderer());
+	@Override
+	public void registerRenderers()
+	{
+		super.registerRenderers();
 
-        ThemeRegistry.INSTANCE.loadResourceThemes();
+		RenderingRegistry.registerEntityRenderingHandler(EntityPlaceholder.class, new EntityPlaceholderRenderer());
 
-        ClientCommandHandler.instance.registerCommand(new BQ_CommandClient());
-    }
+		ThemeRegistry.INSTANCE.loadResourceThemes();
+
+		ClientCommandHandler.instance.registerCommand(new BQ_CommandClient());
+	}
 }
