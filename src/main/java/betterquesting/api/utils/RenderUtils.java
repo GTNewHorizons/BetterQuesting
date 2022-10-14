@@ -35,6 +35,8 @@ public class RenderUtils
 {
 	public static final String REGEX_NUMBER = "[^\\.0123456789-]"; // I keep screwing this up so now it's reusable
     public static final RenderItem itemRender = new RenderItem();
+
+	private static final int SPLIT_STRING_TRIAL_LIMIT = 1000;
 	
 	public static void RenderItemStack(Minecraft mc, ItemStack stack, int x, int y, String text)
 	{
@@ -450,9 +452,16 @@ public class RenderUtils
 		
 		String lastFormat = ""; // Formatting like bold can affect the wrapping width
 		String temp = str;
+
+		int trial = 0;
 		
 		while(true)
 		{
+			// in some cases this goes into infinite loop
+			// todo: figure out fundamental fix
+			trial++;
+			if (trial > SPLIT_STRING_TRIAL_LIMIT) break;
+
 			int i = sizeStringToWidth(lastFormat + temp, wrapWidth, font); // Cut to size WITH formatting
 			i -= lastFormat.length(); // Remove formatting characters from count
 			
@@ -485,9 +494,16 @@ public class RenderUtils
 		List<String> list = new ArrayList<>();
 		
 		String temp = str;
+
+		int trial = 0;
 		
 		while(true)
 		{
+			// in some cases this goes into infinite loop
+			// todo: figure out fundamental fix
+			trial++;
+			if (trial > SPLIT_STRING_TRIAL_LIMIT) break;
+
 			int i = sizeStringToWidth(temp, wrapWidth, font); // Cut to size WITH formatting
 			
 			if(temp.length() <= i)
