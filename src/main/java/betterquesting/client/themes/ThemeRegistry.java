@@ -42,6 +42,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -52,24 +53,24 @@ import java.util.function.Function;
 public class ThemeRegistry implements IThemeRegistry
 {
 	public static final ThemeRegistry INSTANCE = new ThemeRegistry();
-	
+
 	private static final IGuiTexture NULL_TEXTURE = new SlicedTexture(PresetTexture.TX_NULL, new GuiRectangle(0,0,32,32), new GuiPadding(8,8,8,8));
 	private static final IGuiLine NULL_LINE = new SimpleLine();
 	private static final IGuiColor NULL_COLOR = new GuiColorStatic(0xFF000000);
-	
+
 	private final HashMap<ResourceLocation, IGuiTexture> defTextures = new HashMap<>();
 	private final HashMap<ResourceLocation, IGuiLine> defLines = new HashMap<>();
 	private final HashMap<ResourceLocation, IGuiColor> defColors = new HashMap<>();
 	private final HashMap<GuiKey<?>, Function<?, GuiScreen>> defGuis = new HashMap<>();
-	
+
 	private final HashMap<ResourceLocation, IGuiTheme> themes = new HashMap<>();
 	private final List<ResourceLocation> loadedThemes = new ArrayList<>();
-	
+
 	private final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	private IGuiTheme activeTheme = null;
-	
+
 	private boolean setup = false;
-	
+
 	public ThemeRegistry()
 	{
 		PresetTexture.registerTextures(this);
@@ -101,7 +102,7 @@ public class ThemeRegistry implements IThemeRegistry
         setDefaultGui(PresetGUIs.EDIT_TEXT, arg -> new GuiTextEditor(arg.parent, arg.value, arg.callback));
         setDefaultGui(PresetGUIs.FILE_EXPLORE, arg -> new GuiFileBrowser(arg.parent, arg.callback, arg.root, arg.filter).allowMultiSelect(arg.multiSelect));
 	}
-	
+
 	@Override
 	public void registerTheme(IGuiTheme theme)
 	{
@@ -112,12 +113,12 @@ public class ThemeRegistry implements IThemeRegistry
 		{
 			throw new IllegalArgumentException("Cannot register duplicate theme: " + theme.getID());
 		}
-		
+
 		themes.put(theme.getID(), theme);
-		
+
 		if(activeTheme == null) setup = false; // A theme was registered that could possibly resolve the currently configured theme
 	}
-	
+
 	/**
 	 * Sets the default fallback texture. Only use if you're defining your own custom texture ID
 	 */
@@ -128,10 +129,10 @@ public class ThemeRegistry implements IThemeRegistry
 		{
 			throw new NullPointerException("Tried to register a default theme texture with one or more NULL arguments");
 		}
-		
+
 		defTextures.put(key, tex);
 	}
-	
+
 	/**
 	 * Sets the default fallback texture. Only use if you're defining your own custom texture ID
 	 */
@@ -142,10 +143,10 @@ public class ThemeRegistry implements IThemeRegistry
 		{
 			throw new NullPointerException("Tried to register a default theme line with one or more NULL arguments");
 		}
-		
+
         defLines.put(key, line);
 	}
-	
+
 	/**
 	 * Sets the default fallback texture. Only use if you're defining your own custom texture ID
 	 */
@@ -156,10 +157,10 @@ public class ThemeRegistry implements IThemeRegistry
         {
             throw new NullPointerException("Tried to register default theme colour with one or more NULL arguments");
         }
-		
+
         defColors.put(key, color);
 	}
-	
+
 	@Override
 	public <T> void setDefaultGui(GuiKey<T> key, Function<T, GuiScreen> func)
     {
@@ -170,26 +171,26 @@ public class ThemeRegistry implements IThemeRegistry
         
         defGuis.put(key, func);
     }
-	
+
 	@Override
 	public void setTheme(ResourceLocation id)
 	{
 		setTheme(themes.get(id), id);
 	}
-	
+
 	@Override
     public IGuiTheme getTheme(ResourceLocation key)
     {
         if(key == null) return null;
         return themes.get(key);
     }
-	
+
 	private void setTheme(IGuiTheme theme, ResourceLocation id)
 	{
 		this.activeTheme = theme;
-		
+
 		BQ_Settings.curTheme = id == null ? "" : id.toString();
-		
+
 		if(ConfigHandler.config != null)
 		{
 			ConfigHandler.config.get(Configuration.CATEGORY_GENERAL, "Theme", "").set(BQ_Settings.curTheme);
@@ -199,7 +200,7 @@ public class ThemeRegistry implements IThemeRegistry
 			BetterQuesting.logger.log(Level.WARN, "Unable to save theme setting");
 		}
 	}
-	
+
 	@Override
 	public IGuiTheme getCurrentTheme()
 	{
@@ -211,7 +212,7 @@ public class ThemeRegistry implements IThemeRegistry
         
 		return this.activeTheme;
 	}
-	
+
     @Override
     @SuppressWarnings("unchecked")
     public void loadResourceThemes()
@@ -395,43 +396,43 @@ public class ThemeRegistry implements IThemeRegistry
         themes.put(theme.getID(), theme);
         loadedThemes.add(theme.getID());
     }
-	
+
 	@Override
 	public IGuiTexture getTexture(ResourceLocation key)
 	{
 		if(key == null) return NULL_TEXTURE;
-		
+
 		IGuiTexture tex = null;
-		
+
 		if(getCurrentTheme() != null) tex = activeTheme.getTexture(key);
 		if(tex == null) tex = defTextures.get(key);
 		return tex == null? NULL_TEXTURE : tex;
 	}
-	
+
 	@Override
 	public IGuiLine getLine(ResourceLocation key)
 	{
 		if(key == null) return NULL_LINE;
-		
+
 		IGuiLine line = null;
-		
+
 		if(getCurrentTheme() != null) line = activeTheme.getLine(key);
 		if(line == null) line = defLines.get(key);
 		return line == null? NULL_LINE : line;
 	}
-	
+
 	@Override
 	public IGuiColor getColor(ResourceLocation key)
 	{
 		if(key == null) return NULL_COLOR;
-		
+
 		IGuiColor color = null;
-		
+
 		if(getCurrentTheme() != null) color = activeTheme.getColor(key);
 		if(color == null) color = defColors.get(key);
 		return color == null? NULL_COLOR : color;
 	}
-	
+
 	@Override
     @SuppressWarnings("unchecked")
 	public <T> GuiScreen getGui(GuiKey<T> key, T args)
@@ -445,11 +446,13 @@ public class ThemeRegistry implements IThemeRegistry
         
         return func == null ? null : func.apply(args);
     }
-	
+
 	@Override
 	public List<IGuiTheme> getAllThemes()
 	{
-		return new ArrayList<>(themes.values());
+		ArrayList<IGuiTheme> sorted = new ArrayList<>(themes.values());
+		sorted.sort(Comparator.naturalOrder());
+		return sorted;
 	}
     
     @Override

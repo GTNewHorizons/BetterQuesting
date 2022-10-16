@@ -9,7 +9,7 @@ import net.minecraft.util.ResourceLocation;
 import javax.annotation.Nullable;
 import java.util.function.Function;
 
-public interface IGuiTheme
+public interface IGuiTheme extends Comparable<IGuiTheme>
 {
 	String getName();
 	ResourceLocation getID();
@@ -23,4 +23,9 @@ public interface IGuiTheme
 	
 	@Nullable
     <T> Function<T, GuiScreen> getGui(GuiKey<T> key);
+
+	@Override
+	default int compareTo(IGuiTheme iGuiTheme) {
+		return this.getName().compareTo(iGuiTheme.getName());
+	}
 }
