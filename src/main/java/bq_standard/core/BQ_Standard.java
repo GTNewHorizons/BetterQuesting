@@ -27,6 +27,7 @@ import org.apache.logging.log4j.Logger;
         modid = BQ_Standard.MODID,
         name = BQ_Standard.NAME,
         version = BQ_Standard.VERSION,
+        dependencies = "required-after:betterquesting",
         guiFactory = "bq_standard.handlers.ConfigGuiFactory")
 public class BQ_Standard {
     public static final String MODID = "bq_standard";
