@@ -33,12 +33,17 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.config.Configuration;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.Level;
 
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -215,9 +220,15 @@ public class ThemeRegistry implements IThemeRegistry
         loadedThemes.clear();
         
         IResourceManager resManager = Minecraft.getMinecraft().getResourceManager();
-        
+
+        Set<String> encounteredJsons = new HashSet<>();
+
         for(String domain : (Set<String>)resManager.getResourceDomains())
         {
+            // Skip the other embedded mods
+            if ("bq_standard".equals(domain) || "questbook".equals(domain) || "CB4BQ".equals(domain)) {
+                continue;
+            }
             ResourceLocation res = new ResourceLocation(domain, "bq_themes.json");
             List<IResource> list;
             
@@ -228,10 +239,14 @@ public class ThemeRegistry implements IThemeRegistry
             
             for(IResource iresource : list)
             {
-                try(InputStreamReader isr = new InputStreamReader(iresource.getInputStream(), StandardCharsets.UTF_8))
-                {
-                    JsonArray jAry = GSON.fromJson(isr, JsonArray.class);
-                    isr.close();
+                try {
+                    String jsonStr = IOUtils.toString(iresource.getInputStream(), StandardCharsets.UTF_8);
+                    String signature = DigestUtils.sha256Hex(jsonStr);
+                    if (!encounteredJsons.add(signature)) {
+                        // Already parsed an identical json file.
+                        continue;
+                    }
+                    JsonArray jAry = GSON.fromJson(jsonStr, JsonArray.class);
                     
                     for(int i = 0; i < jAry.size(); i++)
                     {
