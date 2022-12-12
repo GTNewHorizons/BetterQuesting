@@ -8,7 +8,37 @@ public enum EnumLogic
 	NOR, // All false
 	XOR, // Only one true
 	XNOR; // Only one false
-	
+
+	public boolean isTrivial() {
+		switch(this)
+		{
+			case AND:
+			case OR:
+				return true;
+			default:
+				return false;
+		}
+	}
+
+	public boolean isUnlockable(int inputs, int total) {
+		switch(this)
+		{
+			case AND:
+			case OR:
+				return true;
+			case NAND:
+				return inputs <= total;
+			case NOR:
+				return inputs == 0;
+			case XNOR:
+				return inputs < total;
+			case XOR:
+				return inputs <= 1;
+			default:
+				return false;
+		}
+	}
+
 	public boolean getResult(int inputs, int total)
 	{
 		switch(this)
@@ -18,7 +48,7 @@ public enum EnumLogic
 			case NAND:
 				return inputs < total;
 			case NOR:
-				return inputs == 0; 
+				return inputs == 0;
 			case OR:
 				return inputs > 0;
 			case XNOR:

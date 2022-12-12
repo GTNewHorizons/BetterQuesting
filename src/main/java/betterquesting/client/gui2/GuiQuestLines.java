@@ -620,14 +620,9 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
         for(DBEntry<IQuestLineEntry> entry : selectedLine.getEntries()) {
             IQuest quest = QuestingAPI.getAPI(ApiReference.QUEST_DB).getValue(entry.getID());
 
-            if(quest.getProperty(NativeProps.LOGIC_QUEST) == EnumLogic.XOR) {
-                // Subtract the number of requirements - 1 to simulate only doing 1 task for XOR requirements
-                totalQuests = totalQuests - Math.max(0, quest.getRequirements().length - 1);
-            }
-
             totalQuests++;
 
-            if(quest.isComplete(playerUUId)) {
+            if(quest.isComplete(playerUUId) || !quest.isUnlockable(playerUUId)) {
                 questsCompleted++;
             }
         }

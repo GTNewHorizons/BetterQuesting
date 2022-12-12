@@ -31,7 +31,15 @@ public interface IQuest extends INBTSaveLoad<NBTTagCompound>, INBTProgress<NBTTa
 	
 	boolean isUnlocked(UUID uuid);
 	boolean canSubmit(EntityPlayer player);
-	
+
+	/**
+	 * Test if this quest can be unlocked at all as required by quest logic for given participant.
+	 *
+	 * If this return true, it means whatever the player do, this quest cannot be unlocked without bq_admin commands
+	 * or hand editing save file.
+	 * This assumes quest cannot be un-completed.
+	 */
+	boolean isUnlockable(UUID uuid);
 	boolean isComplete(UUID uuid);
 	void setComplete(UUID uuid, long timeStamp);
 
