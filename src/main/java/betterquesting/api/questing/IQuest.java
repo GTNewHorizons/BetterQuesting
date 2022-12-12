@@ -35,7 +35,7 @@ public interface IQuest extends INBTSaveLoad<NBTTagCompound>, INBTProgress<NBTTa
 	/**
 	 * Test if this quest can be unlocked at all as required by quest logic for given participant.
 	 *
-	 * If this return true, it means whatever the player do, this quest cannot be unlocked without bq_admin commands
+	 * If this return false, it means whatever the player do, this quest cannot be unlocked without bq_admin commands
 	 * or hand editing save file.
 	 * This assumes quest cannot be un-completed.
 	 */

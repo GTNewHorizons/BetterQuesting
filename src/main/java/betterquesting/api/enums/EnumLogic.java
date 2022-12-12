@@ -27,11 +27,10 @@ public enum EnumLogic
 			case OR:
 				return true;
 			case NAND:
-				return inputs <= total;
-			case NOR:
-				return inputs == 0;
 			case XNOR:
 				return inputs < total;
+			case NOR:
+				return inputs == 0;
 			case XOR:
 				return inputs <= 1;
 			default:
