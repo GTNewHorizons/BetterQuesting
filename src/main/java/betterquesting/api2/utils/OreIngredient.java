@@ -44,7 +44,7 @@ public class OreIngredient
                 if (itemstack.getItemDamage() == OreDictionary.WILDCARD_VALUE)
                     itemstack.getItem().getSubItems(itemstack.getItem(), CreativeTabs.tabAllSearch, lst);
                 else
-                    lst.add(itemstack);
+                    lst.add(itemstack.copy());
             }
             this.array = lst.toArray(new ItemStack[0]);
             this.lastSizeA = ores.size();
