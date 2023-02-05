@@ -1,5 +1,5 @@
 // Add your dependencies here
 
 dependencies {
-    compile 'com.github.GTNewHorizons:NotEnoughItems:2.3.7-GTNH:dev'
+    implementation 'com.github.GTNewHorizons:NotEnoughItems:2.3.27-GTNH:dev'
 }
