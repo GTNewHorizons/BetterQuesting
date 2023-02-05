@@ -40,7 +40,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.UUID;
 
 public class QuestInstance implements IQuest
@@ -624,6 +626,13 @@ public class QuestInstance implements IQuest
             DirtyPlayerMarker.markDirty(uuid);
         }
 	}
+
+    public void getUsersWithCompletionData(Set<UUID> targetSet) {
+        synchronized (completeUsers) {
+            // Take a copy to prevent concurrent modifications to the returned Set
+            targetSet.addAll(completeUsers.keySet());
+        }
+    }
 
     @Override
     public <T> T getProperty(IPropertyType<T> prop)

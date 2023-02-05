@@ -3,15 +3,18 @@ package betterquesting.handlers;
 import betterquesting.api.events.DatabaseEvent;
 import betterquesting.api.events.DatabaseEvent.DBType;
 import betterquesting.api.properties.NativeProps;
+import betterquesting.api.questing.IQuest;
 import betterquesting.api.storage.BQ_Settings;
 import betterquesting.api.utils.JsonHelper;
 import betterquesting.api.utils.NBTConverter;
+import betterquesting.api2.storage.DBEntry;
 import betterquesting.client.QuestNotification;
 import betterquesting.client.gui2.GuiHome;
 import betterquesting.core.BetterQuesting;
 import betterquesting.legacy.ILegacyLoader;
 import betterquesting.legacy.LegacyLoaderRegistry;
 import betterquesting.questing.QuestDatabase;
+import betterquesting.questing.QuestInstance;
 import betterquesting.questing.QuestLineDatabase;
 import betterquesting.questing.party.PartyManager;
 import betterquesting.storage.LifeDatabase;
@@ -24,12 +27,14 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.server.MinecraftServer;
 import net.minecraftforge.common.MinecraftForge;
+import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -241,6 +246,17 @@ public class SaveLoadHandler {
             } else {
                 legacyLoader.readProgressFromJson(json);
             }
+
+            // Mark all data as dirty to migrate the file to the new format
+            markDirty();
+            HashSet<UUID> usersFound = new HashSet<>();
+            for (DBEntry<IQuest> quest : QuestDatabase.INSTANCE.getEntries()) {
+                if(quest.getValue() instanceof QuestInstance) {
+                    QuestInstance qi = (QuestInstance) quest.getValue();
+                    qi.getUsersWithCompletionData(usersFound);
+                }
+            }
+            dirtyPlayers.addAll(usersFound);
         }
 
         getPlayerProgressFiles().forEach(file -> {
@@ -312,6 +328,16 @@ public class SaveLoadHandler {
     private List<Future<Void>> saveProgress() {
         final List<Future<Void>> futures = dirtyPlayers.stream().map(this::savePlayerProgress).collect(Collectors.toList());
         dirtyPlayers.clear();
+        if (fileProgress != null && fileProgress.exists()) {
+            String backupName = fileProgress.getName().replace(".json", ".backup.json");
+            try {
+                FileUtils.moveFile(fileProgress, new File(fileProgress.getParentFile(), backupName));
+                // Only remove the file if the backup was successful
+                FileUtils.forceDelete(fileProgress);
+            } catch (Exception e) {
+                BetterQuesting.logger.warn("Could not move old progress data out of the way {}", backupName, e);
+            }
+        }
         return futures;
     }
 
