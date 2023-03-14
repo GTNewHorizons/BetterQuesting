@@ -42,7 +42,10 @@ public class PlayerContainerListener implements ICrafting {
 
     @Override
     public void sendSlotContents(Container container, int i, ItemStack itemStack) {
-        updateTasks();
+        // Ignore changes outside of main inventory (e.g. crafting grid and armor)
+        if (i >= 9 && i <= 44) {
+            updateTasks();
+        }
     }
 
     @Override
