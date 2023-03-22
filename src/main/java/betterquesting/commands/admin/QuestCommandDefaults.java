@@ -385,6 +385,13 @@ public class QuestCommandDefaults extends QuestCommandBase {
                         UUID questLineId = NBTConverter.UuidValueType.QUEST_LINE.readId(questLineTag);
                         int order = questLineTag.getInteger("order");
 
+                        if (questLines.containsKey(order)) {
+                            QuestingAPI.getLogger().log(Level.ERROR, "Found duplicate quest line order: {}, {}", order, UuidConverter.encodeUuid(questLineId));
+                            QuestingAPI.getLogger().log(Level.ERROR, "You most likely have left over quest line files!");
+                            sendChatMessage(sender, "betterquesting.cmd.error");
+                            return;
+                        }
+
                         IQuestLine questLine = new QuestLine();
                         questLine.readFromNBT(questLineTag);
                         questLines.put(order, Maps.immutableEntry(questLineId, questLine));
