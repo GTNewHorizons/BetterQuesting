@@ -12,6 +12,7 @@ import net.minecraft.util.MathHelper;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -36,6 +37,20 @@ public class QuestLineDatabase extends UuidDatabase<IQuestLine> implements IQues
      */
 	protected final List<UUID> lineOrder = new ArrayList<>();
 	protected final QuestLineSorter SORTER = new QuestLineSorter(this);
+
+    @Override
+    public IQuestLine createNew(UUID lineID)
+    {
+        IQuestLine ql = new QuestLine();
+        put(lineID, ql);
+        return ql;
+    }
+
+    @Override
+    public void removeQuest(UUID questID)
+    {
+        values().forEach(ql -> ql.remove(questID));
+    }
 
 	@Override
 	public synchronized int getOrderIndex(UUID lineID)
@@ -69,20 +84,24 @@ public class QuestLineDatabase extends UuidDatabase<IQuestLine> implements IQues
                 .sorted(SORTER)
                 .collect(Collectors.toCollection(ArrayList::new));
 	}
-	
-	@Override
-	public IQuestLine createNew(UUID lineID)
-	{
-		IQuestLine ql = new QuestLine();
-        put(lineID, ql);
-		return ql;
-	}
-	
-	@Override
-	public void removeQuest(UUID questID)
-	{
-        values().forEach(ql -> ql.remove(questID));
-	}
+
+    @Override
+    public void setOrderedEntries(Collection<Entry<UUID, IQuestLine>> entries)
+    {
+        clear();
+        entries.forEach(
+                entry -> {
+                    put(entry.getKey(), entry.getValue());
+                    lineOrder.add(entry.getKey());
+                });
+    }
+
+    @Override
+    public synchronized void clear()
+    {
+        super.clear();
+        lineOrder.clear();
+    }
 
 	@Override
 	public NBTTagList writeToNBT(NBTTagList json, @Nullable List<UUID> subset)
@@ -156,11 +175,4 @@ public class QuestLineDatabase extends UuidDatabase<IQuestLine> implements IQues
         lineOrder.clear();
         lineOrder.addAll(orderMap.values());
 	}
-
-	@Override
-    public synchronized void clear()
-    {
-        super.clear();
-        lineOrder.clear();
-    }
 }

@@ -17,6 +17,7 @@ import betterquesting.network.handlers.NetQuestSync;
 import betterquesting.network.handlers.NetSettingSync;
 import betterquesting.questing.QuestDatabase;
 import betterquesting.questing.QuestInstance;
+import betterquesting.questing.QuestLine;
 import betterquesting.questing.QuestLineDatabase;
 import betterquesting.storage.QuestSettings;
 import com.google.common.collect.ListMultimap;
@@ -58,7 +59,7 @@ public class QuestCommandDefaults extends QuestCommandBase {
     public static final String LANG_FILE = "en_US.lang";
 
     public static final String SETTINGS_FILE = "QuestSettings.json";
-    public static final String QUEST_LINES_FILE = "QuestLines.json";
+    public static final String QUEST_LINE_DIR = "QuestLines";
     public static final String QUEST_DIR = "Quests";
     public static final String MULTI_QUEST_LINE_DIRECTORY = "MultipleQuestLine";
     public static final String NO_QUEST_LINE_DIRECTORY = "NoQuestLine";
@@ -185,15 +186,29 @@ public class QuestCommandDefaults extends QuestCommandBase {
         // And restore back
         QuestSettings.INSTANCE.setProperty(NativeProps.EDIT_MODE, editMode);
 
-        File questLinesFile = new File(dataDir, QUEST_LINES_FILE);
-        NBTTagCompound questLinesTag = new NBTTagCompound();
-        questLinesTag.setTag("questLines", QuestLineDatabase.INSTANCE.writeToNBT(new NBTTagList(), null));
-        JsonHelper.WriteToFile(questLinesFile, NBTConverter.NBTtoJSON_Compound(questLinesTag, new JsonObject(), true));
+        File questLineDir = new File(dataDir, QUEST_LINE_DIR);
+        if (!questLineDir.exists() && !questLineDir.mkdirs()) {
+            QuestingAPI.getLogger().log(Level.ERROR, "Failed to create directories\n{}", questLineDir);
+            sendChatMessage(sender, "betterquesting.cmd.error");
+            return;
+        }
 
+        int questLineIndex = 0;
         ListMultimap<UUID, IQuestLine> questToQuestLineMultimap =
                 MultimapBuilder.hashKeys().arrayListValues().build();
-        for (IQuestLine questLine : QuestLineDatabase.INSTANCE.values()) {
+
+        for (Map.Entry<UUID, IQuestLine> entry : QuestLineDatabase.INSTANCE.getOrderedEntries()) {
+            UUID questLineId = entry.getKey();
+            IQuestLine questLine = entry.getValue();
             questLine.keySet().forEach(key -> questToQuestLineMultimap.put(key, questLine));
+
+            String questLineName = questLine.getProperty(NativeProps.NAME);
+            File questLineFile = new File(questLineDir, buildFileName.apply(questLineName, questLineId) + ".json");
+
+            NBTTagCompound questLineTag = questLine.writeToNBT(new NBTTagCompound());
+            NBTConverter.UuidValueType.QUEST_LINE.writeId(questLineId, questLineTag);
+            questLineTag.setInteger("order", questLineIndex++);
+            JsonHelper.WriteToFile(questLineFile, NBTConverter.NBTtoJSON_Compound(questLineTag, new JsonObject(), true));
         }
 
         SortedMap<UUID, IQuest> questsInMultipleQuestLines = new TreeMap<>();
@@ -360,14 +375,27 @@ public class QuestCommandDefaults extends QuestCommandBase {
         }
         QuestSettings.INSTANCE.readFromNBT(readNbt.apply(settingsFile));
 
-        File questLinesFile = new File(dataDir, QUEST_LINES_FILE);
-        if (!questLinesFile.exists()) {
-            QuestingAPI.getLogger().log(Level.ERROR, "Failed to find file\n{}", questLinesFile);
+        File questLineDir = new File(dataDir, QUEST_LINE_DIR);
+        SortedMap<Integer, Map.Entry<UUID, IQuestLine>> questLines = new TreeMap<>();
+        try (Stream<Path> paths = Files.walk(questLineDir.toPath())) {
+            paths.filter(Files::isRegularFile).forEach(
+                    path -> {
+                        File questLineFile = path.toFile();
+                        NBTTagCompound questLineTag = readNbt.apply(questLineFile);
+                        UUID questLineId = NBTConverter.UuidValueType.QUEST_LINE.readId(questLineTag);
+                        int order = questLineTag.getInteger("order");
+
+                        IQuestLine questLine = new QuestLine();
+                        questLine.readFromNBT(questLineTag);
+                        questLines.put(order, Maps.immutableEntry(questLineId, questLine));
+                    }
+            );
+        } catch (IOException e) {
+            QuestingAPI.getLogger().log(Level.ERROR, "Failed to traverse directory\n" + questLineDir, e);
             sendChatMessage(sender, "betterquesting.cmd.error");
             return;
         }
-        NBTTagCompound questLinesTag = readNbt.apply(questLinesFile);
-        QuestLineDatabase.INSTANCE.readFromNBT(questLinesTag.getTagList("questLines", Constants.NBT.TAG_COMPOUND), false);
+        QuestLineDatabase.INSTANCE.setOrderedEntries(questLines.values());
 
         File questDir = new File(dataDir, QUEST_DIR);
         QuestDatabase.INSTANCE.clear();
