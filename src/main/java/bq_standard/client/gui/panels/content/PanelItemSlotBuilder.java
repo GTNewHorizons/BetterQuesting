@@ -4,7 +4,8 @@ import betterquesting.api.utils.BigItemStack;
 import betterquesting.api2.client.gui.misc.IGuiRect;
 import betterquesting.api2.client.gui.panels.content.PanelItemSlot;
 import bq_standard.core.BQ_Standard;
-import org.apache.logging.log4j.core.helpers.Assert;
+
+import java.util.Objects;
 
 public final class PanelItemSlotBuilder {
 
@@ -22,7 +23,7 @@ public final class PanelItemSlotBuilder {
     }
 
     public static PanelItemSlotBuilder forValue(BigItemStack value, IGuiRect rectangle) {
-        Assert.isNotNull(rectangle, "PanelItemSlot rectangle");
+        Objects.requireNonNull(rectangle, "PanelItemSlot rectangle");
 
         return new PanelItemSlotBuilder(value, rectangle);
     }
