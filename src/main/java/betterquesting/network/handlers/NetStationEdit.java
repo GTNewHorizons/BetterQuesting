@@ -78,7 +78,7 @@ public class NetStationEdit
                     ITask task = quest == null ? null : quest.getTasks().getValue(data.getInteger("taskID"));
                     if(quest != null && task != null)
                     {
-                        if (!quest.isUnlocked(QID) && !task.isComplete(QID))
+                        if (!quest.isUnlocked(QID) || !task.isComplete(QID))
                         {
                             BetterQuesting.logger.warn(
                                     MarkerManager.getMarker("SuspiciousPackets"),
