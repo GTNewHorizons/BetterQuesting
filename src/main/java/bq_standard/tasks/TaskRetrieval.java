@@ -14,6 +14,7 @@ import bq_standard.client.gui.tasks.PanelTaskRetrieval;
 import bq_standard.core.BQ_Standard;
 import bq_standard.tasks.base.TaskProgressableBase;
 import bq_standard.tasks.factory.FactoryTaskRetrieval;
+import drethic.questbook.config.QBConfig;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import java.util.ArrayList;
@@ -137,7 +138,7 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
     public void detect(ParticipantInfo pInfo, Map.Entry<UUID, IQuest> quest) {
         if (isComplete(pInfo.UUID)) return;
 
-        Detector detector = new Detector(this, consume ? Collections.singletonList(pInfo.UUID) : pInfo.ALL_UUIDS);
+        Detector detector = new Detector(this, (consume && !QBConfig.partySyncConsumeQuests) ? Collections.singletonList(pInfo.UUID) : pInfo.ALL_UUIDS);
 
         final List<InventoryPlayer> invoList;
         if (consume) {
@@ -171,7 +172,7 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
 
             updated = true;
 
-            if (consume) {
+            if (consume && !QBConfig.partySyncConsumeQuests) {
                 setComplete(value.getFirst());
             } else {
                 progress.forEach((pair) -> setComplete(pair.getFirst()));
@@ -180,7 +181,7 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
         }
 
         if (updated) {
-            if (consume) {
+            if (consume && !QBConfig.partySyncConsumeQuests) {
                 pInfo.markDirty(quest.getKey());
             } else {
                 pInfo.markDirtyParty(quest.getKey());
@@ -292,7 +293,7 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
             this.task = task;
             this.progress = task.getBulkProgress(uuids);
             this.remCounts = new int[progress.size()];
-            if (!task.consume) {
+            if (!task.consume || QBConfig.partySyncConsumeQuests) {
                 if (task.groupDetect) {
                     // Reset all detect progress
                     progress.forEach((value) -> Arrays.fill(value.getSecond(), 0));
