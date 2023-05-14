@@ -65,7 +65,6 @@ public class GuiQuestSearch extends GuiScreenCanvas {
         CanvasQuestSearch canvasQuestSearch = createSearchCanvas();
         cvInner.addPanel(canvasQuestSearch);
 
-        searchBox.setCallback(canvasQuestSearch::setSearchFilter);
         searchBox.setCallback((String searchText) -> {
             this.prevSearch = searchText;
             canvasQuestSearch.setSearchFilter(searchText);

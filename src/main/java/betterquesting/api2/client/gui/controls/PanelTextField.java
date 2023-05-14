@@ -813,7 +813,7 @@ public class PanelTextField<T> implements IGuiPanel
                 updateScrollBounds(); // Just in case
             }
 
-            if(clearOnRightClick)
+            if(button == 1 && clearOnRightClick)
             {
                 setText("");
 
