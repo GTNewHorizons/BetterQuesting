@@ -214,7 +214,8 @@ public class TileSubmitStation extends TileEntity implements IFluidHandler, ISid
 		
 		if(doFill)
 		{
-			remainder = t.submitFluid(owner, getQuest(), fluid);
+			EntityPlayerMP player = getPlayerByUUID(owner);
+			remainder = t.submitFluid(player, getQuest(), fluid);
 		    consumed = remainder != null? amount - remainder.amount : amount;
 		    
 			if(t.isComplete(owner))
@@ -286,7 +287,7 @@ public class TileSubmitStation extends TileEntity implements IFluidHandler, ISid
 				
 				if(t.canAcceptItem(owner, getQuest(), inStack))
 				{
-					itemStack[SLOT_INPUT] = t.submitItem(owner, getQuest(), inStack); // Even if this returns an invalid item for submission it will be moved next pass
+					itemStack[SLOT_INPUT] = t.submitItem(player, getQuest(), inStack); // Even if this returns an invalid item for submission it will be moved next pass
 					
 					if(t.isComplete(owner))
 					{

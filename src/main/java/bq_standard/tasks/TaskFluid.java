@@ -24,7 +24,9 @@ import java.util.function.BiFunction;
 import java.util.function.IntFunction;
 import java.util.stream.IntStream;
 import javax.annotation.Nonnull;
+import drethic.questbook.config.QBConfig;
 import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTBase;
@@ -139,7 +141,8 @@ public class TaskFluid extends TaskProgressableBase<int[]> implements ITaskInven
     public void detect(ParticipantInfo pInfo, Map.Entry<UUID, IQuest> quest) {
         if (isComplete(pInfo.UUID)) return;
 
-        Detector detector = new Detector(this, consume ? Collections.singletonList(pInfo.UUID) : pInfo.ALL_UUIDS);
+        boolean selector = consume && !QBConfig.partySyncConsumeQuests;
+        Detector detector = new Detector(this, selector ? Collections.singletonList(pInfo.UUID) : pInfo.ALL_UUIDS);
 
         final List<InventoryPlayer> invoList;
         if (consume) {
@@ -163,8 +166,9 @@ public class TaskFluid extends TaskProgressableBase<int[]> implements ITaskInven
     }
 
     private void checkAndComplete(ParticipantInfo pInfo, Map.Entry<UUID, IQuest> quest, boolean resync) {
+        boolean applyToParty = !consume || QBConfig.partySyncConsumeQuests;
         final List<Tuple2<UUID, int[]>> progress =
-                getBulkProgress(consume ? Collections.singletonList(pInfo.UUID) : pInfo.ALL_UUIDS);
+                getBulkProgress(applyToParty ? Collections.singletonList(pInfo.UUID) : pInfo.ALL_UUIDS);
         boolean updated = resync;
 
         topLoop:
@@ -176,7 +180,7 @@ public class TaskFluid extends TaskProgressableBase<int[]> implements ITaskInven
 
             updated = true;
 
-            if (consume) {
+            if (!applyToParty) {
                 setComplete(value.getFirst());
             } else {
                 progress.forEach((pair) -> setComplete(pair.getFirst()));
@@ -185,7 +189,7 @@ public class TaskFluid extends TaskProgressableBase<int[]> implements ITaskInven
         }
 
         if (updated) {
-            if (consume) {
+            if (!applyToParty) {
                 pInfo.markDirty(quest.getKey());
             } else {
                 pInfo.markDirtyParty(quest.getKey());
@@ -271,7 +275,8 @@ public class TaskFluid extends TaskProgressableBase<int[]> implements ITaskInven
     }
 
     @Override
-    public FluidStack submitFluid(UUID owner, Map.Entry<UUID, IQuest> quest, FluidStack input) {
+    public FluidStack submitFluid(EntityPlayerMP player, Map.Entry<UUID, IQuest> quest, FluidStack input) {
+        UUID owner = player.getUniqueID();
         if (owner == null
                 || input == null
                 || input.amount <= 0
@@ -281,7 +286,10 @@ public class TaskFluid extends TaskProgressableBase<int[]> implements ITaskInven
             return input;
         }
 
-        Detector detector = new Detector(this, Collections.singletonList(owner));
+        boolean syncParty = QBConfig.partySyncConsumeQuests;
+        ParticipantInfo pInfo = new ParticipantInfo(player);
+        List<UUID> uuids = syncParty ? pInfo.ALL_UUIDS : Collections.singletonList(owner);
+        Detector detector = new Detector(this, uuids);
 
         final FluidStack fluid = input.copy();
 
@@ -304,7 +312,7 @@ public class TaskFluid extends TaskProgressableBase<int[]> implements ITaskInven
     public void retrieveFluids(ParticipantInfo pInfo, Map.Entry<UUID, IQuest> quest, FluidStack[] fluids) {
         if (consume || isComplete(pInfo.UUID)) return;
 
-        Detector detector = new Detector(this, consume ? Collections.singletonList(pInfo.UUID) : pInfo.ALL_UUIDS);
+        Detector detector = new Detector(this, pInfo.ALL_UUIDS);
 
         for (FluidStack fluid : fluids) {
             detector.run(fluid, (remaining) -> null); // Never execute consumer
@@ -334,10 +342,14 @@ public class TaskFluid extends TaskProgressableBase<int[]> implements ITaskInven
     }
 
     @Override
-    public ItemStack submitItem(UUID owner, Map.Entry<UUID, IQuest> quest, ItemStack input) {
+    public ItemStack submitItem(EntityPlayerMP player, Map.Entry<UUID, IQuest> quest, ItemStack input) {
+        UUID owner = player.getUniqueID();
         if (owner == null || input == null || input.stackSize != 1 || !consume || isComplete(owner)) return input;
 
-        Detector detector = new Detector(this, Collections.singletonList(owner));
+        boolean syncParty = QBConfig.partySyncConsumeQuests;
+        ParticipantInfo pInfo = new ParticipantInfo(player);
+        List<UUID> uuids = syncParty ? pInfo.ALL_UUIDS : Collections.singletonList(owner);
+        Detector detector = new Detector(this, uuids);
 
         final ItemStack[] wrapper = new ItemStack[] {input.copy()};
 
@@ -484,28 +496,43 @@ public class TaskFluid extends TaskProgressableBase<int[]> implements ITaskInven
                 // Pre-check
                 if (!drainOG.isFluidEqual(fluid)) continue;
 
-                for (Tuple2<UUID, int[]> value : progress) {
-                    if (value.getSecond()[i] >= rStack.amount) continue;
-                    int remaining = rStack.amount - value.getSecond()[i];
+                // If consume is synchronized: Remove item from the stack only once, apply to party
+                if (task.consume && QBConfig.partySyncConsumeQuests && !progress.isEmpty()) {
+                    Tuple2<UUID, int[]> value = progress.get(0); // Should be in sync with other party members
 
-                    if (task.consume) {
-                        FluidStack removed = consumer.apply(remaining);
-                        if (removed != null && removed.amount > 0) {
-                            value.getSecond()[i] += removed.amount;
+                    if (value.getSecond()[i] >= rStack.amount) continue; // Skip completed
+                    int remaining = rStack.amount - value.getSecond()[i];
+                    FluidStack removed = consumer.apply(remaining);
+
+                    if (removed != null && removed.amount > 0) {
+                        int slot = i;
+                        progress.forEach(p -> p.getSecond()[slot] += removed.amount);
+                        updated = true;
+                    }
+                } else {
+                    for (Tuple2<UUID, int[]> value : progress) {
+                        if (value.getSecond()[i] >= rStack.amount) continue;
+                        int remaining = rStack.amount - value.getSecond()[i];
+
+                        if (task.consume) {
+                            FluidStack removed = consumer.apply(remaining);
+                            if (removed != null && removed.amount > 0) {
+                                value.getSecond()[i] += removed.amount;
+                                updated = true;
+                            }
+                        } else {
+                            FluidStack drain = rStack.copy();
+                            drain.amount = remaining; // drain.amount = remaining / stack.stackSize;
+                            if (task.ignoreNbt) drain.tag = null;
+                            if (drain.amount <= 0) continue;
+
+                            FluidStack tFluid = fluid.copy();
+                            tFluid.amount = Math.min(tFluid.amount, drain.amount);
+                            if (tFluid.amount <= 0) continue;
+
+                            value.getSecond()[i] += tFluid.amount;
                             updated = true;
                         }
-                    } else {
-                        FluidStack drain = rStack.copy();
-                        drain.amount = remaining; // drain.amount = remaining / stack.stackSize;
-                        if (task.ignoreNbt) drain.tag = null;
-                        if (drain.amount <= 0) continue;
-
-                        FluidStack tFluid = fluid.copy();
-                        tFluid.amount = Math.min(tFluid.amount, drain.amount);
-                        if (tFluid.amount <= 0) continue;
-
-                        value.getSecond()[i] += tFluid.amount;
-                        updated = true;
                     }
                 }
             }

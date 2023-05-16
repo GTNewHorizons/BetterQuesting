@@ -27,6 +27,7 @@ import java.util.function.IntFunction;
 import java.util.stream.IntStream;
 import javax.annotation.Nonnull;
 import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTBase;
@@ -138,7 +139,8 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
     public void detect(ParticipantInfo pInfo, Map.Entry<UUID, IQuest> quest) {
         if (isComplete(pInfo.UUID)) return;
 
-        Detector detector = new Detector(this, (consume && !QBConfig.partySyncConsumeQuests) ? Collections.singletonList(pInfo.UUID) : pInfo.ALL_UUIDS);
+        boolean selector = consume && !QBConfig.partySyncConsumeQuests;
+        Detector detector = new Detector(this, selector ? Collections.singletonList(pInfo.UUID) : pInfo.ALL_UUIDS);
 
         final List<InventoryPlayer> invoList;
         if (consume) {
@@ -151,7 +153,7 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
         for (InventoryPlayer invo : invoList) {
             IntStream.range(0, invo.getSizeInventory()).forEachOrdered(i -> {
                 ItemStack stack = invo.getStackInSlot(i);
-                detector.run(stack, remaining -> invo.decrStackSize(i, remaining));
+                detector.run(stack, remaining -> invo.decrStackSize(i, remaining), pInfo.UUID);
             });
         }
 
@@ -162,6 +164,7 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
     private void checkAndComplete(
             ParticipantInfo pInfo, Map.Entry<UUID, IQuest> quest, boolean resync, List<Tuple2<UUID, int[]>> progress) {
         boolean updated = resync;
+        boolean applyToParty = !consume || QBConfig.partySyncConsumeQuests;
 
         topLoop:
         for (Tuple2<UUID, int[]> value : progress) {
@@ -172,7 +175,7 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
 
             updated = true;
 
-            if (consume && !QBConfig.partySyncConsumeQuests) {
+            if (!applyToParty) {
                 setComplete(value.getFirst());
             } else {
                 progress.forEach((pair) -> setComplete(pair.getFirst()));
@@ -181,7 +184,7 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
         }
 
         if (updated) {
-            if (consume && !QBConfig.partySyncConsumeQuests) {
+            if (!applyToParty) {
                 pInfo.markDirty(quest.getKey());
             } else {
                 pInfo.markDirtyParty(quest.getKey());
@@ -219,17 +222,21 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
     }
 
     @Override
-    public ItemStack submitItem(UUID owner, Map.Entry<UUID, IQuest> quest, ItemStack input) {
+    public ItemStack submitItem(EntityPlayerMP player, Map.Entry<UUID, IQuest> quest, ItemStack input) {
+        UUID owner = player.getUniqueID();
         if (owner == null || input == null || !consume || isComplete(owner)) return input;
 
-        Detector detector = new Detector(this, Collections.singletonList(owner));
+        boolean syncParty = QBConfig.partySyncConsumeQuests;
+        ParticipantInfo pInfo = new ParticipantInfo(player);
+        List<UUID> uuids = syncParty ? pInfo.ALL_UUIDS : Collections.singletonList(owner);
+        Detector detector = new Detector(this, uuids);
 
         final ItemStack stack = input.copy();
 
-        detector.run(stack, (remaining) -> {
+        detector.run(stack, remaining -> {
             int removed = Math.min(stack.stackSize, remaining);
             return stack.splitStack(removed);
-        });
+        }, pInfo.UUID);
 
         if (detector.updated) {
             setBulkProgress(detector.progress);
@@ -242,10 +249,10 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
     public void retrieveItems(ParticipantInfo pInfo, Map.Entry<UUID, IQuest> quest, ItemStack[] stacks) {
         if (consume || isComplete(pInfo.UUID)) return;
 
-        Detector detector = new Detector(this, consume ? Collections.singletonList(pInfo.UUID) : pInfo.ALL_UUIDS);
+        Detector detector = new Detector(this, pInfo.ALL_UUIDS);
 
         for (ItemStack stack : stacks) {
-            detector.run(stack, (remaining) -> null); // Never execute consumer
+            detector.run(stack, (remaining) -> null, pInfo.UUID); // Never execute consumer
         }
 
         if (detector.updated) setBulkProgress(detector.progress);
@@ -293,7 +300,7 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
             this.task = task;
             this.progress = task.getBulkProgress(uuids);
             this.remCounts = new int[progress.size()];
-            if (!task.consume || QBConfig.partySyncConsumeQuests) {
+            if (!task.consume) {
                 if (task.groupDetect) {
                     // Reset all detect progress
                     progress.forEach((value) -> Arrays.fill(value.getSecond(), 0));
@@ -316,7 +323,7 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
          * @param consumer
          *     Args: (remaining)
          */
-        public void run(ItemStack stack, IntFunction<ItemStack> consumer) {
+        public void run(ItemStack stack, IntFunction<ItemStack> consumer, UUID owner) {
             if (stack == null || stack.stackSize <= 0) return;
             // Allows the stack detection to split across multiple requirements. Counts may vary per person
             Arrays.fill(remCounts, stack.stackSize);
@@ -334,21 +341,36 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
                     continue;
                 }
 
-                for (int n = 0; n < progress.size(); n++) {
-                    Tuple2<UUID, int[]> value = progress.get(n);
+                // If consume is synchronized: Remove item from the stack only once, apply to party
+                if (task.consume && QBConfig.partySyncConsumeQuests && !progress.isEmpty()) {
+                    Tuple2<UUID, int[]> value = progress.get(0); // Should be in sync with other party members
+
                     if (value.getSecond()[i] >= rStack.stackSize) continue;
 
                     int remaining = rStack.stackSize - value.getSecond()[i];
+                    ItemStack removed = consumer.apply(remaining);
 
-                    if (task.consume) {
-                        ItemStack removed = consumer.apply(remaining);
-                        value.getSecond()[i] += removed.stackSize;
-                    } else {
-                        int temp = Math.min(remaining, remCounts[n]);
-                        remCounts[n] -= temp;
-                        value.getSecond()[i] += temp;
-                    }
+                    int slot = i;
+                    progress.forEach(p -> p.getSecond()[slot] += removed.stackSize);
                     updated = true;
+                } else {
+                    for (int n = 0; n < progress.size(); n++) {
+                        Tuple2<UUID, int[]> value = progress.get(n);
+
+                        if (value.getSecond()[i] >= rStack.stackSize) continue;
+
+                        int remaining = rStack.stackSize - value.getSecond()[i];
+
+                        if (task.consume) {
+                            ItemStack removed = consumer.apply(remaining);
+                            value.getSecond()[i] += removed.stackSize;
+                        } else {
+                            int temp = Math.min(remaining, remCounts[n]);
+                            remCounts[n] -= temp;
+                            value.getSecond()[i] += temp;
+                        }
+                        updated = true;
+                    }
                 }
             }
         }
