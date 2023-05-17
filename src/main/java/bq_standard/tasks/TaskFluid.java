@@ -88,6 +88,9 @@ public class TaskFluid extends TaskProgressableBase<int[]> implements ITaskInven
     }
 
     @Override
+    public boolean isConsume() { return consume; }
+
+    @Override
     public ResourceLocation getFactoryID() {
         return FactoryTaskFluid.INSTANCE.getRegistryName();
     }

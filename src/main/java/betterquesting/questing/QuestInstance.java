@@ -23,6 +23,7 @@ import betterquesting.questing.tasks.TaskStorage;
 import betterquesting.storage.PropertyContainer;
 import betterquesting.storage.QuestSettings;
 import com.google.common.collect.Maps;
+import drethic.questbook.config.QBConfig;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Items;
 import net.minecraft.nbt.NBTBase;
@@ -30,6 +31,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraftforge.common.util.Constants;
 import org.apache.logging.log4j.Level;
+import scala.collection.parallel.Task;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -45,6 +47,7 @@ import java.util.UUID;
 public class QuestInstance implements IQuest
 {
 	private final TaskStorage tasks = new TaskStorage();
+    private boolean hasConsumableTasks = false;
 	private final RewardStorage rewards = new RewardStorage();
 
 	private final HashMap<UUID, NBTTagCompound> completeUsers = new HashMap<>();
@@ -158,6 +161,15 @@ public class QuestInstance implements IQuest
 					{
 						done++;
 						update = true;
+                        if (hasConsumableTasks && QBConfig.partySyncConsumeQuests) {
+                            synchronized (completeUsers) {
+                                for (UUID p : partInfo.ALL_UUIDS) {
+                                    if (p != playerID) {
+                                        setClaimed(p, System.currentTimeMillis());
+                                    }
+                                }
+                            }
+                        }
 					}
 				}
                 else
@@ -537,6 +549,16 @@ public class QuestInstance implements IQuest
 		this.qInfo.readFromNBT(jObj.getCompoundTag("properties"));
 		this.tasks.readFromNBT(jObj.getTagList("tasks", 10), false);
 		this.rewards.readFromNBT(jObj.getTagList("rewards", 10), false);
+
+        // Remember if there are any consumable tasks in this quest to prevent reward duplication
+        if (QBConfig.partySyncConsumeQuests) {
+            for (DBEntry<ITask> entry : tasks.getEntries()) {
+                if (entry.getValue().isConsume()) {
+                    hasConsumableTasks = true;
+                    break;
+                }
+            }
+        }
 
         // The legacy storage format used array indices to link together two separate list tags,
         // one for prerequisites, and one for prerequisite tags.

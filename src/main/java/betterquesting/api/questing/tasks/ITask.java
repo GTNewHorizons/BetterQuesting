@@ -47,4 +47,6 @@ public interface ITask extends INBTSaveLoad<NBTTagCompound>, INBTProgress<NBTTag
 	default List<String> getTextsForSearch() {
 		return null;
 	}
+
+	default boolean isConsume() { return false; }
 }

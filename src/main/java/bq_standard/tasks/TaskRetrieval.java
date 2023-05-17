@@ -86,6 +86,9 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
     }
 
     @Override
+    public boolean isConsume() { return consume; }
+
+    @Override
     public ResourceLocation getFactoryID() {
         return FactoryTaskRetrieval.INSTANCE.getRegistryName();
     }
