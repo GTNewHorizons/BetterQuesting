@@ -1,5 +1,6 @@
 package betterquesting.api2.client.gui.panels.content;
 
+import betterquesting.api.storage.BQ_Settings;
 import betterquesting.api.utils.RenderUtils;
 import betterquesting.api2.client.gui.misc.GuiAlign;
 import betterquesting.api2.client.gui.misc.GuiTransform;
@@ -120,7 +121,8 @@ public class PanelTextBox implements IGuiPanel
 			sl = sl1;
 		}
 
-		Matcher matcher = url.matcher(rawText);
+		// minecraft code removes line breaks for us, so to keep offset in sync, we have to do a manual replaceAll here
+		Matcher matcher = url.matcher(rawText.replaceAll("\n", ""));
 		// removal of [url] and whitespace on either side of the url can affect string pos
 		int toDeduct = 0;
 
@@ -268,7 +270,15 @@ public class PanelTextBox implements IGuiPanel
 		{
 			RenderUtils.drawSplitString(fr, text, 0, 0, bw, color.getRGB(), shadow, 0, lines);
 		}
-        
+
+		if(BQ_Settings.urlDebug)
+		{
+			for(int i = 0, hotZonesSize = hotZones.size(); i < hotZonesSize; i++)
+			{
+				RenderUtils.drawHighlightBox(hotZones.get(i).location, new GuiColorStatic(i % 3 == 0 ? 255 : 0, i % 3 == 1 ? 255 : 0, i % 3 == 2 ? 255 : 0, 255));
+			}
+		}
+
         GL11.glPopMatrix();
 	}
 	

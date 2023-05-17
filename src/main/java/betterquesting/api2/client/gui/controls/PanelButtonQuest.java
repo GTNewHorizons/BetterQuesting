@@ -8,7 +8,6 @@ import betterquesting.api.questing.IQuest;
 import betterquesting.api.questing.tasks.ITask;
 import betterquesting.api.storage.BQ_Settings;
 import betterquesting.api.utils.BigItemStack;
-import betterquesting.api.utils.UuidConverter;
 import betterquesting.api2.client.gui.misc.GuiRectangle;
 import betterquesting.api2.client.gui.resources.colors.IGuiColor;
 import betterquesting.api2.client.gui.resources.textures.GuiTextureColored;
@@ -110,7 +109,7 @@ public class PanelButtonQuest extends PanelButtonStorage<Map.Entry<UUID, IQuest>
     {
 		List<String> list = new ArrayList<>();
 
-		list.add(QuestTranslation.translateQuestName(qID, quest) + (!Minecraft.getMinecraft().gameSettings.advancedItemTooltips ? "" : (" #" + UuidConverter.encodeUuid(qID))));
+		list.add(QuestTranslation.translateQuestName(qID, quest));
 
 		UUID playerID = QuestingAPI.getQuestingUUID(player);
 

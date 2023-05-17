@@ -56,6 +56,10 @@ bq_standard.gui.questcompletion=Quest Completed
 
 bq_standard.importer.dummy.name=Dummy Importer
 bq_standard.importer.dummy.desc=Does nothing but throw UnsupportedOperationException.
+bq_standard.importer.hqm_bag.name=HQM Bag Importer
+bq_standard.importer.hqm_bag.desc=Imports HQM rewards bags exported in json format.
+bq_standard.importer.hqm_quest.name=HQM Quest Importer
+bq_standard.importer.hqm_quest.desc=Imports HQM quest lines exported in json format. Due to the strange nature in which HQM quests are indexed post export, errors may occur between quests with duplicate names or conditional unlocks.
 
 item.bq_standard.loot_chest.name=Loot Chest
 

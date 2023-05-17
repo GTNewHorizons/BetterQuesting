@@ -176,7 +176,6 @@ public class SaveLoadHandler {
 
         int packVer = 0;
         String packName = "";
-        final String currVer = Loader.instance().activeModContainer().getVersion();
 
         File defaultDatabaseFile = new File(BQ_Settings.defaultDir, QuestCommandDefaults.DEFAULT_FILE + ".json");
         File defaultDatabaseDir = new File(BQ_Settings.defaultDir, QuestCommandDefaults.DEFAULT_FILE);
@@ -198,8 +197,10 @@ public class SaveLoadHandler {
             // Perhaps we should improve this.
             JsonObject databaseJson = JsonHelper.ReadFromFile(fileDatabase);
             String buildVer =
-                    NBTConverter.JSONtoNBT_Object(settingsJson, new NBTTagCompound(), true)
+                    NBTConverter.JSONtoNBT_Object(databaseJson, new NBTTagCompound(), true)
                             .getString("build");
+            String currVer = Loader.instance().activeModContainer().getVersion();
+
             if (!currVer.equalsIgnoreCase(buildVer)) // RUN BACKUPS
             {
                 String fsVer = JsonHelper.makeFileNameSafe(buildVer);

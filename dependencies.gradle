@@ -1,5 +1,8 @@
 // Add your dependencies here
 
 dependencies {
-    implementation 'com.github.GTNewHorizons:NotEnoughItems:2.3.40-GTNH:dev'
+    implementation 'com.github.GTNewHorizons:NotEnoughItems:2.3.52-GTNH:dev'
+
+    // For testing translations
+    runtimeOnly 'com.github.GTNewHorizons:TX-Loader:1.5.2'
 }

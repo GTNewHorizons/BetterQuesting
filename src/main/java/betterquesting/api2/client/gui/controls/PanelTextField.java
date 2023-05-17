@@ -35,6 +35,7 @@ public class PanelTextField<T> implements IGuiPanel
     private boolean isFocused = false;
     private boolean isActive = true;
     private boolean canWrap = false;
+    private boolean clearOnRightClick = false;
     private int maxLength = 32;
     
     private String text;
@@ -116,7 +117,13 @@ public class PanelTextField<T> implements IGuiPanel
         updateScrollBounds();
         return this;
     }
-    
+
+    public PanelTextField<T> enableClearingOnRightClick(boolean state)
+    {
+        this.clearOnRightClick = state;
+        return this;
+    }
+
     public void lockFocus(boolean state)
     {
         this.lockFocus = state;
@@ -805,7 +812,18 @@ public class PanelTextField<T> implements IGuiPanel
                 this.isFocused = true;
                 updateScrollBounds(); // Just in case
             }
-            
+
+            if(button == 1 && clearOnRightClick)
+            {
+                setText("");
+
+                // Broadcast changes
+                if(callback != null)
+                {
+                    callback.setValue(filter.parseValue(this.text));
+                }
+            }
+
             if(canWrap)
             {
                 setCursorPosition(RenderUtils.getCursorPos(text, mx - (transform.getX() + 4) + getScrollX(), my - (transform.getY() + 4) + getScrollY(), transform.getWidth() - 8, Minecraft.getMinecraft().fontRenderer));

@@ -7,6 +7,7 @@ import betterquesting.api.questing.tasks.ITask;
 import betterquesting.api.utils.NBTConverter;
 import betterquesting.api2.utils.Tuple2;
 import betterquesting.blocks.TileSubmitStation;
+import betterquesting.core.BetterQuesting;
 import betterquesting.network.PacketSender;
 import betterquesting.network.PacketTypeRegistry;
 import betterquesting.questing.QuestDatabase;
@@ -16,6 +17,7 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ResourceLocation;
+import org.apache.logging.log4j.MarkerManager;
 
 import java.util.UUID;
 
@@ -74,7 +76,18 @@ public class NetStationEdit
                     UUID QID = QuestingAPI.getQuestingUUID(message.getSecond());
                     IQuest quest = QuestDatabase.INSTANCE.get(NBTConverter.UuidValueType.QUEST.readId(data));
                     ITask task = quest == null ? null : quest.getTasks().getValue(data.getInteger("taskID"));
-                    if(quest != null && task != null) oss.setupTask(QID, quest, task);
+                    if(quest != null && task != null)
+                    {
+                        if (!quest.isUnlocked(QID) || !task.isComplete(QID))
+                        {
+                            BetterQuesting.logger.warn(
+                                    MarkerManager.getMarker("SuspiciousPackets"),
+                                    "Player {} tried to set task to completed or not yet unlocked one.",
+                                    message.getSecond().getGameProfile()
+                            );
+                        }
+                        oss.setupTask(QID, quest, task);
+                    }
                 }
             }
         }

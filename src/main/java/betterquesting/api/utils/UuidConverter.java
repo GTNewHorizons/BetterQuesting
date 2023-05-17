@@ -24,6 +24,14 @@ public class UuidConverter {
         return Base64.getUrlEncoder().encodeToString(Bytes.concat(upper, lower));
     }
 
+    /**
+     * Returns a compact string representation of a UUID, with trailing '=' removed.
+     * This is used for quest book translation keys, which must not contain '='.
+     */
+    public static String encodeUuidStripPadding(UUID uuid) {
+        return encodeUuid(uuid).replace("=", "");
+    }
+
     /** Decodes a compact string representation of a UUID. */
     public static UUID decodeUuid(String string) {
         byte[] bytes = Base64.getUrlDecoder().decode(string);

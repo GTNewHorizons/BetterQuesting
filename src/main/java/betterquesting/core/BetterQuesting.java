@@ -52,7 +52,7 @@ public class BetterQuesting
     public static final String VERSION = "GRADLETOKEN_VERSION";
     public static final String PROXY = "betterquesting.core.proxies";
     public static final String CHANNEL = "BQ_NET_CHAN";
-    public static final String FORMAT = "3.0.0";
+    public static final String FORMAT = "3.1.0";
 	
 	@Instance(MODID)
 	public static BetterQuesting instance;

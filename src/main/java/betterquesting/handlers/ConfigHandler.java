@@ -45,6 +45,7 @@ public class ConfigHandler
 		BQ_Settings.viewModeAllQuestLine = config.getBoolean("View mode all quest line", Configuration.CATEGORY_GENERAL, true, "If true, view mode will display the quest line regardless of whether the quest line is unlocked yet.");
 		BQ_Settings.viewModeBtn = config.getBoolean("View mode button", Configuration.CATEGORY_GENERAL, false, "If true, show view mode button.");
 		BQ_Settings.alwaysDrawImplicit = config.getBoolean("Always draw implicit dependency", Configuration.CATEGORY_GENERAL, false, "If true, always draw implicit dependency. This property can be changed by the GUI");
+		BQ_Settings.urlDebug = config.getBoolean("Highlight detected clickable url hotzone.", Configuration.CATEGORY_GENERAL, false, "If true, render each hotzone using alternating color.");
 
 		config.save();
 	}
