@@ -216,8 +216,8 @@ public class TileSubmitStation extends TileEntity implements IFluidHandler, ISid
 		{
 			EntityPlayerMP player = getPlayerByUUID(owner);
 			remainder = t.submitFluid(player, getQuest(), fluid);
-		    consumed = remainder != null? amount - remainder.amount : amount;
-		    
+			consumed = remainder != null? amount - remainder.amount : amount;
+
 			if(t.isComplete(owner))
 			{
 				needsUpdate = true;

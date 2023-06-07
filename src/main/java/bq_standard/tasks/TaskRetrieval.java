@@ -156,7 +156,7 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
         for (InventoryPlayer invo : invoList) {
             IntStream.range(0, invo.getSizeInventory()).forEachOrdered(i -> {
                 ItemStack stack = invo.getStackInSlot(i);
-                detector.run(stack, remaining -> invo.decrStackSize(i, remaining), pInfo.UUID);
+                detector.run(stack, remaining -> invo.decrStackSize(i, remaining));
             });
         }
 
@@ -239,7 +239,7 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
         detector.run(stack, remaining -> {
             int removed = Math.min(stack.stackSize, remaining);
             return stack.splitStack(removed);
-        }, pInfo.UUID);
+        });
 
         if (detector.updated) {
             setBulkProgress(detector.progress);
@@ -255,7 +255,7 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
         Detector detector = new Detector(this, pInfo.ALL_UUIDS);
 
         for (ItemStack stack : stacks) {
-            detector.run(stack, (remaining) -> null, pInfo.UUID); // Never execute consumer
+            detector.run(stack, (remaining) -> null); // Never execute consumer
         }
 
         if (detector.updated) setBulkProgress(detector.progress);
@@ -326,7 +326,7 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
          * @param consumer
          *     Args: (remaining)
          */
-        public void run(ItemStack stack, IntFunction<ItemStack> consumer, UUID owner) {
+        public void run(ItemStack stack, IntFunction<ItemStack> consumer) {
             if (stack == null || stack.stackSize <= 0) return;
             // Allows the stack detection to split across multiple requirements. Counts may vary per person
             Arrays.fill(remCounts, stack.stackSize);

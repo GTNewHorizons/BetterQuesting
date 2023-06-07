@@ -47,7 +47,7 @@ import java.util.UUID;
 public class QuestInstance implements IQuest
 {
 	private final TaskStorage tasks = new TaskStorage();
-    private boolean hasConsumableTasks = false;
+	private boolean hasConsumableTasks = false;
 	private final RewardStorage rewards = new RewardStorage();
 
 	private final HashMap<UUID, NBTTagCompound> completeUsers = new HashMap<>();
@@ -161,15 +161,15 @@ public class QuestInstance implements IQuest
 					{
 						done++;
 						update = true;
-                        if (hasConsumableTasks && QBConfig.partySyncConsumeQuests) {
-                            synchronized (completeUsers) {
-                                for (UUID p : partInfo.ALL_UUIDS) {
-                                    if (p != playerID) {
-                                        setClaimed(p, System.currentTimeMillis());
-                                    }
-                                }
-                            }
-                        }
+						if (hasConsumableTasks && QBConfig.partySyncConsumeQuests) {
+							synchronized (completeUsers) {
+								for (UUID p : partInfo.ALL_UUIDS) {
+									if (p != playerID) {
+										setClaimed(p, System.currentTimeMillis());
+									}
+								}
+							}
+						}
 					}
 				}
                 else
@@ -552,13 +552,13 @@ public class QuestInstance implements IQuest
 
         // Remember if there are any consumable tasks in this quest to prevent reward duplication
         if (QBConfig.partySyncConsumeQuests) {
-            for (DBEntry<ITask> entry : tasks.getEntries()) {
-                if (entry.getValue().isConsume()) {
-                    hasConsumableTasks = true;
-                    break;
-                }
-            }
-        }
+			for (DBEntry<ITask> entry : tasks.getEntries()) {
+				if (entry.getValue().isConsume()) {
+					hasConsumableTasks = true;
+					break;
+				}
+			}
+		}
 
         // The legacy storage format used array indices to link together two separate list tags,
         // one for prerequisites, and one for prerequisite tags.
