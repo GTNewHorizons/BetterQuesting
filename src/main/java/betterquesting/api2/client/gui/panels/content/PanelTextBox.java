@@ -32,6 +32,7 @@ import static betterquesting.api.storage.BQ_Settings.textWidthCorrection;
 public class PanelTextBox implements IGuiPanel
 {
 	private static final Pattern url = Pattern.compile("\\[url] *(.*?) *\\[/url]");
+	private static final String defaultUrlProtocol = "https";
 	private static final Set<String> supportedUrlProtocol = ImmutableSet.of("http", "https");
 	private final GuiRectText transform;
 	private final List<HotZone> hotZones = new ArrayList<>();
@@ -289,7 +290,11 @@ public class PanelTextBox implements IGuiPanel
 			if (hotZone.location.contains(mxt, myt)) {
 				URI uri;
 				try {
-					uri = new URI(hotZone.url);
+					URI tmp;
+					tmp = new URI(hotZone.url);
+					if (tmp.getScheme() == null)
+						tmp = new URI(defaultUrlProtocol + "://" + hotZone.url);
+					uri = tmp;
 				} catch(URISyntaxException ex) {
 					return false;
 				}
