@@ -93,8 +93,8 @@ public class PanelTextBox implements IGuiPanel
 		
 		if(autoFit)
 		{
-			@SuppressWarnings("unchecked")
-			List<String> sl = fr.listFormattedStringToWidth(this.text, bounds.getWidth());
+			float scale = fontScale / 12F;
+			List<String> sl = RenderUtils.splitStringWithoutFormat(this.text, (int)Math.floor(bounds.getWidth() / scale / textWidthCorrection), fr);
 			lines = sl.size() - 1;
 			
 			this.transform.h = fr.FONT_HEIGHT * sl.size();
@@ -116,13 +116,11 @@ public class PanelTextBox implements IGuiPanel
 		IGuiRect fullbox = getTransform();
 		if (sl == null)
 		{
-			@SuppressWarnings("unchecked")
-			List<String> sl1 = fr.listFormattedStringToWidth(text, fullbox.getWidth());
-			sl = sl1;
+			float scale = fontScale / 12F;
+			sl = RenderUtils.splitStringWithoutFormat(this.text, (int) Math.floor(fullbox.getWidth() / scale / textWidthCorrection), fr);
 		}
 
-		// minecraft code removes line breaks for us, so to keep offset in sync, we have to do a manual replaceAll here
-		Matcher matcher = url.matcher(rawText.replaceAll("\n", ""));
+		Matcher matcher = url.matcher(rawText);
 		// removal of [url] and whitespace on either side of the url can affect string pos
 		int toDeduct = 0;
 
@@ -141,11 +139,11 @@ public class PanelTextBox implements IGuiPanel
 				{
 					if(start < c + s.length())
 					{
-						int left = fr.getStringWidth(s.substring(0, start - c));
+						int left = RenderUtils.getStringWidth(s.substring(0, start - c), fr);
 						if (end <= c + s.length())
 						{
 							// url on same line, early exit
-							int right = fr.getStringWidth(s.substring(0, end - c));
+							int right = RenderUtils.getStringWidth(s.substring(0, end - c), fr);
 							GuiTransform location = new GuiTransform(GuiAlign.FULL_BOX, left, fr.FONT_HEIGHT * i, right - left, fr.FONT_HEIGHT, 0);
 							location.setParent(fullbox);
 							hotZones.add(new HotZone(location, url));
@@ -163,7 +161,7 @@ public class PanelTextBox implements IGuiPanel
 					{
 						// url ends at current line
 						b2 = true;
-						GuiTransform location = new GuiTransform(GuiAlign.FULL_BOX, 0, fr.FONT_HEIGHT * i, fr.getStringWidth(s.substring(0, end - c)), fr.FONT_HEIGHT, 0);
+						GuiTransform location = new GuiTransform(GuiAlign.FULL_BOX, 0, fr.FONT_HEIGHT * i, RenderUtils.getStringWidth(s.substring(0, end - c), fr), fr.FONT_HEIGHT, 0);
 						location.setParent(fullbox);
 						hotZones.add(new HotZone(location, url));
 					} else
@@ -225,7 +223,7 @@ public class PanelTextBox implements IGuiPanel
 			return;
 		}
 		
-		List<String> sl = fr.listFormattedStringToWidth(text, (int)Math.floor(bounds.getWidth() / scale / textWidthCorrection));
+		List<String> sl = RenderUtils.splitStringWithoutFormat(text, (int)Math.floor(bounds.getWidth() / scale / textWidthCorrection), fr);
 		lines = sl.size() - 1;
 		bakeHotZones(sl);
 
