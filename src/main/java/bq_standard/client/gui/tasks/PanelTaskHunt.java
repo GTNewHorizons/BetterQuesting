@@ -48,10 +48,17 @@ public class PanelTaskHunt extends CanvasMinimum {
                 .setAlignment(1)
                 .setColor(PresetColor.TEXT_MAIN.getColor()));
 
-        if (target != null)
-            this.addPanel(new PanelEntityPreview(new GuiTransform(GuiAlign.TOP_LEFT, 0, 16, width, 64, 0), target)
-                    .setRotationDriven(new ValueFuncIO<>(() -> 15F), new ValueFuncIO<>(() ->
-                            (float) (Minecraft.getSystemTime() % 30000L / 30000D * 360D))));
+        if (target != null) {
+            if (task.idName.contains("Wisp")) {
+                this.addPanel(new PanelEntityPreview(new GuiTransform(GuiAlign.TOP_LEFT, 0, 16, width, 64, 0), target)
+                        .setRotationDriven(new ValueFuncIO<>(() -> 90F),
+                                new ValueFuncIO<>(() -> (float) (Minecraft.getSystemTime() % 30000L / 30000D * 360D))));
+            } else {
+                this.addPanel(new PanelEntityPreview(new GuiTransform(GuiAlign.TOP_LEFT, 0, 16, width, 64, 0), target)
+                        .setRotationDriven(new ValueFuncIO<>(() -> 15F),
+                                new ValueFuncIO<>(() -> (float) (Minecraft.getSystemTime() % 30000L / 30000D * 360D))));
+            }
+        }
         recalcSizes();
     }
 }
