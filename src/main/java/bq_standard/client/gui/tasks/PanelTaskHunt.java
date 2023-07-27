@@ -48,16 +48,10 @@ public class PanelTaskHunt extends CanvasMinimum {
                 .setAlignment(1)
                 .setColor(PresetColor.TEXT_MAIN.getColor()));
 
-        if (target != null) {
-            ValueFuncIO<Float> pitch;
-            if (task.idName.contains("Wisp")) {
-                pitch = new ValueFuncIO<>(() -> 90F);
-            } else {
-                pitch = new ValueFuncIO<>(() -> 15F);
-            }
+        if (target != null)
             this.addPanel(new PanelEntityPreview(new GuiTransform(GuiAlign.TOP_LEFT, 0, 16, width, 64, 0), target)
-                    .setRotationDriven(pitch, new ValueFuncIO<>(() -> (float) (Minecraft.getSystemTime() % 30000L / 30000D * 360D))));
-        }
+                    .setRotationDriven(new ValueFuncIO<>(() -> 15F), new ValueFuncIO<>(() -> (float) (Minecraft.getSystemTime() % 30000L / 30000D * 360D))));
+
         recalcSizes();
     }
 }

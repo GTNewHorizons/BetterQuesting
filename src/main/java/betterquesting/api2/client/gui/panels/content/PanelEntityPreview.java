@@ -7,6 +7,7 @@ import betterquesting.api2.client.gui.misc.GuiRectangle;
 import betterquesting.api2.client.gui.misc.IGuiRect;
 import betterquesting.api2.client.gui.panels.IGuiPanel;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityList;
 import net.minecraft.util.MathHelper;
 import org.lwjgl.opengl.GL11;
 
@@ -105,9 +106,10 @@ public class PanelEntityPreview implements IGuiPanel
 		int sizeX = bounds.getWidth();
 		int sizeY = bounds.getHeight();
 		float scale = Math.min((sizeY/2F)/entity.height, (sizeX/2F)/entity.width);
-		
-		RenderUtils.RenderEntity(bounds.getX() + sizeX/2, bounds.getY() + sizeY/2 + MathHelper.ceiling_float_int(entity.height * scale / 2F), (int)scale, yawDriver.readValue(), pitchDriver.readValue(), entity);
-		
+		float pitch = EntityList.getEntityString(entity).contains("Wisp") ? 90F : pitchDriver.readValue();
+
+		RenderUtils.RenderEntity(bounds.getX() + sizeX/2, bounds.getY() + sizeY/2 + MathHelper.ceiling_float_int(entity.height * scale / 2F), (int)scale, yawDriver.readValue(), pitch, entity);
+
 		RenderUtils.endScissor();
         GL11.glPopMatrix();
     }
