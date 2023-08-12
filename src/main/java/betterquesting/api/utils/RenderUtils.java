@@ -145,13 +145,9 @@ public class RenderUtils
 	        GL11.glRotatef(180.0F, 0.0F, 0.0F, 1.0F);
 	        GL11.glRotatef(pitch, 1F, 0F, 0F);
 	        GL11.glRotatef(rotation, 0F, 1F, 0F);
-	        float f3 = entity.rotationYaw;
-	        float f4 = entity.rotationPitch;
 	        RenderHelper.enableStandardItemLighting();
 	        RenderManager.instance.playerViewY = 180.0F;
 	        RenderManager.instance.renderEntityWithPosYaw(entity, 0.0D, 0.0D, 0.0D, 0.0F, 1.0F);
-	        entity.rotationYaw = f3;
-	        entity.rotationPitch = f4;
 	        GL11.glDisable(GL11.GL_DEPTH_TEST);
 	        GL11.glPopMatrix();
 	        RenderHelper.disableStandardItemLighting();
