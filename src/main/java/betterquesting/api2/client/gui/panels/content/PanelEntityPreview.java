@@ -118,7 +118,8 @@ public class PanelEntityPreview implements IGuiPanel
 		RenderUtils.endScissor();
 		GL11.glPopMatrix();
 
-		changeTheCameraPitch(thePlayerPitch);
+		if (thePlayerPitch != Minecraft.getMinecraft().thePlayer.rotationPitch)
+			changeTheCameraPitch(thePlayerPitch);
     }
 
 	private void changeTheCameraPitch(float pitch) {
