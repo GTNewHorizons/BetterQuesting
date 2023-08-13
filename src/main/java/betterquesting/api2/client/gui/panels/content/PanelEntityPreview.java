@@ -7,6 +7,7 @@ import betterquesting.api2.client.gui.misc.GuiRectangle;
 import betterquesting.api2.client.gui.misc.IGuiRect;
 import betterquesting.api2.client.gui.panels.IGuiPanel;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.ActiveRenderInfo;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityList;
 import net.minecraft.util.MathHelper;
@@ -105,18 +106,26 @@ public class PanelEntityPreview implements IGuiPanel
 		int sizeX = bounds.getWidth();
 		int sizeY = bounds.getHeight();
 		float scale = Math.min((sizeY/2F)/entity.height, (sizeX/2F)/entity.width);
+		float thePlayerPitch = Minecraft.getMinecraft().thePlayer.rotationPitch;
 		float pitch;
 		if (EntityList.getEntityString(entity).contains("Wisp")) {
-			Minecraft.getMinecraft().thePlayer.rotationPitch = 90F;
+			changeTheCameraPitch(90F);
 			pitch = 90F;
 		} else
 			pitch = pitchDriver.readValue();
 
 		RenderUtils.RenderEntity(bounds.getX() + sizeX/2, bounds.getY() + sizeY/2 + MathHelper.ceiling_float_int(entity.height * scale / 2F), (int)scale, yawDriver.readValue(), pitch, entity);
-
 		RenderUtils.endScissor();
 		GL11.glPopMatrix();
+
+		changeTheCameraPitch(thePlayerPitch);
     }
+
+	private void changeTheCameraPitch(float pitch) {
+		Minecraft.getMinecraft().thePlayer.rotationPitch = pitch;
+		ActiveRenderInfo.updateRenderInfo(Minecraft.getMinecraft().thePlayer,
+				Minecraft.getMinecraft().gameSettings.thirdPersonView == 2);
+	}
 	
 	@Override
 	public boolean onMouseClick(int mx, int my, int click)

@@ -34,7 +34,6 @@ public class GuiScreenCanvas extends GuiScreen implements IScene
 	private boolean useMargins = true;
 	private boolean useDefaultBG = false;
 	private boolean isVolatile = false;
-	private float thePlayerPitch;
 	
 	public final GuiScreen parent;
 	
@@ -100,8 +99,6 @@ public class GuiScreenCanvas extends GuiScreen implements IScene
 	public final void initGui()
 	{
 		super.initGui();
-		// remember player's pitch for mob previews that depends on its value (Wisp mob)
-		thePlayerPitch = Minecraft.getMinecraft().thePlayer.rotationPitch;
 
 		initPanel();
 	}
@@ -110,8 +107,6 @@ public class GuiScreenCanvas extends GuiScreen implements IScene
 	public void onGuiClosed()
 	{
 		super.onGuiClosed();
-		// restore player's pitch if changed (Wisp mob)
-		Minecraft.getMinecraft().thePlayer.rotationPitch = thePlayerPitch;
 
 		Keyboard.enableRepeatEvents(false);
 	}
