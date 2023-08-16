@@ -114,7 +114,9 @@ public class PanelEntityPreview implements IGuiPanel
 		} else if (EntityList.getEntityString(entity).equals("TwilightForest.Hydra")) {
 			pitch = pitchDriver.readValue();
 			Entity head = EntityList.createEntityByName("TwilightForest.HydraHead", Minecraft.getMinecraft().theWorld);
-			RenderUtils.RenderEntity(bounds.getX() + sizeX/2, (int) (bounds.getY() + sizeY/2 + head.height * scale), (int)scale, yawDriver.readValue(), pitch, head);
+			RenderUtils.RenderEntity(bounds.getX() + sizeX/2, (int) (bounds.getY() + sizeY/2 - head.height * scale), (int)scale, yawDriver.readValue(), pitch, head);
+			RenderUtils.RenderEntity(bounds.getX() + sizeX/2, (int) (bounds.getY() + sizeY/2 + head.height*.25 * scale), (int)scale, yawDriver.readValue(), pitch, head);
+			RenderUtils.RenderEntity(bounds.getX() + sizeX/2, (int) (bounds.getY() + sizeY/2 + head.height*1.5 * scale), (int)scale, yawDriver.readValue(), pitch, head);
 		} else
 			pitch = pitchDriver.readValue();
 
