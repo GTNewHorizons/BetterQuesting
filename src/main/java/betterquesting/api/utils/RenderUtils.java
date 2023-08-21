@@ -15,12 +15,14 @@ import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.entity.RenderItem;
 import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityList;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.MathHelper;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.util.vector.Matrix4f;
+import twilightforest.entity.boss.EntityTFHydra;
 
 import java.awt.*;
 import java.nio.FloatBuffer;
@@ -141,14 +143,31 @@ public class RenderUtils
 	        GL11.glPushMatrix();
 	        GL11.glEnable(GL11.GL_DEPTH_TEST);
 	        GL11.glTranslatef(posX, posY, posZ);
-	        GL11.glScalef((float)-scale, (float)scale, (float)scale); // Not entirely sure why mobs are flipped but this is how vanilla GUIs fix it so...
-	        GL11.glRotatef(180.0F, 0.0F, 0.0F, 1.0F);
+	        GL11.glScalef((float) -scale, (float) scale, (float) scale); // Not entirely sure why mobs are flipped but this is how vanilla GUIs fix it so...
+	        GL11.glRotatef(180F, 0F, 0F, 1F);
 	        GL11.glRotatef(pitch, 1F, 0F, 0F);
 	        GL11.glRotatef(rotation, 0F, 1F, 0F);
 	        RenderHelper.enableStandardItemLighting();
-	        RenderManager.instance.playerViewY = 180.0F;
-	        RenderManager.instance.renderEntityWithPosYaw(entity, 0.0D, 0.0D, 0.0D, 0.0F, 1.0F);
-	        GL11.glDisable(GL11.GL_DEPTH_TEST);
+	        RenderManager.instance.playerViewY = 180F;
+	        RenderManager.instance.renderEntityWithPosYaw(entity, 0D, 0D, 0D, 0F, 1F);
+			if (EntityList.getEntityString(entity).equals("TwilightForest.Naga")) {
+				int body = 11;	// 0 to 12
+				for (int i = 0; i < body; i++) {
+					Entity part = entity.getParts()[i];
+					RenderManager.instance.renderEntityWithPosYaw(part, part.posX, part.posY, part.posZ, part.rotationYaw, 1F);
+				}
+			} else if (EntityList.getEntityString(entity).equals("TwilightForest.Hydra")) {
+				int heads = 7;	// 0 to 7, optimal 3, 5, 7
+				for (int i = 4; i < 4 + 5 * heads; i++) {
+					Entity part = entity.getParts()[i];
+					RenderManager.instance.renderEntityWithPosYaw(part, part.posX, part.posY, part.posZ, 0F, 1F);
+				}
+				for (int i = 0; i < heads; i++) {
+					Entity head = ((EntityTFHydra) entity).hc[i].headEntity;
+					RenderManager.instance.renderEntityWithPosYaw(head, head.posX, head.posY, head.posZ, 0F, 1F);
+				}
+			}
+			GL11.glDisable(GL11.GL_DEPTH_TEST);
 	        GL11.glPopMatrix();
 	        RenderHelper.disableStandardItemLighting();
 	        GL11.glDisable(GL12.GL_RESCALE_NORMAL);
