@@ -6,15 +6,18 @@ import betterquesting.api2.client.gui.controls.io.ValueFuncIO;
 import betterquesting.api2.client.gui.misc.GuiRectangle;
 import betterquesting.api2.client.gui.misc.IGuiRect;
 import betterquesting.api2.client.gui.panels.IGuiPanel;
+import betterquesting.core.BetterQuesting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ActiveRenderInfo;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityList;
 import net.minecraft.util.MathHelper;
+import org.apache.logging.log4j.Level;
 import org.lwjgl.opengl.GL11;
 import twilightforest.entity.boss.EntityTFHydra;
 import twilightforest.entity.boss.EntityTFHydraHead;
 import twilightforest.entity.boss.EntityTFNaga;
+import twilightforest.entity.boss.HydraHeadContainer;
 
 import java.util.List;
 
@@ -202,14 +205,14 @@ public class PanelEntityPreview implements IGuiPanel
 		naga.getParts()[1].rotationYaw = 0;
 		naga.getParts()[2].rotationYaw = -30;
 		naga.getParts()[3].rotationYaw = -60;
-		naga.getParts()[4].rotationYaw = 0;
-		naga.getParts()[5].rotationYaw = -30;
-		naga.getParts()[6].rotationYaw = -60;
+		naga.getParts()[4].rotationYaw = -90;
+		naga.getParts()[5].rotationYaw = -120;
+		naga.getParts()[6].rotationYaw = -150;
 		naga.getParts()[7].rotationYaw = 0;
 		naga.getParts()[8].rotationYaw = -30;
 		naga.getParts()[9].rotationYaw = -60;
-		naga.getParts()[10].rotationYaw = 0;
-		naga.getParts()[11].rotationYaw = -30;
+		naga.getParts()[10].rotationYaw = -90;
+		naga.getParts()[11].rotationYaw = -120;
 	}
 
 	private void changeTheCameraPitch(float pitch) {
