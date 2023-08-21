@@ -139,6 +139,7 @@ public class RenderUtils {
             RenderManager.instance.playerViewY = 180F;
             RenderManager.instance.renderEntityWithPosYaw(entity, 0D, 0D, 0D, 0F, 1F);
             if (EntityList.getEntityString(entity).equals("TwilightForest.Naga")) {
+				GL11.glDisable(GL11.GL_LIGHTING);
                 int body = 11;    // 0 to 12
                 for (int i = 0; i < body; i++) {
                     Entity part = entity.getParts()[i];
@@ -157,6 +158,7 @@ public class RenderUtils {
             }
             GL11.glDisable(GL11.GL_DEPTH_TEST);
             GL11.glPopMatrix();
+			GL11.glEnable(GL11.GL_LIGHTING);
             RenderHelper.disableStandardItemLighting();
             GL11.glDisable(GL12.GL_RESCALE_NORMAL);
             OpenGlHelper.setActiveTexture(OpenGlHelper.lightmapTexUnit);
