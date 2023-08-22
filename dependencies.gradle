@@ -2,7 +2,6 @@
 
 dependencies {
     implementation 'com.github.GTNewHorizons:NotEnoughItems:2.3.83-GTNH:dev'
-    devOnlyNonPublishable("com.github.GTNewHorizons:twilightforest:2.4.5:dev")
 
     // For testing translations
     runtimeOnly 'com.github.GTNewHorizons:TX-Loader:1.5.2'

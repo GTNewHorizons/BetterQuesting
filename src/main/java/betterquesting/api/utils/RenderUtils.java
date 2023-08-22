@@ -22,7 +22,6 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.util.vector.Matrix4f;
-import twilightforest.entity.boss.EntityTFHydra;
 
 import java.awt.*;
 import java.nio.FloatBuffer;
@@ -140,20 +139,23 @@ public class RenderUtils {
             RenderManager.instance.renderEntityWithPosYaw(entity, 0D, 0D, 0D, 0F, 1F);
             if (EntityList.getEntityString(entity).equals("TwilightForest.Naga")) {
                 OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240, 240);
-                int body = 11;    // 0 to 12
-                for (int i = 0; i < body; i++) {
-                    Entity part = entity.getParts()[i];
-                    RenderManager.instance.renderEntityWithPosYaw(part, part.posX, part.posY, part.posZ, part.rotationYaw, 1F);
+                int bodySize = 11;    // 0 to 12
+                Entity part = entity.getParts()[0];
+                float [][] xyzYaw = getNagaXyzYaw();
+                for (int i = 0; i < bodySize; i++) {
+                    RenderManager.instance.renderEntityWithPosYaw(part, xyzYaw[i][0], xyzYaw[i][1], xyzYaw[i][2], xyzYaw[i][3], 1F);
                 }
             } else if (EntityList.getEntityString(entity).equals("TwilightForest.Hydra")) {
-                int heads = 7;    // 0 to 7, optimal 3, 5, 7
-                for (int i = 4; i < 4 + 5 * heads; i++) {
-                    Entity part = entity.getParts()[i];
-                    RenderManager.instance.renderEntityWithPosYaw(part, part.posX, part.posY, part.posZ, 0F, 1F);
+                int headsNumber = 7;    // 0 to 7, optimal 3, 5, 7
+                Entity part = entity.getParts()[4];
+                float [][] xyzYaw = getHydraNeckXyz();
+                for (int i = 0; i < 5 * headsNumber; i++) {
+                    RenderManager.instance.renderEntityWithPosYaw(part, xyzYaw[i][0], xyzYaw[i][1], xyzYaw[i][2], 0F, 1F);
                 }
-                for (int i = 0; i < heads; i++) {
-                    Entity head = ((EntityTFHydra) entity).hc[i].headEntity;
-                    RenderManager.instance.renderEntityWithPosYaw(head, head.posX, head.posY, head.posZ, 0F, 1F);
+                part = EntityList.createEntityByName("TwilightForest.HydraHead", Minecraft.getMinecraft().theWorld);
+                xyzYaw = getHydraHeadXyz();
+                for (int i = 0; i < headsNumber; i++) {
+                    RenderManager.instance.renderEntityWithPosYaw(part, xyzYaw[i][0], xyzYaw[i][1], xyzYaw[i][2], 0F, 1F);
                 }
             }
             GL11.glDisable(GL11.GL_DEPTH_TEST);
@@ -167,6 +169,47 @@ public class RenderUtils {
         } catch (Exception e) {
             // Hides rendering errors with entities which are common for invalid/technical entities
         }
+    }
+
+    private static float[][] getHydraHeadXyz() {
+        return new float[][] {
+            {0.0F, 9.1F, 3.6F},
+            {-7.5F, 5.5F, 4.4F},
+            {7.5F, 5.5F, 4.4F},
+            {-5.1F, 9.1F, 0.0F},
+            {5.1F, 9.1F, 0.0F},
+            {-8.9F, 1.5F, 0.0F},
+            {8.9F, 1.5F, 0.0F},
+        };
+    }
+
+    private static float[][] getHydraNeckXyz() {
+        return new float[][] {
+            {0.0F, 9.0F, 2.6F}, {0.0F, 7.5F, 1.7F}, {0.0F, 6.0F, 0.8F}, {0.0F, 4.5F, -0.1F}, {0.0F, 3.0F, -1.0F},
+            {-7.4F, 5.4F, 3.4F}, {-6.3F, 4.8F, 2.3F}, {-5.2F, 4.2F, 1.2F}, {-4.1F, 3.6F, 0.1F}, {-3.0F, 3.0F, -1.0F},
+            {7.4F, 5.4F, 3.4F}, {6.3F, 4.8F, 2.3F}, {5.2F, 4.2F, 1.2F}, {4.1F, 3.6F, 0.1F}, {3.0F, 3.0F, -1.0F},
+            {-5.0F, 9.0F, -1.0F}, {-4.1F, 7.5F, -1.4F}, {-3.2F, 6.0F, -1.9F}, {-2.3F, 4.5F, -2.3F}, {-1.4F, 3.0F, -2.8F},
+            {5.0F, 9.0F, -1.0F}, {4.1F, 7.5F, -1.4F}, {3.2F, 6.0F, -1.9F}, {2.3F, 4.5F, -2.3F}, {1.4F, 3.0F, -2.8F},
+            {-8.8F, 1.4F, -1.0F}, {-7.3F, 1.8F, -1.8F}, {-5.8F, 2.2F, -2.6F}, {-4.3F, 2.6F, -3.4F}, {-2.8F, 3.0F, -4.2F},
+            {8.8F, 1.4F, -1.0F}, {7.3F, 1.8F, -1.8F}, {5.8F, 2.2F, -2.6F}, {4.3F, 2.6F, -3.4F}, {2.8F, 3.0F, -4.2F}
+        };
+    }
+
+    private static float[][] getNagaXyzYaw() {
+        return new float[][] {
+            {0, 0, -2, 0},
+            {0, -2, -2, 0},
+            {-1.366F, -2, -1.634F, -30},
+            {-2.366F, -2, -.634F, -60},
+            {-2.732F, -2, .732F, -90},
+            {-2.366F, -2, 2.098F, -120},
+            {-1.366F, -2, 3.098F, -150},
+            {0, -2, 3.464F, 0},
+            {1.366F, -2, 3.098F, -30},
+            {2.366F, -2, 2.098F, -60},
+            {2.732F, -2, .732F, -90},
+            {2.366F, -2, -.634F, -120}
+        };
     }
 
     public static void DrawLine(int x1, int y1, int x2, int y2, float width, int color) {
