@@ -146,6 +146,7 @@ public class RenderUtils {
                     RenderManager.instance.renderEntityWithPosYaw(part, xyzYaw[i][0], xyzYaw[i][1], xyzYaw[i][2], xyzYaw[i][3], 1F);
                 }
             } else if (EntityList.getEntityString(entity).equals("TwilightForest.Hydra")) {
+                OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240, 240);
                 int headsNumber = 7;    // 0 to 7, optimal 3, 5, 7
                 Entity part = EntityList.createEntityByName("TwilightForest.HydraHead", Minecraft.getMinecraft().theWorld);
                 float [][] xyz = getHydraHeadXyz();
