@@ -32,34 +32,38 @@ import java.util.Stack;
 
 // TODO: Move text related stuff to its own utility class
 @SideOnly(Side.CLIENT)
-public class RenderUtils {
+public class RenderUtils
+{
     public static final String REGEX_NUMBER = "[^\\.0123456789-]"; // I keep screwing this up so now it's reusable
     public static final RenderItem itemRender = new RenderItem();
 
     private static final int SPLIT_STRING_TRIAL_LIMIT = 1000;
-    private static final Stack<IGuiRect> scissorStack = new Stack<>();
 
-    public static void RenderItemStack(Minecraft mc, ItemStack stack, int x, int y, String text) {
+    public static void RenderItemStack(Minecraft mc, ItemStack stack, int x, int y, String text)
+    {
         RenderItemStack(mc, stack, x, y, 16F, text, 0xFFFFFFFF);
     }
 
-    public static void RenderItemStack(Minecraft mc, ItemStack stack, int x, int y, String text, Color color) {
+    public static void RenderItemStack(Minecraft mc, ItemStack stack, int x, int y, String text, Color color)
+    {
         RenderItemStack(mc, stack, x, y, 16F, text, color.getRGB());
     }
 
-    public static void RenderItemStack(Minecraft mc, ItemStack stack, int x, int y, String text, int color) {
+    public static void RenderItemStack(Minecraft mc, ItemStack stack, int x, int y, String text, int color)
+    {
         RenderItemStack(mc, stack, x, y, 16F, text, color);
     }
 
-    public static void RenderItemStack(Minecraft mc, ItemStack stack, int x, int y, float z, String text, int color) {
-        if (stack == null) return;
+    public static void RenderItemStack(Minecraft mc, ItemStack stack, int x, int y, float z, String text, int color)
+    {
+        if(stack == null) return;
 
         GL11.glPushMatrix();
         float preZ = itemRender.zLevel;
 
-        float r = (float) (color >> 16 & 255) / 255.0F;
-        float g = (float) (color >> 8 & 255) / 255.0F;
-        float b = (float) (color & 255) / 255.0F;
+        float r = (float)(color >> 16 & 255) / 255.0F;
+        float g = (float)(color >> 8 & 255) / 255.0F;
+        float b = (float)(color & 255) / 255.0F;
         GL11.glColor3f(r, g, b);
         RenderHelper.enableGUIStandardItemLighting();
         GL11.glEnable(GL12.GL_RESCALE_NORMAL);
@@ -71,10 +75,12 @@ public class RenderUtils {
         FontRenderer font = stack.getItem().getFontRenderer(stack);
         if (font == null) font = mc.fontRenderer;
 
-        try {
+        try
+        {
             itemRender.renderItemAndEffectIntoGUI(font, mc.getTextureManager(), stack, x, y);
 
-            if (stack.stackSize != 1 || text != null) {
+            if (stack.stackSize != 1 || text != null)
+            {
                 GL11.glPushMatrix();
 
                 int w = getStringWidth(text, font);
@@ -82,11 +88,13 @@ public class RenderUtils {
                 float ty;
                 float s = 1F;
 
-                if (w > 17) {
+                if(w > 17)
+                {
                     s = 17F / w;
                     tx = 0;
                     ty = 17 - font.FONT_HEIGHT * s;
-                } else {
+                } else
+                {
                     tx = 17 - w;
                     ty = 18 - font.FONT_HEIGHT;
                 }
@@ -108,7 +116,8 @@ public class RenderUtils {
             }
 
             itemRender.renderItemOverlayIntoGUI(font, mc.getTextureManager(), stack, x, y, "");
-        } catch (Exception e) {
+        } catch(Exception e)
+        {
             BetterQuesting.logger.warn("Unabled to render item " + stack, e);
         }
 
@@ -120,7 +129,8 @@ public class RenderUtils {
         GL11.glPopMatrix();
     }
 
-    public static void RenderEntity(int posX, int posY, int scale, float rotation, float pitch, Entity entity) {
+    public static void RenderEntity(int posX, int posY, int scale, float rotation, float pitch, Entity entity)
+    {
         RenderEntity(posX, posY, 64F, scale, rotation, pitch, entity);
     }
 
@@ -171,49 +181,50 @@ public class RenderUtils {
 
     private static float[][] getHydraHeadXyz() {
         return new float[][] {
-            {0.0F, 9.1F, 3.6F},
-            {-7.5F, 5.5F, 4.4F},
-            {7.5F, 5.5F, 4.4F},
-            {-5.1F, 9.1F, 0.0F},
-            {5.1F, 9.1F, 0.0F},
-            {-8.9F, 1.5F, 0.0F},
-            {8.9F, 1.5F, 0.0F},
+                {0.0F, 9.1F, 3.6F},
+                {-7.5F, 5.5F, 4.4F},
+                {7.5F, 5.5F, 4.4F},
+                {-5.1F, 9.1F, 0.0F},
+                {5.1F, 9.1F, 0.0F},
+                {-8.9F, 1.5F, 0.0F},
+                {8.9F, 1.5F, 0.0F},
         };
     }
 
     private static float[][] getHydraNeckXyz() {
         return new float[][] {
-            {0.0F, 9.0F, 2.6F}, {0.0F, 7.5F, 1.7F}, {0.0F, 6.0F, 0.8F}, {0.0F, 4.5F, -0.1F}, {0.0F, 3.0F, -1.0F},
-            {-7.4F, 5.4F, 3.4F}, {-6.3F, 4.8F, 2.3F}, {-5.2F, 4.2F, 1.2F}, {-4.1F, 3.6F, 0.1F}, {-3.0F, 3.0F, -1.0F},
-            {7.4F, 5.4F, 3.4F}, {6.3F, 4.8F, 2.3F}, {5.2F, 4.2F, 1.2F}, {4.1F, 3.6F, 0.1F}, {3.0F, 3.0F, -1.0F},
-            {-5.0F, 9.0F, -1.0F}, {-4.1F, 7.5F, -1.4F}, {-3.2F, 6.0F, -1.9F}, {-2.3F, 4.5F, -2.3F}, {-1.4F, 3.0F, -2.8F},
-            {5.0F, 9.0F, -1.0F}, {4.1F, 7.5F, -1.4F}, {3.2F, 6.0F, -1.9F}, {2.3F, 4.5F, -2.3F}, {1.4F, 3.0F, -2.8F},
-            {-8.8F, 1.4F, -1.0F}, {-7.3F, 1.8F, -1.8F}, {-5.8F, 2.2F, -2.6F}, {-4.3F, 2.6F, -3.4F}, {-2.8F, 3.0F, -4.2F},
-            {8.8F, 1.4F, -1.0F}, {7.3F, 1.8F, -1.8F}, {5.8F, 2.2F, -2.6F}, {4.3F, 2.6F, -3.4F}, {2.8F, 3.0F, -4.2F}
+                {0.0F, 9.0F, 2.6F}, {0.0F, 7.5F, 1.7F}, {0.0F, 6.0F, 0.8F}, {0.0F, 4.5F, -0.1F}, {0.0F, 3.0F, -1.0F},
+                {-7.4F, 5.4F, 3.4F}, {-6.3F, 4.8F, 2.3F}, {-5.2F, 4.2F, 1.2F}, {-4.1F, 3.6F, 0.1F}, {-3.0F, 3.0F, -1.0F},
+                {7.4F, 5.4F, 3.4F}, {6.3F, 4.8F, 2.3F}, {5.2F, 4.2F, 1.2F}, {4.1F, 3.6F, 0.1F}, {3.0F, 3.0F, -1.0F},
+                {-5.0F, 9.0F, -1.0F}, {-4.1F, 7.5F, -1.4F}, {-3.2F, 6.0F, -1.9F}, {-2.3F, 4.5F, -2.3F}, {-1.4F, 3.0F, -2.8F},
+                {5.0F, 9.0F, -1.0F}, {4.1F, 7.5F, -1.4F}, {3.2F, 6.0F, -1.9F}, {2.3F, 4.5F, -2.3F}, {1.4F, 3.0F, -2.8F},
+                {-8.8F, 1.4F, -1.0F}, {-7.3F, 1.8F, -1.8F}, {-5.8F, 2.2F, -2.6F}, {-4.3F, 2.6F, -3.4F}, {-2.8F, 3.0F, -4.2F},
+                {8.8F, 1.4F, -1.0F}, {7.3F, 1.8F, -1.8F}, {5.8F, 2.2F, -2.6F}, {4.3F, 2.6F, -3.4F}, {2.8F, 3.0F, -4.2F}
         };
     }
 
     private static float[][] getNagaXyzYaw() {
         return new float[][] {
-            {0, 0, -2, 0},
-            {0, -2, -2, 0},
-            {-1.366F, -2, -1.634F, -30},
-            {-2.366F, -2, -.634F, -60},
-            {-2.732F, -2, .732F, -90},
-            {-2.366F, -2, 2.098F, -120},
-            {-1.366F, -2, 3.098F, -150},
-            {0, -2, 3.464F, 0},
-            {1.366F, -2, 3.098F, -30},
-            {2.366F, -2, 2.098F, -60},
-            {2.732F, -2, .732F, -90},
-            {2.366F, -2, -.634F, -120}
+                {0, 0, -2, 0},
+                {0, -2, -2, 0},
+                {-1.366F, -2, -1.634F, -30},
+                {-2.366F, -2, -.634F, -60},
+                {-2.732F, -2, .732F, -90},
+                {-2.366F, -2, 2.098F, -120},
+                {-1.366F, -2, 3.098F, -150},
+                {0, -2, 3.464F, 0},
+                {1.366F, -2, 3.098F, -30},
+                {2.366F, -2, 2.098F, -60},
+                {2.732F, -2, .732F, -90},
+                {2.366F, -2, -.634F, -120}
         };
     }
 
-    public static void DrawLine(int x1, int y1, int x2, int y2, float width, int color) {
-        float r = (float) (color >> 16 & 255) / 255.0F;
-        float g = (float) (color >> 8 & 255) / 255.0F;
-        float b = (float) (color & 255) / 255.0F;
+    public static void DrawLine(int x1, int y1, int x2, int y2, float width, int color)
+    {
+        float r = (float)(color >> 16 & 255) / 255.0F;
+        float g = (float)(color >> 8 & 255) / 255.0F;
+        float b = (float)(color & 255) / 255.0F;
         GL11.glPushMatrix();
 
         GL11.glDisable(GL11.GL_TEXTURE_2D);
@@ -231,22 +242,27 @@ public class RenderUtils {
         GL11.glPopMatrix();
     }
 
-    public static void drawSplitString(FontRenderer renderer, String string, int x, int y, int width, int color, boolean shadow) {
+    public static void drawSplitString(FontRenderer renderer, String string, int x, int y, int width, int color, boolean shadow)
+    {
         drawSplitString(renderer, string, x, y, width, color, shadow, 0, splitString(string, width, renderer).size() - 1);
+    }
+
+    public static void drawSplitString(FontRenderer renderer, String string, int x, int y, int width, int color, boolean shadow, int start, int end)
+    {
+        drawHighlightedSplitString(renderer, string, x, y, width, color, shadow, start, end, 0, 0, 0);
     }
 
     // TODO: Clean this up. The list of parameters is getting a bit excessive
 
-    public static void drawSplitString(FontRenderer renderer, String string, int x, int y, int width, int color, boolean shadow, int start, int end) {
-        drawHighlightedSplitString(renderer, string, x, y, width, color, shadow, start, end, 0, 0, 0);
-    }
-
-    public static void drawHighlightedSplitString(FontRenderer renderer, String string, int x, int y, int width, int color, boolean shadow, int highlightColor, int highlightStart, int highlightEnd) {
+    public static void drawHighlightedSplitString(FontRenderer renderer, String string, int x, int y, int width, int color, boolean shadow, int highlightColor, int highlightStart, int highlightEnd)
+    {
         drawHighlightedSplitString(renderer, string, x, y, width, color, shadow, 0, splitString(string, width, renderer).size() - 1, highlightColor, highlightStart, highlightEnd);
     }
 
-    public static void drawHighlightedSplitString(FontRenderer renderer, String string, int x, int y, int width, int color, boolean shadow, int start, int end, int highlightColor, int highlightStart, int highlightEnd) {
-        if (renderer == null || string == null || string.length() <= 0 || start > end) {
+    public static void drawHighlightedSplitString(FontRenderer renderer, String string, int x, int y, int width, int color, boolean shadow, int start, int end, int highlightColor, int highlightStart, int highlightEnd)
+    {
+        if(renderer == null || string == null || string.length() <= 0 || start > end)
+        {
             return;
         }
 
@@ -255,7 +271,8 @@ public class RenderUtils {
         List<String> list = splitString(string, width, renderer);
         List<String> noFormat = splitStringWithoutFormat(string, width, renderer); // Needed for accurate highlight index positions
 
-        if (list.size() != noFormat.size()) {
+        if(list.size() != noFormat.size())
+        {
             //BetterQuesting.logger.error("Line count mismatch (" + list.size() + " != " + noFormat.size() + ") while drawing formatted text!");
             return;
         }
@@ -264,16 +281,20 @@ public class RenderUtils {
         int hlEnd = Math.max(highlightStart, highlightEnd);
         int idxStart = 0;
 
-        for (int i = 0; i < start; i++) {
-            if (i >= noFormat.size()) {
+        for(int i = 0; i < start; i++)
+        {
+            if(i >= noFormat.size())
+            {
                 break;
             }
 
             idxStart += noFormat.get(i).length();
         }
 
-        for (int i = start; i <= end; i++) {
-            if (i < 0 || i >= list.size()) {
+        for(int i = start; i <= end; i++)
+        {
+            if(i < 0 || i >= list.size())
+            {
                 continue;
             }
 
@@ -303,7 +324,8 @@ public class RenderUtils {
             int i1 = Math.max(idxStart, hlStart) - idxStart;
             int i2 = Math.min(idxEnd, hlEnd) - idxStart;
 
-            if (!(i1 == i2 || i1 < 0 || i2 < 0 || i1 > lineSize || i2 > lineSize)) {
+            if(!(i1 == i2 || i1 < 0 || i2 < 0 || i1 > lineSize || i2 > lineSize))
+            {
                 String lastFormat = getFormatFromString(list.get(i));
                 int x1 = getStringWidth(lastFormat + noFormat.get(i).substring(0, i1), renderer);
                 int x2 = getStringWidth(lastFormat + noFormat.get(i).substring(0, i2), renderer);
@@ -315,8 +337,10 @@ public class RenderUtils {
         }
     }
 
-    public static void drawHighlightedString(FontRenderer renderer, String string, int x, int y, int color, boolean shadow, int highlightColor, int highlightStart, int highlightEnd) {
-        if (renderer == null || string == null || string.length() <= 0) {
+    public static void drawHighlightedString(FontRenderer renderer, String string, int x, int y, int color, boolean shadow, int highlightColor, int highlightStart, int highlightEnd)
+    {
+        if(renderer == null || string == null || string.length() <= 0)
+        {
             return;
         }
 
@@ -329,7 +353,8 @@ public class RenderUtils {
         int i1 = MathHelper.clamp_int(hlStart, 0, size);
         int i2 = MathHelper.clamp_int(hlEnd, 0, size);
 
-        if (i1 != i2) {
+        if(i1 != i2)
+        {
             int x1 = getStringWidth(string.substring(0, i1), renderer);
             int x2 = getStringWidth(string.substring(0, i2), renderer);
 
@@ -337,27 +362,31 @@ public class RenderUtils {
         }
     }
 
-    public static void drawHighlightBox(IGuiRect rect, IGuiColor color) {
+    public static void drawHighlightBox(IGuiRect rect, IGuiColor color)
+    {
         drawHighlightBox(rect.getX(), rect.getY(), rect.getX() + rect.getWidth(), rect.getY() + rect.getHeight(), color.getRGB());
     }
 
-    public static void drawHighlightBox(int left, int top, int right, int bottom, int color) {
-        if (left < right) {
+    public static void drawHighlightBox(int left, int top, int right, int bottom, int color)
+    {
+        if (left < right)
+        {
             int i = left;
             left = right;
             right = i;
         }
 
-        if (top < bottom) {
+        if (top < bottom)
+        {
             int j = top;
             top = bottom;
             bottom = j;
         }
 
-        float f3 = (float) (color >> 24 & 255) / 255.0F;
-        float f = (float) (color >> 16 & 255) / 255.0F;
-        float f1 = (float) (color >> 8 & 255) / 255.0F;
-        float f2 = (float) (color & 255) / 255.0F;
+        float f3 = (float)(color >> 24 & 255) / 255.0F;
+        float f = (float)(color >> 16 & 255) / 255.0F;
+        float f1 = (float)(color >> 8 & 255) / 255.0F;
+        float f2 = (float)(color & 255) / 255.0F;
 
         GL11.glPushMatrix();
 
@@ -370,10 +399,10 @@ public class RenderUtils {
         GL11.glEnable(GL11.GL_COLOR_LOGIC_OP);
         GL11.glLogicOp(GL11.GL_OR_REVERSE);
         tessellator.startDrawingQuads();
-        tessellator.addVertex(left, bottom, 0.0D);
-        tessellator.addVertex(right, bottom, 0.0D);
-        tessellator.addVertex(right, top, 0.0D);
-        tessellator.addVertex(left, top, 0.0D);
+        tessellator.addVertex((double)left, (double)bottom, 0.0D);
+        tessellator.addVertex((double)right, (double)bottom, 0.0D);
+        tessellator.addVertex((double)right, (double)top, 0.0D);
+        tessellator.addVertex((double)left, (double)top, 0.0D);
         tessellator.draw();
         GL11.glDisable(GL11.GL_COLOR_LOGIC_OP);
         GL11.glEnable(GL11.GL_TEXTURE_2D);
@@ -383,28 +412,33 @@ public class RenderUtils {
         GL11.glPopMatrix();
     }
 
-    public static void drawColoredRect(IGuiRect rect, IGuiColor color) {
+    public static void drawColoredRect(IGuiRect rect, IGuiColor color)
+    {
         Tessellator tessellator = Tessellator.instance;
         GL11.glEnable(GL11.GL_BLEND);
         GL11.glDisable(GL11.GL_TEXTURE_2D);
         OpenGlHelper.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ZERO);
         color.applyGlColor();
         tessellator.startDrawingQuads();
-        tessellator.addVertex(rect.getX(), (double) rect.getY() + rect.getHeight(), 0.0D);
-        tessellator.addVertex((double) rect.getX() + rect.getWidth(), (double) rect.getY() + rect.getHeight(), 0.0D);
-        tessellator.addVertex((double) rect.getX() + rect.getWidth(), rect.getY(), 0.0D);
-        tessellator.addVertex(rect.getX(), rect.getY(), 0.0D);
+        tessellator.addVertex((double)rect.getX(), (double)rect.getY() + rect.getHeight(), 0.0D);
+        tessellator.addVertex((double)rect.getX() + rect.getWidth(), (double)rect.getY() + rect.getHeight(), 0.0D);
+        tessellator.addVertex((double)rect.getX() + rect.getWidth(), (double)rect.getY(), 0.0D);
+        tessellator.addVertex((double)rect.getX(), (double)rect.getY(), 0.0D);
         tessellator.draw();
         GL11.glEnable(GL11.GL_TEXTURE_2D);
         GL11.glDisable(GL11.GL_BLEND);
     }
 
+    private static final Stack<IGuiRect> scissorStack = new Stack<>();
+
     /**
      * Performs a OpenGL scissor based on Minecraft's resolution instead of display resolution and adds it to the stack of ongoing scissors.
      * Not using this method will result in incorrect scissoring and scaling of parent/child GUIs
      */
-    public static void startScissor(IGuiRect rect) {
-        if (scissorStack.size() >= 255) {
+    public static void startScissor(IGuiRect rect)
+    {
+        if(scissorStack.size() >= 255)
+        {
             throw new IndexOutOfBoundsException("Exceeded the maximum number of nested scissor (255)");
         }
 
@@ -422,9 +456,10 @@ public class RenderUtils {
         fm.load(fb);
 
         // GL screenspace rectangle
-        GuiRectangle sRect = new GuiRectangle((int) (rect.getX() * f * fm.m00 + (fm.m30 * f)), (r.getScaledHeight() - (int) ((rect.getY() + rect.getHeight()) * fm.m11 + fm.m31)) * f, (int) (rect.getWidth() * f * fm.m00), (int) (rect.getHeight() * f * fm.m11));
+        GuiRectangle sRect = new GuiRectangle((int)(rect.getX() * f  * fm.m00 + (fm.m30 * f)), (r.getScaledHeight() - (int)((rect.getY() + rect.getHeight()) * fm.m11 + fm.m31)) * f, (int)(rect.getWidth() * f * fm.m00), (int)(rect.getHeight() * f * fm.m11));
 
-        if (!scissorStack.empty()) {
+        if(!scissorStack.empty())
+        {
             IGuiRect parentRect = scissorStack.peek();
             int x = Math.max(parentRect.getX(), sRect.getX());
             int y = Math.max(parentRect.getY(), sRect.getY());
@@ -433,26 +468,30 @@ public class RenderUtils {
             w = Math.max(0, w - x); // Clamp to 0 to prevent OpenGL errors
             h = Math.max(0, h - y); // Clamp to 0 to prevent OpenGL errors
             sRect = new GuiRectangle(x, y, w, h, 0);
-        } else {
+        } else
+        {
             sRect.w = Math.max(0, sRect.w);
             sRect.h = Math.max(0, sRect.h);
         }
 
-        GL11.glScissor(sRect.getX(), sRect.getY(), sRect.getWidth(), sRect.getHeight());
+        GL11.glScissor(sRect.getX(),sRect.getY(), sRect.getWidth(), sRect.getHeight());
         scissorStack.add(sRect);
     }
 
     /**
      * Pops the last scissor off the stack and returns to the last parent scissor or disables it if there are none
      */
-    public static void endScissor() {
+    public static void endScissor()
+    {
         scissorStack.pop();
 
-        if (scissorStack.empty()) {
+        if(scissorStack.empty())
+        {
             GL11.glDisable(GL11.GL_SCISSOR_TEST);
-        } else {
+        } else
+        {
             IGuiRect rect = scissorStack.peek();
-            GL11.glScissor(rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight());
+            GL11.glScissor(rect.getX(),rect.getY(), rect.getWidth(), rect.getHeight());
         }
     }
 
@@ -461,7 +500,8 @@ public class RenderUtils {
      * not attempt to preserve the formatting between lines. This is particularly important when the
      * index positions in the text are required to match the original unwrapped text.
      */
-    public static List<String> splitStringWithoutFormat(String str, int wrapWidth, FontRenderer font) {
+    public static List<String> splitStringWithoutFormat(String str, int wrapWidth, FontRenderer font)
+    {
         List<String> list = new ArrayList<>();
 
         String lastFormat = ""; // Formatting like bold can affect the wrapping width
@@ -469,7 +509,8 @@ public class RenderUtils {
 
         int trial = 0;
 
-        while (true) {
+        while(true)
+        {
             // in some cases this goes into infinite loop
             // todo: figure out fundamental fix
             trial++;
@@ -478,10 +519,12 @@ public class RenderUtils {
             int i = sizeStringToWidth(lastFormat + temp, wrapWidth, font); // Cut to size WITH formatting
             i -= lastFormat.length(); // Remove formatting characters from count
 
-            if (temp.length() <= i) {
+            if(temp.length() <= i)
+            {
                 list.add(temp);
                 break;
-            } else {
+            } else
+            {
                 String s = temp.substring(0, i);
                 char c0 = temp.charAt(i);
                 boolean flag = c0 == ' ' || c0 == '\n';
@@ -490,7 +533,8 @@ public class RenderUtils {
                 // NOTE: The index actually stops just before the space/nl so we don't need to remove it from THIS line. This is why the previous line moves forward by one for the NEXT line
                 list.add(s + (flag ? "\n" : "")); // Although we need to remove the spaces between each line we have to replace them with invisible new line characters to preserve the index count
 
-                if (temp.length() <= 0 && !flag) {
+                if(temp.length() <= 0 && !flag)
+                {
                     break;
                 }
             }
@@ -499,14 +543,16 @@ public class RenderUtils {
         return list;
     }
 
-    public static List<String> splitString(String str, int wrapWidth, FontRenderer font) {
+    public static List<String> splitString(String str, int wrapWidth, FontRenderer font)
+    {
         List<String> list = new ArrayList<>();
 
         String temp = str;
 
         int trial = 0;
 
-        while (true) {
+        while(true)
+        {
             // in some cases this goes into infinite loop
             // todo: figure out fundamental fix
             trial++;
@@ -514,17 +560,20 @@ public class RenderUtils {
 
             int i = sizeStringToWidth(temp, wrapWidth, font); // Cut to size WITH formatting
 
-            if (temp.length() <= i) {
+            if(temp.length() <= i)
+            {
                 list.add(temp);
                 break;
-            } else {
+            } else
+            {
                 String s = temp.substring(0, i);
                 char c0 = temp.charAt(i);
                 boolean flag = c0 == ' ' || c0 == '\n';
                 temp = getFormatFromString(s) + temp.substring(i + (flag ? 1 : 0));
                 list.add(s);
 
-                if (temp.length() <= 0 && !flag) {
+                if(temp.length() <= 0 && !flag)
+                {
                     break;
                 }
             }
@@ -536,20 +585,25 @@ public class RenderUtils {
     /**
      * Returns the index position under a given set of coordinates in a piece of text
      */
-    public static int getCursorPos(String text, int x, FontRenderer font) {
-        if (text.length() <= 0) {
+    public static int getCursorPos(String text, int x, FontRenderer font)
+    {
+        if(text.length() <= 0)
+        {
             return 0;
         }
 
         int i = 0;
 
-        for (; i < text.length(); i++) {
-            if (getStringWidth(text.substring(0, i + 1), font) > x) {
+        for(; i < text.length(); i++)
+        {
+            if(getStringWidth(text.substring(0, i + 1), font) > x)
+            {
                 break;
             }
         }
 
-        if (i - 1 >= 0 && text.charAt(i - 1) == '\n') {
+        if(i - 1 >= 0 && text.charAt(i - 1) == '\n')
+        {
             return i - 1;
         }
 
@@ -559,19 +613,22 @@ public class RenderUtils {
     /**
      * Returns the index position under a given set of coordinates in a wrapped piece of text
      */
-    public static int getCursorPos(String text, int x, int y, int width, FontRenderer font) {
+    public static int getCursorPos(String text, int x, int y, int width, FontRenderer font)
+    {
         List<String> tLines = RenderUtils.splitStringWithoutFormat(text, width, font);
 
-        if (tLines.size() <= 0) {
+        if(tLines.size() <= 0)
+        {
             return 0;
         }
 
-        int row = MathHelper.clamp_int(y / font.FONT_HEIGHT, 0, tLines.size() - 1);
+        int row = MathHelper.clamp_int(y/font.FONT_HEIGHT, 0, tLines.size() - 1);
         String lastFormat = "";
         String line;
         int idx = 0;
 
-        for (int i = 0; i < row; i++) {
+        for(int i = 0; i < row; i++)
+        {
             line = tLines.get(i);
             idx += line.length();
             lastFormat = getFormatFromString(lastFormat + line);
@@ -580,18 +637,24 @@ public class RenderUtils {
         return idx + getCursorPos(lastFormat + tLines.get(row), x, font) - lastFormat.length();
     }
 
-    public static String getFormatFromString(String p_78282_0_) {
+    public static String getFormatFromString(String p_78282_0_)
+    {
         String s1 = "";
         int i = -1;
         int j = p_78282_0_.length();
 
-        while ((i = p_78282_0_.indexOf(167, i + 1)) != -1) {
-            if (i < j - 1) {
+        while ((i = p_78282_0_.indexOf(167, i + 1)) != -1)
+        {
+            if (i < j - 1)
+            {
                 char c0 = p_78282_0_.charAt(i + 1);
 
-                if (isFormatColor(c0)) {
+                if (isFormatColor(c0))
+                {
                     s1 = "\u00a7" + c0;
-                } else if (isFormatSpecial(c0)) {
+                }
+                else if (isFormatSpecial(c0))
+                {
                     s1 = s1 + "\u00a7" + c0;
                 }
             }
@@ -600,16 +663,19 @@ public class RenderUtils {
         return s1;
     }
 
-    private static int sizeStringToWidth(String str, int wrapWidth, FontRenderer font) {
+    private static int sizeStringToWidth(String str, int wrapWidth, FontRenderer font)
+    {
         int i = str.length();
         int j = 0;
         int k = 0;
         int l = -1;
 
-        for (boolean flag = false; k < i; ++k) {
+        for (boolean flag = false; k < i; ++k)
+        {
             char c0 = str.charAt(k);
 
-            switch (c0) {
+            switch (c0)
+            {
                 case '\n':
                     --k;
                     break;
@@ -618,34 +684,42 @@ public class RenderUtils {
                 default:
                     j += font.getCharWidth(c0);
 
-                    if (flag) {
+                    if (flag)
+                    {
                         ++j;
                     }
 
                     break;
                 case '\u00a7':
 
-                    if (k < i - 1) {
+                    if (k < i - 1)
+                    {
                         ++k;
                         char c1 = str.charAt(k);
 
-                        if (c1 != 'l' && c1 != 'L') {
-                            if (c1 == 'r' || c1 == 'R' || isFormatColor(c1)) {
+                        if (c1 != 'l' && c1 != 'L')
+                        {
+                            if (c1 == 'r' || c1 == 'R' || isFormatColor(c1))
+                            {
                                 flag = false;
                             }
-                        } else {
+                        }
+                        else
+                        {
                             flag = true;
                         }
                     }
             }
 
-            if (c0 == '\n') {
+            if (c0 == '\n')
+            {
                 ++k;
                 l = k;
                 break;
             }
 
-            if (j > wrapWidth) {
+            if (j > wrapWidth)
+            {
                 break;
             }
         }
@@ -653,23 +727,28 @@ public class RenderUtils {
         return k != i && l != -1 && l < k ? l : k;
     }
 
-    private static boolean isFormatColor(char colorChar) {
+    private static boolean isFormatColor(char colorChar)
+    {
         return colorChar >= '0' && colorChar <= '9' || colorChar >= 'a' && colorChar <= 'f' || colorChar >= 'A' && colorChar <= 'F';
     }
 
-    private static boolean isFormatSpecial(char p_78270_0_) {
+    private static boolean isFormatSpecial(char p_78270_0_)
+    {
         return p_78270_0_ >= 107 && p_78270_0_ <= 111 || p_78270_0_ >= 75 && p_78270_0_ <= 79 || p_78270_0_ == 114 || p_78270_0_ == 82;
     }
 
-    public static float lerpFloat(float f1, float f2, float blend) {
+    public static float lerpFloat(float f1, float f2, float blend)
+    {
         return (f2 * blend) + (f1 * (1F - blend));
     }
 
-    public static double lerpDouble(double d1, double d2, double blend) {
+    public static double lerpDouble(double d1, double d2, double blend)
+    {
         return (d2 * blend) + (d1 * (1D - blend));
     }
 
-    public static int lerpRGB(int c1, int c2, float blend) {
+    public static int lerpRGB(int c1, int c2, float blend)
+    {
         float a1 = c1 >> 24 & 255;
         float r1 = c1 >> 16 & 255;
         float g1 = c1 >> 8 & 255;
@@ -680,23 +759,26 @@ public class RenderUtils {
         float g2 = c2 >> 8 & 255;
         float b2 = c2 & 255;
 
-        int a3 = (int) lerpFloat(a1, a2, blend);
-        int r3 = (int) lerpFloat(r1, r2, blend);
-        int g3 = (int) lerpFloat(g1, g2, blend);
-        int b3 = (int) lerpFloat(b1, b2, blend);
+        int a3 = (int)lerpFloat(a1, a2, blend);
+        int r3 = (int)lerpFloat(r1, r2, blend);
+        int g3 = (int)lerpFloat(g1, g2, blend);
+        int b3 = (int)lerpFloat(b1, b2, blend);
 
         return (a3 << 24) + (r3 << 16) + (g3 << 8) + b3;
     }
 
-    public static void drawHoveringText(List<String> textLines, int mouseX, int mouseY, int screenWidth, int screenHeight, int maxTextWidth, FontRenderer font) {
+    public static void drawHoveringText(List<String> textLines, int mouseX, int mouseY, int screenWidth, int screenHeight, int maxTextWidth, FontRenderer font)
+    {
         drawHoveringText(null, textLines, mouseX, mouseY, screenWidth, screenHeight, maxTextWidth, font);
     }
 
     /**
      * Modified version of Forge's tooltip rendering that doesn't adjust Z depth
      */
-    public static void drawHoveringText(final ItemStack stack, List<String> textLines, int mouseX, int mouseY, int screenWidth, int screenHeight, int maxTextWidth, FontRenderer font) {
-        if (textLines == null || textLines.isEmpty()) {
+    public static void drawHoveringText(final ItemStack stack, List<String> textLines, int mouseX, int mouseY, int screenWidth, int screenHeight, int maxTextWidth, FontRenderer font)
+    {
+        if(textLines == null || textLines.isEmpty())
+        {
             return;
         }
 
@@ -709,10 +791,12 @@ public class RenderUtils {
         GL11.glDisable(GL11.GL_DEPTH_TEST);
         int tooltipTextWidth = 0;
 
-        for (String textLine : textLines) {
+        for (String textLine : textLines)
+        {
             int textLineWidth = getStringWidth(textLine, font);
 
-            if (textLineWidth > tooltipTextWidth) {
+            if (textLineWidth > tooltipTextWidth)
+            {
                 tooltipTextWidth = textLineWidth;
             }
         }
@@ -722,38 +806,49 @@ public class RenderUtils {
         int titleLinesCount = 1;
         int tooltipX = mouseX + 12;
 
-        if (tooltipX + tooltipTextWidth + 4 > screenWidth) {
+        if (tooltipX + tooltipTextWidth + 4 > screenWidth)
+        {
             tooltipX = mouseX - 16 - tooltipTextWidth;
 
-            if (tooltipX < 4) { // if the tooltip doesn't fit on the screen
-                if (mouseX > screenWidth / 2) {
+            if (tooltipX < 4) // if the tooltip doesn't fit on the screen
+            {
+                if (mouseX > screenWidth / 2)
+                {
                     tooltipTextWidth = mouseX - 12 - 8;
-                } else {
+                }
+                else
+                {
                     tooltipTextWidth = screenWidth - 16 - mouseX;
                 }
                 needsWrap = true;
             }
         }
 
-        if (maxTextWidth > 0 && tooltipTextWidth > maxTextWidth) {
+        if (maxTextWidth > 0 && tooltipTextWidth > maxTextWidth)
+        {
             tooltipTextWidth = maxTextWidth;
             needsWrap = true;
         }
 
-        if (needsWrap) {
+        if (needsWrap)
+        {
             int wrappedTooltipWidth = 0;
             List<String> wrappedTextLines = new ArrayList<>();
 
-            for (int i = 0; i < textLines.size(); i++) {
+            for (int i = 0; i < textLines.size(); i++)
+            {
                 String textLine = textLines.get(i);
                 List<String> wrappedLine = font.listFormattedStringToWidth(textLine, tooltipTextWidth);
-                if (i == 0) {
+                if (i == 0)
+                {
                     titleLinesCount = wrappedLine.size();
                 }
 
-                for (String line : wrappedLine) {
+                for (String line : wrappedLine)
+                {
                     int lineWidth = getStringWidth(line, font);
-                    if (lineWidth > wrappedTooltipWidth) {
+                    if (lineWidth > wrappedTooltipWidth)
+                    {
                         wrappedTooltipWidth = lineWidth;
                     }
                     wrappedTextLines.add(line);
@@ -763,9 +858,12 @@ public class RenderUtils {
             tooltipTextWidth = wrappedTooltipWidth;
             textLines = wrappedTextLines;
 
-            if (mouseX > screenWidth / 2) {
+            if (mouseX > screenWidth / 2)
+            {
                 tooltipX = mouseX - 16 - tooltipTextWidth;
-            } else {
+            }
+            else
+            {
                 tooltipX = mouseX + 12;
             }
         }
@@ -773,17 +871,21 @@ public class RenderUtils {
         int tooltipY = mouseY - 12;
         int tooltipHeight = 8;
 
-        if (textLines.size() > 1) {
+        if (textLines.size() > 1)
+        {
             tooltipHeight += (textLines.size() - 1) * 10;
 
-            if (textLines.size() > titleLinesCount) {
+            if (textLines.size() > titleLinesCount)
+            {
                 tooltipHeight += 2; // gap between title lines and next lines
             }
         }
 
-        if (tooltipY < 4) {
+        if (tooltipY < 4)
+        {
             tooltipY = 4;
-        } else if (tooltipY + tooltipHeight + 4 > screenHeight) {
+        } else if (tooltipY + tooltipHeight + 4 > screenHeight)
+        {
             tooltipY = screenHeight - tooltipHeight - 4;
         }
 
@@ -805,11 +907,13 @@ public class RenderUtils {
 
         GL11.glTranslatef(0F, 0F, 0.1F);
 
-        for (int lineNumber = 0; lineNumber < textLines.size(); ++lineNumber) {
+        for (int lineNumber = 0; lineNumber < textLines.size(); ++lineNumber)
+        {
             String line = textLines.get(lineNumber);
             font.drawStringWithShadow(line, tooltipX, tooltipY, -1);
 
-            if (lineNumber + 1 == titleLinesCount) {
+            if (lineNumber + 1 == titleLinesCount)
+            {
                 tooltipY += 2;
             }
 
@@ -824,15 +928,16 @@ public class RenderUtils {
         GL11.glPopMatrix();
     }
 
-    public static void drawGradientRect(int zDepth, int p_drawGradientRect_1_, int p_drawGradientRect_2_, int p_drawGradientRect_3_, int p_drawGradientRect_4_, int p_drawGradientRect_5_, int p_drawGradientRect_6_) {
-        float var7 = (float) (p_drawGradientRect_5_ >> 24 & 255) / 255.0F;
-        float var8 = (float) (p_drawGradientRect_5_ >> 16 & 255) / 255.0F;
-        float var9 = (float) (p_drawGradientRect_5_ >> 8 & 255) / 255.0F;
-        float var10 = (float) (p_drawGradientRect_5_ & 255) / 255.0F;
-        float var11 = (float) (p_drawGradientRect_6_ >> 24 & 255) / 255.0F;
-        float var12 = (float) (p_drawGradientRect_6_ >> 16 & 255) / 255.0F;
-        float var13 = (float) (p_drawGradientRect_6_ >> 8 & 255) / 255.0F;
-        float var14 = (float) (p_drawGradientRect_6_ & 255) / 255.0F;
+    public static void drawGradientRect(int zDepth, int p_drawGradientRect_1_, int p_drawGradientRect_2_, int p_drawGradientRect_3_, int p_drawGradientRect_4_, int p_drawGradientRect_5_, int p_drawGradientRect_6_)
+    {
+        float var7 = (float)(p_drawGradientRect_5_ >> 24 & 255) / 255.0F;
+        float var8 = (float)(p_drawGradientRect_5_ >> 16 & 255) / 255.0F;
+        float var9 = (float)(p_drawGradientRect_5_ >> 8 & 255) / 255.0F;
+        float var10 = (float)(p_drawGradientRect_5_ & 255) / 255.0F;
+        float var11 = (float)(p_drawGradientRect_6_ >> 24 & 255) / 255.0F;
+        float var12 = (float)(p_drawGradientRect_6_ >> 16 & 255) / 255.0F;
+        float var13 = (float)(p_drawGradientRect_6_ >> 8 & 255) / 255.0F;
+        float var14 = (float)(p_drawGradientRect_6_ & 255) / 255.0F;
         GL11.glDisable(3553);
         GL11.glEnable(3042);
         GL11.glDisable(3008);
@@ -841,11 +946,11 @@ public class RenderUtils {
         Tessellator var15 = Tessellator.instance;
         var15.startDrawingQuads();
         var15.setColorRGBA_F(var8, var9, var10, var7);
-        var15.addVertex(p_drawGradientRect_3_, p_drawGradientRect_2_, zDepth);
-        var15.addVertex(p_drawGradientRect_1_, p_drawGradientRect_2_, zDepth);
+        var15.addVertex((double)p_drawGradientRect_3_, (double)p_drawGradientRect_2_, (double)zDepth);
+        var15.addVertex((double)p_drawGradientRect_1_, (double)p_drawGradientRect_2_, (double)zDepth);
         var15.setColorRGBA_F(var12, var13, var14, var11);
-        var15.addVertex(p_drawGradientRect_1_, p_drawGradientRect_4_, zDepth);
-        var15.addVertex(p_drawGradientRect_3_, p_drawGradientRect_4_, zDepth);
+        var15.addVertex((double)p_drawGradientRect_1_, (double)p_drawGradientRect_4_, (double)zDepth);
+        var15.addVertex((double)p_drawGradientRect_3_, (double)p_drawGradientRect_4_, (double)zDepth);
         var15.draw();
         GL11.glShadeModel(7424);
         GL11.glDisable(3042);
@@ -854,29 +959,36 @@ public class RenderUtils {
     }
 
     /**
-     * A version of getStringWidth that actually behaves according to the format resetting rules of colour codes. Minecraft's built in one is busted!
+     *  A version of getStringWidth that actually behaves according to the format resetting rules of colour codes. Minecraft's built in one is busted!
      */
-    public static int getStringWidth(String text, FontRenderer font) {
+    public static int getStringWidth(String text, FontRenderer font)
+    {
         if (text == null || text.length() == 0) return 0;
 
         int i = 0;
         boolean flag = false;
 
-        for (int j = 0; j < text.length(); ++j) {
+        for (int j = 0; j < text.length(); ++j)
+        {
             char c0 = text.charAt(j);
             int k = font.getCharWidth(c0);
 
-            if (k < 0 && j < text.length() - 1) { // k should only be negative when the section sign has been used!
+            if (k < 0 && j < text.length() - 1) // k should only be negative when the section sign has been used!
+            {
                 ++j;
                 c0 = text.charAt(j);
 
-                if (c0 != 'l' && c0 != 'L') {
+                if (c0 != 'l' && c0 != 'L')
+                {
                     int ci = "0123456789abcdefklmnor".indexOf(String.valueOf(c0).toLowerCase(Locale.ROOT).charAt(0));
                     //if (c0 == 'r' || c0 == 'R') // Minecraft's original implemention. This is broken...
-                    if (ci < 16 || ci == 21) { // Colour or reset code!
+                    if(ci < 16 || ci == 21) // Colour or reset code!
+                    {
                         flag = false;
                     }
-                } else {
+                }
+                else
+                {
                     flag = true;
                 }
 
@@ -885,7 +997,8 @@ public class RenderUtils {
 
             i += k;
 
-            if (flag && k > 0) {
+            if (flag && k > 0)
+            {
                 ++i;
             }
         }

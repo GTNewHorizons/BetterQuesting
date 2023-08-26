@@ -114,8 +114,6 @@ public class PanelEntityPreview implements IGuiPanel
 		} else if (EntityList.getEntityString(entity).equals("TwilightForest.Naga")) {
 			pitch = pitchDriver.readValue();
 			scale /= 2;
-		} else if (EntityList.getEntityString(entity).equals("TwilightForest.Hydra")) {
-			pitch = pitchDriver.readValue();
 		} else
 			pitch = pitchDriver.readValue();
 
