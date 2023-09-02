@@ -158,6 +158,8 @@ public class RenderUtils
 				OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240, 240);
 				int headsNumber = 7;    // 0 to 7, optimal 3, 5, 7
 				Entity part = EntityList.createEntityByName("TwilightForest.HydraHead", Minecraft.getMinecraft().theWorld);
+				part.rotationYaw = 0;
+				part.rotationPitch = 0;
 				float [][] xyz = getHydraHeadXyz();
 				for (int i = 0; i < headsNumber; i++)
 					RenderManager.instance.renderEntityWithPosYaw(part, xyz[i][0], xyz[i][1], xyz[i][2], 0F, 1F);
