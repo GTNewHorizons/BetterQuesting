@@ -10,13 +10,14 @@ import bq_standard.tasks.base.TaskProgressableBase;
 import bq_standard.tasks.factory.FactoryTaskXP;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
-import java.util.Map;
-import java.util.UUID;
-import javax.annotation.Nonnull;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.util.Constants;
+
+import javax.annotation.Nonnull;
+import java.util.Map;
+import java.util.UUID;
 
 public class TaskXP extends TaskProgressableBase<Long> implements ITaskTickable {
     // region Properties

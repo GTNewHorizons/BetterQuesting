@@ -10,12 +10,6 @@ import bq_standard.tasks.factory.FactoryTaskLocation;
 import codechicken.lib.math.MathHelper;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import javax.annotation.Nonnull;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -28,6 +22,13 @@ import net.minecraft.util.Vec3;
 import net.minecraft.world.WorldProvider;
 import net.minecraftforge.common.DimensionManager;
 import net.minecraftforge.common.util.Constants;
+
+import javax.annotation.Nonnull;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public class TaskLocation extends TaskBase implements ITaskTickable {
     // region Static

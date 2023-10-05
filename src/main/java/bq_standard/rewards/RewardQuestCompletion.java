@@ -10,14 +10,14 @@ import betterquesting.api2.client.gui.misc.IGuiRect;
 import betterquesting.api2.client.gui.panels.IGuiPanel;
 import bq_standard.client.gui.rewards.PanelRewardQuestCompletion;
 import bq_standard.rewards.factory.FactoryRewardQuestCompletion;
-
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ResourceLocation;
+
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 
 public class RewardQuestCompletion implements IReward {
     public UUID questNum = null;

@@ -1,9 +1,5 @@
 package bq_standard.integration.nei;
 
-import static codechicken.lib.gui.GuiDraw.changeTexture;
-import static codechicken.lib.gui.GuiDraw.drawTexturedModalRect;
-import static net.minecraft.util.EnumChatFormatting.*;
-
 import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.questing.IQuest;
 import betterquesting.api.questing.rewards.IReward;
@@ -33,7 +29,14 @@ import codechicken.nei.PositionedStack;
 import codechicken.nei.recipe.GuiRecipe;
 import codechicken.nei.recipe.TemplateRecipeHandler;
 import com.google.common.base.Stopwatch;
-import java.awt.*;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemStack;
+import org.lwjgl.opengl.GL11;
+
+import java.awt.Point;
+import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -42,11 +45,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import org.lwjgl.opengl.GL11;
+
+import static codechicken.lib.gui.GuiDraw.changeTexture;
+import static codechicken.lib.gui.GuiDraw.drawTexturedModalRect;
+import static net.minecraft.util.EnumChatFormatting.DARK_GRAY;
+import static net.minecraft.util.EnumChatFormatting.ITALIC;
+import static net.minecraft.util.EnumChatFormatting.UNDERLINE;
+import static net.minecraft.util.EnumChatFormatting.getTextWithoutFormattingCodes;
 
 @SuppressWarnings("UnstableApiUsage")
 public class QuestRecipeHandler extends TemplateRecipeHandler {

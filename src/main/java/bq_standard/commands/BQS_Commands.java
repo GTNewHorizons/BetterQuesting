@@ -5,7 +5,6 @@ import betterquesting.api.utils.NBTConverter;
 import bq_standard.network.handlers.NetLootSync;
 import bq_standard.rewards.loot.LootRegistry;
 import com.google.gson.JsonObject;
-import java.io.File;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommandSender;
@@ -14,6 +13,8 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
+
+import java.io.File;
 
 public class BQS_Commands extends CommandBase {
     @Override

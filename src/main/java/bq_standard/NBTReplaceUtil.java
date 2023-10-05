@@ -1,12 +1,13 @@
 package bq_standard;
 
 import betterquesting.api.utils.NBTConverter;
-import java.util.List;
-import java.util.Set;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.nbt.NBTTagString;
+
+import java.util.List;
+import java.util.Set;
 
 public class NBTReplaceUtil {
     @SuppressWarnings("unchecked")

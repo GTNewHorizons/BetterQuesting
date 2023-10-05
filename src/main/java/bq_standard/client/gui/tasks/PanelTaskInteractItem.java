@@ -15,8 +15,9 @@ import betterquesting.api2.client.gui.themes.presets.PresetColor;
 import betterquesting.api2.client.gui.themes.presets.PresetIcon;
 import bq_standard.client.theme.BQSTextures;
 import bq_standard.tasks.TaskInteractItem;
-import java.util.UUID;
 import net.minecraft.client.Minecraft;
+
+import java.util.UUID;
 
 public class PanelTaskInteractItem extends CanvasMinimum {
     private final TaskInteractItem task;

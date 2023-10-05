@@ -5,7 +5,11 @@ import betterquesting.api2.client.gui.resources.factories.colors.FactoryColorPul
 import betterquesting.api2.client.gui.resources.factories.colors.FactoryColorSequence;
 import betterquesting.api2.client.gui.resources.factories.colors.FactoryColorStatic;
 import betterquesting.api2.client.gui.resources.factories.lines.FactorySimpleLine;
-import betterquesting.api2.client.gui.resources.factories.textures.*;
+import betterquesting.api2.client.gui.resources.factories.textures.FactoryColorTexture;
+import betterquesting.api2.client.gui.resources.factories.textures.FactoryLayeredTexture;
+import betterquesting.api2.client.gui.resources.factories.textures.FactorySimpleTexture;
+import betterquesting.api2.client.gui.resources.factories.textures.FactorySlicedTexture;
+import betterquesting.api2.client.gui.resources.factories.textures.FactorySlideShowTexture;
 import betterquesting.api2.client.gui.resources.lines.IGuiLine;
 import betterquesting.api2.client.gui.resources.textures.IGuiTexture;
 import betterquesting.api2.client.gui.themes.IResourceReg;

@@ -2,8 +2,9 @@ package betterquesting.api2.utils;
 
 import betterquesting.api.questing.IQuestLine;
 import betterquesting.api.questing.IQuestLineDatabase;
-import java.util.Map;
+
 import java.util.Comparator;
+import java.util.Map;
 import java.util.UUID;
 
 public class QuestLineSorter implements Comparator<Map.Entry<UUID, IQuestLine>>

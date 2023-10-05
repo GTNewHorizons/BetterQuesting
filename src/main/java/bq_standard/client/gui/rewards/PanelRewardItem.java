@@ -1,7 +1,8 @@
 package bq_standard.client.gui.rewards;
 
 import betterquesting.api.utils.BigItemStack;
-import betterquesting.api2.client.gui.misc.*;
+import betterquesting.api2.client.gui.misc.GuiRectangle;
+import betterquesting.api2.client.gui.misc.IGuiRect;
 import betterquesting.api2.client.gui.panels.CanvasMinimum;
 import betterquesting.api2.client.gui.panels.content.PanelItemSlot;
 import betterquesting.api2.client.gui.panels.content.PanelTextBox;

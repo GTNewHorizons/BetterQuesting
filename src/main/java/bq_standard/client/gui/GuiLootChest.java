@@ -10,10 +10,11 @@ import betterquesting.api2.client.gui.panels.content.PanelTextBox;
 import betterquesting.api2.client.gui.resources.textures.IGuiTexture;
 import betterquesting.api2.utils.QuestTranslation;
 import bq_standard.client.theme.BQSTextures;
-import java.util.List;
 import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.util.ResourceLocation;
+
+import java.util.List;
 
 public class GuiLootChest extends GuiScreenCanvas {
     private static final ResourceLocation SND_OPEN = new ResourceLocation("randmom.chestopen");

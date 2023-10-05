@@ -13,7 +13,6 @@ import bq_standard.core.BQ_Standard;
 import bq_standard.rewards.RewardChoice;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
-import javax.annotation.Nonnull;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -21,6 +20,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
 
+import javax.annotation.Nonnull;
 import java.util.Optional;
 import java.util.UUID;
 

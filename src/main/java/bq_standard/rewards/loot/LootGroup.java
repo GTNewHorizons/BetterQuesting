@@ -6,12 +6,13 @@ import betterquesting.api2.storage.DBEntry;
 import betterquesting.api2.storage.INBTSaveLoad;
 import betterquesting.api2.storage.SimpleDatabase;
 import bq_standard.rewards.loot.LootGroup.LootEntry;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
 
 public class LootGroup extends SimpleDatabase<LootEntry> implements INBTSaveLoad<NBTTagCompound> {
     public String name = "Loot Group";

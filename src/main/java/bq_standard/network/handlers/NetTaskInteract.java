@@ -11,13 +11,13 @@ import betterquesting.api2.utils.Tuple2;
 import bq_standard.tasks.TaskInteractItem;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
-import java.util.Map;
-import java.util.UUID;
-
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.ResourceLocation;
+
+import java.util.Map;
+import java.util.UUID;
 
 public class NetTaskInteract {
     private static final ResourceLocation ID_NAME = new ResourceLocation("bq_standard:task_interact");

@@ -60,10 +60,15 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraftforge.common.config.Configuration;
 import org.lwjgl.util.vector.Vector4f;
 
-import java.awt.*;
+import java.awt.Toolkit;
 import java.awt.datatransfer.StringSelection;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 
 import static betterquesting.api.storage.BQ_Settings.alwaysDrawImplicit;
 

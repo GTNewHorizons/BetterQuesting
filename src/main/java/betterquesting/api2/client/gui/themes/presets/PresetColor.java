@@ -4,9 +4,9 @@ import betterquesting.api2.client.gui.resources.colors.GuiColorPulse;
 import betterquesting.api2.client.gui.resources.colors.GuiColorStatic;
 import betterquesting.api2.client.gui.resources.colors.IGuiColor;
 import betterquesting.api2.client.gui.themes.IThemeRegistry;
-import net.minecraft.util.ResourceLocation;
 import betterquesting.client.themes.ThemeRegistry;
 import betterquesting.core.BetterQuesting;
+import net.minecraft.util.ResourceLocation;
 
 // WARNING: Don't use the ordinal indexes. I'll probably be adding/removing enums infrequently
 public enum PresetColor

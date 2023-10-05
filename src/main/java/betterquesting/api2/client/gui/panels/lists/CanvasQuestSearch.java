@@ -24,7 +24,11 @@ import com.google.common.collect.Maps;
 import net.minecraft.entity.player.EntityPlayer;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 

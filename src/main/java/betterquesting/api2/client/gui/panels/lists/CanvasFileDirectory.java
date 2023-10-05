@@ -4,7 +4,11 @@ import betterquesting.api2.client.gui.misc.IGuiRect;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
 
 @SuppressWarnings("WeakerAccess")
 public abstract class CanvasFileDirectory extends CanvasSearch<File, File>

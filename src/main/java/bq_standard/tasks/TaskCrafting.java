@@ -16,11 +16,6 @@ import bq_standard.tasks.base.TaskProgressableBase;
 import bq_standard.tasks.factory.FactoryTaskCrafting;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.function.IntSupplier;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.Item;
@@ -34,6 +29,12 @@ import net.minecraft.stats.StatisticsFile;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.util.Constants;
 import org.apache.logging.log4j.Level;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.function.IntSupplier;
 
 public class TaskCrafting extends TaskProgressableBase<int[]> implements ITaskItemInput {
     // region Properties

@@ -2,9 +2,10 @@ package bq_standard.handlers;
 
 import bq_standard.client.gui.GuiBQSConfig;
 import cpw.mods.fml.client.IModGuiFactory;
-import java.util.Set;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
+
+import java.util.Set;
 
 public class ConfigGuiFactory implements IModGuiFactory {
     @Override

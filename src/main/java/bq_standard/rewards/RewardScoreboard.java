@@ -12,7 +12,11 @@ import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.scoreboard.*;
+import net.minecraft.scoreboard.IScoreObjectiveCriteria;
+import net.minecraft.scoreboard.Score;
+import net.minecraft.scoreboard.ScoreDummyCriteria;
+import net.minecraft.scoreboard.ScoreObjective;
+import net.minecraft.scoreboard.Scoreboard;
 import net.minecraft.util.ResourceLocation;
 import org.apache.logging.log4j.Level;
 

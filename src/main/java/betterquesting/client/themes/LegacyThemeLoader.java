@@ -5,7 +5,7 @@ import betterquesting.api2.client.gui.themes.IGuiTheme;
 import com.google.gson.JsonObject;
 import net.minecraft.util.ResourceLocation;
 
-import java.awt.*;
+import java.awt.Color;
 
 public class LegacyThemeLoader
 {

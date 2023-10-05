@@ -9,12 +9,13 @@ import bq_standard.rewards.loot.LootRegistry;
 import com.mojang.realmsclient.gui.ChatFormatting;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
-import javax.annotation.Nullable;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.ResourceLocation;
 import org.apache.logging.log4j.Level;
+
+import javax.annotation.Nullable;
 
 public class NetLootSync {
     private static final ResourceLocation ID_NAME = new ResourceLocation("bq_standard:loot_database");

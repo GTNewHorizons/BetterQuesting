@@ -3,13 +3,14 @@ package bq_standard.rewards.loot;
 import betterquesting.api2.storage.DBEntry;
 import betterquesting.api2.storage.INBTPartial;
 import betterquesting.api2.storage.SimpleDatabase;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
+
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
-import javax.annotation.Nullable;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
 
 public class LootRegistry extends SimpleDatabase<LootGroup> implements INBTPartial<NBTTagCompound, Integer> {
     // TODO: Add localised group names

@@ -2,7 +2,10 @@ package bq_standard.client.gui.tasks;
 
 import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.utils.BigItemStack;
-import betterquesting.api2.client.gui.misc.*;
+import betterquesting.api2.client.gui.misc.GuiAlign;
+import betterquesting.api2.client.gui.misc.GuiRectangle;
+import betterquesting.api2.client.gui.misc.GuiTransform;
+import betterquesting.api2.client.gui.misc.IGuiRect;
 import betterquesting.api2.client.gui.panels.CanvasMinimum;
 import betterquesting.api2.client.gui.panels.content.PanelItemSlot;
 import betterquesting.api2.client.gui.panels.content.PanelTextBox;
@@ -10,9 +13,10 @@ import betterquesting.api2.client.gui.themes.presets.PresetColor;
 import betterquesting.api2.utils.QuestTranslation;
 import bq_standard.client.gui.panels.content.PanelItemSlotBuilder;
 import bq_standard.tasks.TaskRetrieval;
-import java.util.UUID;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.EnumChatFormatting;
+
+import java.util.UUID;
 
 public class PanelTaskRetrieval extends CanvasMinimum {
     private final TaskRetrieval task;

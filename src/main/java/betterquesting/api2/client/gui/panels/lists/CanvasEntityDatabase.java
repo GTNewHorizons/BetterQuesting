@@ -6,7 +6,12 @@ import betterquesting.api2.client.gui.misc.IGuiRect;
 import net.minecraft.entity.EntityList;
 import net.minecraft.util.StringUtils;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 
 public class CanvasEntityDatabase extends CanvasSearch<String, String>
 {

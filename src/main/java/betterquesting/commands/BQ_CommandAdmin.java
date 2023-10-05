@@ -1,6 +1,16 @@
 package betterquesting.commands;
 
-import betterquesting.commands.admin.*;
+import betterquesting.commands.admin.QuestCommandCheckCompletion;
+import betterquesting.commands.admin.QuestCommandCleanupQuestLine;
+import betterquesting.commands.admin.QuestCommandComplete;
+import betterquesting.commands.admin.QuestCommandDefaults;
+import betterquesting.commands.admin.QuestCommandDelete;
+import betterquesting.commands.admin.QuestCommandEdit;
+import betterquesting.commands.admin.QuestCommandHardcore;
+import betterquesting.commands.admin.QuestCommandLives;
+import betterquesting.commands.admin.QuestCommandPurge;
+import betterquesting.commands.admin.QuestCommandReportAllProgress;
+import betterquesting.commands.admin.QuestCommandReset;
 import cpw.mods.fml.common.FMLCommonHandler;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.ICommandSender;

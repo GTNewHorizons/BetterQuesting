@@ -2,11 +2,12 @@ package bq_standard;
 
 import betterquesting.api.placeholders.ItemPlaceholder;
 import betterquesting.api.utils.BigItemStack;
-import javax.annotation.Nullable;
 import net.minecraft.block.Block;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.nbt.NBTTagCompound;
+
+import javax.annotation.Nullable;
 
 public class NbtBlockType // TODO: Make a version of this for the base mod and give it a dedicated editor
  {

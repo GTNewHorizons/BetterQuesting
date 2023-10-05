@@ -3,7 +3,9 @@ package bq_standard.client.gui.rewards;
 import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.questing.IQuest;
 import betterquesting.api.utils.BigItemStack;
-import betterquesting.api2.client.gui.misc.*;
+import betterquesting.api2.client.gui.misc.GuiRectangle;
+import betterquesting.api2.client.gui.misc.GuiTransform;
+import betterquesting.api2.client.gui.misc.IGuiRect;
 import betterquesting.api2.client.gui.panels.CanvasMinimum;
 import betterquesting.api2.client.gui.panels.content.PanelItemSlot;
 import betterquesting.api2.client.gui.panels.content.PanelTextBox;
@@ -11,11 +13,11 @@ import betterquesting.api2.client.gui.themes.presets.PresetColor;
 import bq_standard.client.gui.panels.content.PanelItemSlotBuilder;
 import bq_standard.network.handlers.NetRewardChoice;
 import bq_standard.rewards.RewardChoice;
+import net.minecraft.client.Minecraft;
+import org.lwjgl.util.vector.Vector4f;
 
 import java.util.Map;
 import java.util.UUID;
-import net.minecraft.client.Minecraft;
-import org.lwjgl.util.vector.Vector4f;
 
 public class PanelRewardChoice extends CanvasMinimum {
     private final Map.Entry<UUID, IQuest> quest;

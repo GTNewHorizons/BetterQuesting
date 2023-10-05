@@ -1,14 +1,15 @@
 package bq_standard;
 
 import betterquesting.api2.storage.INBTPartial;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.UUID;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
 
 public class ScoreBQ implements INBTPartial<NBTTagList, UUID> {
     private final TreeMap<UUID, Integer> playerScores = new TreeMap<>();

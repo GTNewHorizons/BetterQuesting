@@ -29,12 +29,20 @@ import betterquesting.client.gui2.editors.nbt.callback.NbtFluidCallback;
 import betterquesting.client.gui2.editors.nbt.callback.NbtItemCallback;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
-import net.minecraft.nbt.*;
+import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTBase.NBTPrimitive;
+import net.minecraft.nbt.NBTTagByte;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
+import net.minecraft.nbt.NBTTagString;
 import net.minecraftforge.fluids.FluidStack;
 import org.lwjgl.input.Keyboard;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 
 // Self contained editing panel
 // TODO: Add ability for expansions to register modules for identifying and providing custom editors to various NBT data sets (inventory, tinker tool, magic, etc.)

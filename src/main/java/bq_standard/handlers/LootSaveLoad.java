@@ -5,9 +5,10 @@ import betterquesting.api.utils.NBTConverter;
 import bq_standard.core.BQ_Standard;
 import bq_standard.rewards.loot.LootRegistry;
 import com.google.gson.JsonObject;
-import java.io.File;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.server.MinecraftServer;
+
+import java.io.File;
 
 public class LootSaveLoad {
     public static LootSaveLoad INSTANCE = new LootSaveLoad();

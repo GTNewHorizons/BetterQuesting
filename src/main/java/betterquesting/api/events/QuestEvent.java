@@ -2,7 +2,11 @@ package betterquesting.api.events;
 
 import cpw.mods.fml.common.eventhandler.Event;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
 
 public class QuestEvent extends Event
 {

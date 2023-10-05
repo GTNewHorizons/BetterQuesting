@@ -23,7 +23,7 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.util.vector.Matrix4f;
 
-import java.awt.*;
+import java.awt.Color;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;

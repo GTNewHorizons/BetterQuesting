@@ -11,8 +11,6 @@ import bq_standard.rewards.loot.LootGroup;
 import bq_standard.rewards.loot.LootRegistry;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
-import java.util.ArrayList;
-import java.util.List;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -24,6 +22,9 @@ import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
 import net.minecraftforge.common.ChestGenHooks;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class ItemLootChest extends Item {
     public ItemLootChest() {

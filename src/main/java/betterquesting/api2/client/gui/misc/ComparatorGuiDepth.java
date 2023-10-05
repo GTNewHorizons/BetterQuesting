@@ -1,7 +1,8 @@
 package betterquesting.api2.client.gui.misc;
 
-import java.util.Comparator;
 import betterquesting.api2.client.gui.panels.IGuiPanel;
+
+import java.util.Comparator;
 
 public class ComparatorGuiDepth implements Comparator<IGuiPanel>
 {

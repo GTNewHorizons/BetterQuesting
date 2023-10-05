@@ -4,7 +4,6 @@ import betterquesting.api.questing.rewards.IReward;
 import betterquesting.api.utils.JsonHelper;
 import bq_standard.importers.hqm.HQMQuestImporter;
 import bq_standard.importers.hqm.converters.HQMRep;
-
 import bq_standard.rewards.RewardScoreboard;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;

@@ -3,17 +3,18 @@ package bq_standard.tasks.base;
 import betterquesting.api.questing.tasks.ITask;
 import betterquesting.api2.utils.DirtyPlayerMarker;
 import bq_standard.core.BQ_Standard;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.UUID;
-import javax.annotation.Nullable;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.nbt.NBTTagString;
 import net.minecraftforge.common.util.Constants;
 import org.apache.logging.log4j.Level;
+
+import javax.annotation.Nullable;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.UUID;
 
 public abstract class TaskBase implements ITask {
     protected final Set<UUID> completeUsers = new TreeSet<>();

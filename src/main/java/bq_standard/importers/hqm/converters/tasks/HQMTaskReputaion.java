@@ -4,7 +4,6 @@ import betterquesting.api.questing.tasks.ITask;
 import betterquesting.api.utils.JsonHelper;
 import bq_standard.importers.hqm.HQMQuestImporter;
 import bq_standard.importers.hqm.converters.HQMRep;
-
 import bq_standard.tasks.TaskScoreboard;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;

@@ -17,10 +17,11 @@ import betterquesting.api2.client.gui.themes.presets.PresetIcon;
 import betterquesting.api2.utils.QuestTranslation;
 import bq_standard.client.gui.panels.content.PanelItemSlotBuilder;
 import bq_standard.tasks.TaskCrafting;
-import java.util.UUID;
 import net.minecraft.client.Minecraft;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.EnumChatFormatting;
+
+import java.util.UUID;
 
 public class PanelTaskCrafting extends CanvasMinimum {
     private final TaskCrafting task;

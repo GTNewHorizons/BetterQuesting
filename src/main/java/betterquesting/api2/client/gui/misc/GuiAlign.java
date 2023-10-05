@@ -1,9 +1,10 @@
 package betterquesting.api2.client.gui.misc;
 
-import java.nio.FloatBuffer;
 import org.lwjgl.util.vector.ReadableVector4f;
 import org.lwjgl.util.vector.Vector;
 import org.lwjgl.util.vector.Vector4f;
+
+import java.nio.FloatBuffer;
 
 /**
  * Provides pre-made anchor points for GUIs with functions to quickly create new ones

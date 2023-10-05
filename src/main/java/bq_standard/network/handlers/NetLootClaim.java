@@ -8,14 +8,15 @@ import bq_standard.client.gui.GuiLootChest;
 import bq_standard.core.BQ_Standard;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
-import java.util.ArrayList;
-import java.util.List;
-import javax.annotation.Nonnull;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.ResourceLocation;
+
+import javax.annotation.Nonnull;
+import java.util.ArrayList;
+import java.util.List;
 
 public class NetLootClaim {
     private static final ResourceLocation ID_NAME = new ResourceLocation("bq_standard:loot_claim");

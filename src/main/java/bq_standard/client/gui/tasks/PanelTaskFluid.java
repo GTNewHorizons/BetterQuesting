@@ -1,7 +1,10 @@
 package bq_standard.client.gui.tasks;
 
 import betterquesting.api.api.QuestingAPI;
-import betterquesting.api2.client.gui.misc.*;
+import betterquesting.api2.client.gui.misc.GuiAlign;
+import betterquesting.api2.client.gui.misc.GuiRectangle;
+import betterquesting.api2.client.gui.misc.GuiTransform;
+import betterquesting.api2.client.gui.misc.IGuiRect;
 import betterquesting.api2.client.gui.panels.CanvasMinimum;
 import betterquesting.api2.client.gui.panels.content.PanelFluidSlot;
 import betterquesting.api2.client.gui.panels.content.PanelTextBox;
@@ -11,10 +14,11 @@ import bq_standard.core.BQ_Standard;
 import bq_standard.tasks.TaskFluid;
 import codechicken.nei.recipe.GuiCraftingRecipe;
 import cpw.mods.fml.common.Optional.Method;
-import java.util.UUID;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraftforge.fluids.FluidStack;
+
+import java.util.UUID;
 
 public class PanelTaskFluid extends CanvasMinimum {
     private final TaskFluid task;

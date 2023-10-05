@@ -2,7 +2,11 @@ package betterquesting.network.handlers;
 
 import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.network.QuestingPacket;
-import betterquesting.api.questing.*;
+import betterquesting.api.questing.IQuest;
+import betterquesting.api.questing.IQuestDatabase;
+import betterquesting.api.questing.IQuestLine;
+import betterquesting.api.questing.IQuestLineDatabase;
+import betterquesting.api.questing.IQuestLineEntry;
 import betterquesting.api.utils.UuidConverter;
 import betterquesting.api2.utils.Tuple2;
 import betterquesting.client.importers.ImportedQuestLines;

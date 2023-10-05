@@ -1,14 +1,15 @@
 package bq_standard.handlers;
 
 import betterquesting.api.api.QuestingAPI;
-import java.util.HashMap;
-import java.util.List;
-import java.util.UUID;
-import javax.annotation.Nonnull;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.Container;
 import net.minecraft.inventory.ICrafting;
 import net.minecraft.item.ItemStack;
+
+import javax.annotation.Nonnull;
+import java.util.HashMap;
+import java.util.List;
+import java.util.UUID;
 
 public class PlayerContainerListener implements ICrafting {
     private static final HashMap<UUID, PlayerContainerListener> LISTEN_MAP = new HashMap<>();

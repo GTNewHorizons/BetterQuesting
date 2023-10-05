@@ -10,7 +10,13 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraftforge.common.util.FakePlayer;
 
 import javax.annotation.Nonnull;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class ParticipantInfo

@@ -9,9 +9,10 @@ import betterquesting.api2.client.gui.panels.content.PanelTextBox;
 import betterquesting.api2.client.gui.themes.presets.PresetColor;
 import bq_standard.ScoreboardBQ;
 import bq_standard.tasks.TaskScoreboard;
-import java.text.DecimalFormat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.EnumChatFormatting;
+
+import java.text.DecimalFormat;
 
 public class PanelTaskScoreboard extends CanvasMinimum {
     private final TaskScoreboard task;

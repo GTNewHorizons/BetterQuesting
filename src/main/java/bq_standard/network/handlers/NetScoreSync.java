@@ -5,12 +5,13 @@ import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.network.QuestingPacket;
 import bq_standard.ScoreboardBQ;
 import bq_standard.core.BQ_Standard;
-import java.util.Collections;
-import javax.annotation.Nullable;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.ResourceLocation;
+
+import javax.annotation.Nullable;
+import java.util.Collections;
 
 public class NetScoreSync {
     private static final ResourceLocation ID_NAME = new ResourceLocation("bq_standard:score_sync");

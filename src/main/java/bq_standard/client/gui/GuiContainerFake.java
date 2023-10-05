@@ -1,7 +1,8 @@
 package bq_standard.client.gui;
 
-import java.util.function.Consumer;
 import net.minecraft.client.gui.inventory.GuiContainer;
+
+import java.util.function.Consumer;
 
 public class GuiContainerFake extends GuiContainer {
     public GuiContainerFake() {

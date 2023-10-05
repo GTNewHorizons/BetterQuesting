@@ -13,13 +13,14 @@ import betterquesting.api2.client.gui.resources.textures.IGuiTexture;
 import betterquesting.api2.client.gui.themes.presets.PresetColor;
 import betterquesting.api2.utils.QuestTranslation;
 import bq_standard.tasks.TaskLocation;
-import java.awt.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.ResourceLocation;
 import org.apache.commons.lang3.StringUtils;
 import org.lwjgl.opengl.GL11;
+
+import java.awt.Color;
 
 public class PanelTaskLocation extends CanvasMinimum {
     private final TaskLocation task;

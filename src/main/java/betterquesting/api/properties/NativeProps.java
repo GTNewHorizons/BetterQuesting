@@ -1,7 +1,5 @@
 package betterquesting.api.properties;
 
-import net.minecraft.init.Items;
-import net.minecraft.util.ResourceLocation;
 import betterquesting.api.enums.EnumLogic;
 import betterquesting.api.enums.EnumQuestVisibility;
 import betterquesting.api.properties.basic.PropertyTypeBoolean;
@@ -11,6 +9,8 @@ import betterquesting.api.properties.basic.PropertyTypeInteger;
 import betterquesting.api.properties.basic.PropertyTypeItemStack;
 import betterquesting.api.properties.basic.PropertyTypeString;
 import betterquesting.api.utils.BigItemStack;
+import net.minecraft.init.Items;
+import net.minecraft.util.ResourceLocation;
 
 // TODO: SPLIT THIS DAMN FILE UP. It's already too big and it needs to be divided up per-purpose
 /**

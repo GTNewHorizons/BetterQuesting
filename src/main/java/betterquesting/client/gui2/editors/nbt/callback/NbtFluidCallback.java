@@ -1,10 +1,10 @@
 package betterquesting.client.gui2.editors.nbt.callback;
 
+import betterquesting.api.misc.ICallback;
+import betterquesting.api.utils.JsonHelper;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fluids.FluidStack;
-import betterquesting.api.misc.ICallback;
-import betterquesting.api.utils.JsonHelper;
 
 public class NbtFluidCallback implements ICallback<FluidStack>
 {

@@ -6,7 +6,11 @@ import betterquesting.api2.client.gui.controls.PanelButtonStorage;
 import betterquesting.api2.client.gui.controls.PanelTextField;
 import betterquesting.api2.client.gui.controls.filters.FieldFilterNumber;
 import betterquesting.api2.client.gui.controls.filters.FieldFilterString;
-import betterquesting.api2.client.gui.misc.*;
+import betterquesting.api2.client.gui.misc.GuiAlign;
+import betterquesting.api2.client.gui.misc.GuiPadding;
+import betterquesting.api2.client.gui.misc.GuiRectangle;
+import betterquesting.api2.client.gui.misc.GuiTransform;
+import betterquesting.api2.client.gui.misc.IGuiRect;
 import betterquesting.api2.client.gui.panels.CanvasEmpty;
 import betterquesting.api2.client.gui.panels.CanvasTextured;
 import betterquesting.api2.client.gui.panels.bars.PanelVScrollBar;
@@ -22,12 +26,13 @@ import betterquesting.api2.utils.QuestTranslation;
 import bq_standard.network.handlers.NetLootImport;
 import bq_standard.rewards.loot.LootGroup;
 import bq_standard.rewards.loot.LootRegistry;
-import java.text.DecimalFormat;
-import java.util.List;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.nbt.NBTTagCompound;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.util.vector.Vector4f;
+
+import java.text.DecimalFormat;
+import java.util.List;
 
 public class GuiEditLootGroup extends GuiScreenCanvas {
     private LootGroup selGroup;

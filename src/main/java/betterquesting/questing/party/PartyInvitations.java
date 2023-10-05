@@ -16,8 +16,15 @@ import net.minecraft.server.MinecraftServer;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.UUID;
 
 // NOTE: This is in a separate class because it could later be moved to a dedicated inbox system
 public class PartyInvitations implements INBTPartial<NBTTagList, UUID>

@@ -3,17 +3,18 @@ package bq_standard.tasks.base;
 import betterquesting.api2.utils.DirtyPlayerMarker;
 import betterquesting.api2.utils.Tuple2;
 import bq_standard.core.BQ_Standard;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
+import net.minecraftforge.common.util.Constants;
+import org.apache.logging.log4j.Level;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.HashSet;
 import java.util.List;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraftforge.common.util.Constants;
-import org.apache.logging.log4j.Level;
 
 public abstract class TaskProgressableBase<T> extends TaskBase {
     protected final TreeMap<UUID, T> userProgress = new TreeMap<>();
