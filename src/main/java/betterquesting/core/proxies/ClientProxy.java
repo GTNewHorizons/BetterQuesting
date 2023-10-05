@@ -15,6 +15,7 @@ import betterquesting.core.ExpansionLoader;
 import betterquesting.misc.QuestResourcesFile;
 import betterquesting.misc.QuestResourcesFolder;
 import cpw.mods.fml.client.registry.RenderingRegistry;
+import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.ObfuscationReflectionHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.SimpleReloadableResourceManager;
@@ -70,6 +71,8 @@ public class ClientProxy extends CommonProxy
 		}
 
 		ToolboxRegistry.INSTANCE.registerToolTab(new ResourceLocation(BetterQuesting.MODID, "main"), ToolboxTabMain.INSTANCE);
+
+		BetterQuesting.isDuraDisplayLoaded = Loader.isModLoaded("duradisplay");
 	}
 
 	@Override

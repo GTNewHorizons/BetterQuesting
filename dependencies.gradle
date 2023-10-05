@@ -2,6 +2,7 @@
 
 dependencies {
     implementation 'com.github.GTNewHorizons:NotEnoughItems:2.3.83-GTNH:dev'
+    implementation 'com.github.GTNewHorizons:DuraDisplay:1.1.2:dev'
 
     // For testing translations
     runtimeOnly 'com.github.GTNewHorizons:TX-Loader:1.5.2'

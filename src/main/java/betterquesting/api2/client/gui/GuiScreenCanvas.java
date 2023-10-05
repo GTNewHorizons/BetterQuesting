@@ -3,14 +3,20 @@ package betterquesting.api2.client.gui;
 import betterquesting.api.client.gui.misc.IVolatileScreen;
 import betterquesting.api.storage.BQ_Settings;
 import betterquesting.api.utils.RenderUtils;
-import betterquesting.api2.client.gui.misc.*;
+import betterquesting.api2.client.gui.misc.ComparatorGuiDepth;
+import betterquesting.api2.client.gui.misc.GuiAlign;
+import betterquesting.api2.client.gui.misc.GuiPadding;
+import betterquesting.api2.client.gui.misc.GuiRectangle;
+import betterquesting.api2.client.gui.misc.GuiTransform;
+import betterquesting.api2.client.gui.misc.IGuiRect;
 import betterquesting.api2.client.gui.panels.IGuiPanel;
 import betterquesting.api2.client.gui.popups.PopChoice;
 import betterquesting.api2.client.gui.themes.presets.PresetIcon;
 import betterquesting.api2.utils.QuestTranslation;
 import betterquesting.client.BQ_Keybindings;
+import betterquesting.core.BetterQuesting;
+import com.caedis.duradisplay.render.DurabilityRenderer;
 import com.mojang.realmsclient.gui.ChatFormatting;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
@@ -157,13 +163,14 @@ public class GuiScreenCanvas extends GuiScreen implements IScene
 	public final void drawScreen(int mx, int my, float partialTick)
 	{
 		super.drawScreen(mx, my, partialTick);
-		
+
 		if(useDefaultBG) this.drawDefaultBackground();
-        
+
+		if (BetterQuesting.isDuraDisplayLoaded) DurabilityRenderer.Execute = false; // GuiScreen sets this back to true
         GL11.glPushMatrix();
 		GL11.glColor4f(1F, 1F, 1F, 1F);
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
-		
+
 		this.drawPanel(mx, my, partialTick);
 		
 		List<String> tt = this.getTooltip(mx, my);
@@ -172,7 +179,8 @@ public class GuiScreenCanvas extends GuiScreen implements IScene
 		{
 			this.drawHoveringText(tt, mx, my, mc.fontRenderer);
 		}
-		
+		if (BetterQuesting.isDuraDisplayLoaded) DurabilityRenderer.Execute = true;
+
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		GL11.glPopMatrix();
 	}
