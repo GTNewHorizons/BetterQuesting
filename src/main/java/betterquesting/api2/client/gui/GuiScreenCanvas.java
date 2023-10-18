@@ -40,8 +40,16 @@ public class GuiScreenCanvas extends GuiScreen implements IScene
 	private boolean useMargins = true;
 	private boolean useDefaultBG = false;
 	private boolean isVolatile = false;
-	
+
+	/**
+	 * GUI shown on "back" button click. This is meant to be BQ GUI.
+	 */
 	public final GuiScreen parent;
+
+	/**
+	 * GUI shown on close. This is meant to be external GUI, such as NEI recipe GUI which was used to show ours.
+	 */
+	private GuiScreen previousScreen;
 	
 	private IGuiPanel popup = null;
 	//private IGuiPanel focused = null;
@@ -79,7 +87,14 @@ public class GuiScreenCanvas extends GuiScreen implements IScene
     {
         return this.guiPanels;
     }
-    
+
+	public void setPreviousScreen(GuiScreen previousScreen) {
+		this.previousScreen = previousScreen;
+		if (this.parent instanceof GuiScreenCanvas) {
+			((GuiScreenCanvas) this.parent).setPreviousScreen(previousScreen);
+		}
+	}
+
 	public GuiScreenCanvas useMargins(boolean enable)
     {
         this.useMargins = enable;
@@ -236,8 +251,7 @@ public class GuiScreenCanvas extends GuiScreen implements IScene
 				openPopup(new PopChoice(QuestTranslation.translate("betterquesting.gui.closing_warning") + "\n\n" + QuestTranslation.translate("betterquesting.gui.closing_confirm"), PresetIcon.ICON_NOTICE.getTexture(), this::confirmClose, QuestTranslation.translate("gui.yes"), QuestTranslation.translate("gui.no")));
 			} else
 			{
-				this.mc.displayGuiScreen(null);
-				if(this.mc.currentScreen == null) this.mc.setIngameFocus();
+				doClose();
 			}
 
 			return;
@@ -385,8 +399,7 @@ public class GuiScreenCanvas extends GuiScreen implements IScene
         	    openPopup(new PopChoice(QuestTranslation.translate("betterquesting.gui.closing_warning") + "\n\n" + QuestTranslation.translate("betterquesting.gui.closing_confirm"), PresetIcon.ICON_NOTICE.getTexture(), this::confirmClose, QuestTranslation.translate("gui.yes"), QuestTranslation.translate("gui.no")));
         	} else
 			{
-				this.mc.displayGuiScreen(null);
-				if(this.mc.currentScreen == null) this.mc.setIngameFocus();
+				doClose();
 			}
 		}
 		
@@ -482,13 +495,34 @@ public class GuiScreenCanvas extends GuiScreen implements IScene
     {
         RenderUtils.drawHoveringText(textLines, x, y, width, height, -1, font);
     }
+
+	/**
+	 * Displays parent GUI. Usually used for "back" behavior, but when parent BQ screen is not present, previously shown
+	 * GUI will be displayed. If it's also absent, in-game screen will be focused on.
+	 */
+	public void displayParent() {
+		GuiScreen toDisplay = this.parent != null ? this.parent : this.previousScreen;
+		this.mc.displayGuiScreen(toDisplay);
+		if (this.mc.currentScreen == null) {
+			this.mc.setIngameFocus();
+		}
+	}
 	
-	public void confirmClose(int id)
+	private void confirmClose(int id)
     {
         if(id == 0)
         {
-            this.mc.displayGuiScreen(null);
-            if(this.mc.currentScreen == null) this.mc.setIngameFocus();
+            doClose();
         }
     }
+
+	/**
+	 * Closes GUI without confirmation. Shows previously shown GUI if it exists.
+	 */
+	public void doClose() {
+		this.mc.displayGuiScreen(previousScreen);
+		if (this.mc.currentScreen == null) {
+			this.mc.setIngameFocus();
+		}
+	}
 }

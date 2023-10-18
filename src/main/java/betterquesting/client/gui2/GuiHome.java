@@ -155,7 +155,7 @@ public class GuiHome extends GuiScreenCanvas implements IPEventListener
 		
 		if(btn.getButtonID() == 0) // Exit
 		{
-			mc.displayGuiScreen(this.parent);
+			displayParent();
 		} else if(btn.getButtonID() == 1) // Quests
 		{
 			mc.displayGuiScreen(new GuiQuestLines(this));
@@ -195,7 +195,7 @@ public class GuiHome extends GuiScreenCanvas implements IPEventListener
                                 }));
 
                 //this.initGui(); // Reset the whole thing
-                mc.displayGuiScreen(null);
+                doClose();
             }
 			else if (qFile.exists())
 			{
@@ -207,7 +207,7 @@ public class GuiHome extends GuiScreenCanvas implements IPEventListener
                                 }));
 
 				//this.initGui(); // Reset the whole thing
-				mc.displayGuiScreen(null);
+				doClose();
 			}
 		}/* else if(btn.getButtonID() == 6) // Test screen
 		{

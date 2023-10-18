@@ -195,7 +195,8 @@ public class QuestRecipeHandler extends TemplateRecipeHandler {
                 }
             }
 
-            GuiScreen toDisplay = new GuiQuest(parentScreen, recipe.questID);
+            GuiQuest toDisplay = new GuiQuest(parentScreen, recipe.questID);
+            toDisplay.setPreviousScreen(Minecraft.getMinecraft().currentScreen);
             Minecraft.getMinecraft().displayGuiScreen(toDisplay);
             if (BQ_Settings.useBookmark) {
                 GuiHome.bookmark = toDisplay;

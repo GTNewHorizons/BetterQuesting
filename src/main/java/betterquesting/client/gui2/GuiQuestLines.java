@@ -183,7 +183,7 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
         this.addPanel(cvBackground);
 
         PanelButton btnExit = new PanelButton(new GuiTransform(GuiAlign.BOTTOM_LEFT, 8, -24, 32, 16, 0), -1, "").setIcon(PresetIcon.ICON_PG_PREV.getTexture());
-        btnExit.setClickAction((b) -> mc.displayGuiScreen(parent));
+        btnExit.setClickAction((b) -> displayParent());
         btnExit.setTooltip(Collections.singletonList(QuestTranslation.translate("gui.back")));
         cvBackground.addPanel(btnExit);
 
@@ -400,7 +400,7 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
                         PopContextMenu popup = new PopContextMenu(new GuiRectangle(mx, my, maxWidth + 12, questExistsUnderMouse ? 48 : 16), true);
                         Runnable questSharer = () -> {
                             mc.thePlayer.sendChatMessage("betterquesting.msg.sharequest:" + UuidConverter.encodeUuid(questId));
-                            mc.displayGuiScreen(null);
+                            closePopup();
                         };
                         popup.addButton(QuestTranslation.translate("betterquesting.btn.share_quest"), null, questSharer);
 
