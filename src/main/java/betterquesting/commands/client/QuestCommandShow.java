@@ -82,6 +82,6 @@ public class QuestCommandShow extends QuestCommandBase {
 
     @Override
     public List<String> autoComplete(MinecraftServer server, ICommandSender sender, String[] args) {
-        return args.length == 2 ? QuestDatabase.INSTANCE.keySet().stream().map(Object::toString).collect(Collectors.toList()) : Collections.emptyList();
+        return args.length == 2 ? QuestDatabase.INSTANCE.keySet().stream().map(UuidConverter::encodeUuid).collect(Collectors.toList()) : Collections.emptyList();
     }
 }
