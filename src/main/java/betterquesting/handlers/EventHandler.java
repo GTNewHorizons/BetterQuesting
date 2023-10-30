@@ -94,10 +94,9 @@ public class EventHandler
 	@SideOnly(Side.CLIENT)
 	public void onKey(InputEvent.KeyInputEvent event)
 	{
-		Minecraft mc = Minecraft.getMinecraft();
-		
 		if(BQ_Keybindings.openQuests.isPressed())
 		{
+            Minecraft mc = Minecraft.getMinecraft();
 			if(mc.thePlayer.isSneaking() && mc.thePlayer.getCommandSenderName().equalsIgnoreCase("Funwayguy"))
 			{
 				mc.displayGuiScreen(new GuiScreenTest(mc.currentScreen));
