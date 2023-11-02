@@ -177,7 +177,7 @@ public class JsonHelper
 	public static JsonObject ReadFromFile(File file)
 	{
 		Future<JsonObject> task = BQThreadedIO.INSTANCE.enqueue(() -> {
-			if(file == null || !file.exists())
+			if(file == null || !file.exists() || file.getName().contains(".DS_Store") || file.getName().contains("malformed_"))
 			{
 				return new JsonObject();
 			}
@@ -191,16 +191,9 @@ public class JsonHelper
 			} catch(Exception e)
 			{
 				QuestingAPI.getLogger().log(Level.ERROR, "An error occured while loading JSON from file:", e);
-				
-				int i = 0;
-				File bkup = new File(file.getParent(), "malformed_" + file.getName() + i + ".json");
-				
-				while(bkup.exists())
-				{
-					i++;
-					bkup = new File(file.getParent(), "malformed_" + file.getName() + i + ".json");
-				}
-				
+
+				File bkup = new File(file.getParent(), "malformed_" + file.getName() + ".json");
+
 				QuestingAPI.getLogger().log(Level.ERROR, "Creating backup at: " + bkup.getAbsolutePath());
 				CopyPaste(file, bkup);
 				
