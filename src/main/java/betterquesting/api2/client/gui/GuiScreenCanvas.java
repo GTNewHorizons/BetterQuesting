@@ -503,6 +503,7 @@ public class GuiScreenCanvas extends GuiScreen implements IScene
 	public void displayParent() {
 		GuiScreen toDisplay = this.parent != null ? this.parent : this.previousScreen;
 		this.mc.displayGuiScreen(toDisplay);
+		previousScreen = null;
 		if (this.mc.currentScreen == null) {
 			this.mc.setIngameFocus();
 		}
@@ -521,6 +522,7 @@ public class GuiScreenCanvas extends GuiScreen implements IScene
 	 */
 	public void doClose() {
 		this.mc.displayGuiScreen(previousScreen);
+		previousScreen = null;
 		if (this.mc.currentScreen == null) {
 			this.mc.setIngameFocus();
 		}
