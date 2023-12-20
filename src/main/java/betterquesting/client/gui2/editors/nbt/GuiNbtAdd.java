@@ -187,7 +187,15 @@ public class GuiNbtAdd extends GuiScreenCanvas implements IPEventListener, IVola
                     ((NBTTagCompound)nbt).setTag(flKey.getValue(), selected);
                 } else if(nbt.getId() == 9)
                 {
-                    NBTConverter.getTagList((NBTTagList)nbt).add(index, selected);
+                    NBTTagList l = (NBTTagList)nbt;
+
+                    if(index == l.tagCount())
+                    {
+                        l.appendTag(selected);
+                    } else
+                    {
+                        NBTConverter.getTagList((NBTTagList) nbt).add(index, selected);
+                    }
                 }
                 
                 mc.displayGuiScreen(this.parent);
