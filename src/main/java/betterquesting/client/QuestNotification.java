@@ -80,14 +80,14 @@ public class QuestNotification {
                 RenderUtils.RenderItemStack(mc, notice.icon, width / 2 - 8, height / 4 - 20, "", color);
             }
 
+            GL11.glEnable(GL11.GL_BLEND);
+            GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
             String tmp = EnumChatFormatting.UNDERLINE + "" + EnumChatFormatting.BOLD + QuestTranslation.translate(notice.mainTxt);
             int txtW = RenderUtils.getStringWidth(tmp, mc.fontRenderer);
             mc.fontRenderer.drawString(tmp, width / 2 - txtW / 2, height / 4, color, true);
-
             tmp = QuestTranslation.translate(notice.subTxt);
             txtW = RenderUtils.getStringWidth(tmp, mc.fontRenderer);
             mc.fontRenderer.drawString(tmp, width / 2 - txtW / 2, height / 4 + 12, color, true);
-
             GL11.glColor4f(1F, 1F, 1F, 1F);
         }
         GL11.glPopMatrix();
