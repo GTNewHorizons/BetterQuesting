@@ -11,12 +11,13 @@ import betterquesting.commands.admin.QuestCommandLives;
 import betterquesting.commands.admin.QuestCommandPurge;
 import betterquesting.commands.admin.QuestCommandReportAllProgress;
 import betterquesting.commands.admin.QuestCommandReset;
-import drethic.questbook.config.QBConfig;
 
+import betterquesting.handlers.ConfigHandler;
 import cpw.mods.fml.common.FMLCommonHandler;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.command.WrongUsageException;
+import net.minecraftforge.common.config.Configuration;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -109,7 +110,7 @@ public class BQ_CommandAdmin extends CommandBase
 	@Override
 	public boolean canCommandSenderUseCommand(ICommandSender sender)
 	{
-		if(QBConfig.unrestrictAdminCommands) return true;
+		if(ConfigHandler.config.get(Configuration.CATEGORY_GENERAL,"Unrestrict Admin Commands", false).getBoolean(false)) return true;
 		else return super.canCommandSenderUseCommand(sender);
 	}
 

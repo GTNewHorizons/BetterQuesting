@@ -38,4 +38,6 @@ public class BQ_Settings
 	public static boolean alwaysDrawImplicit = false;
 	public static boolean urlDebug = false;
 	public static boolean loadDefaultsOnStartup = true;
+
+	public static boolean unrestrictAdminCommands = false;
 }

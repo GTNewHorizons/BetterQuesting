@@ -14,7 +14,6 @@ public class QBConfig {
     public static boolean spawnWithBook;
     public static boolean disablePartyNotifications;
     public static boolean disableQuestNotifications;
-    public static boolean unrestrictAdminCommands;
 
     public static final void init(FMLPreInitializationEvent e) {
         QBLogger.logger.info("Loading config file.");
@@ -30,8 +29,6 @@ public class QBConfig {
                 "[NYI]Disable party notifications.  Default: false");
         disableQuestNotifications = configBoolOption(Configuration.CATEGORY_GENERAL, "disableQuestNotifications", false,
                 "[NYI]Disable quest notifications.  Default: false");
-        unrestrictAdminCommands = configBoolOption(Configuration.CATEGORY_GENERAL, "unrestrictAdminCommands", false,
-                "Enable this option to let non-op players use /bq_admin commands. Useful for single-player without cheats enabled.  Default: false");
         qbconfig.save();
     }
 

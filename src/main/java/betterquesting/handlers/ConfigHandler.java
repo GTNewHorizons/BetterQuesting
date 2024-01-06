@@ -47,6 +47,7 @@ public class ConfigHandler
 		BQ_Settings.alwaysDrawImplicit = config.getBoolean("Always draw implicit dependency", Configuration.CATEGORY_GENERAL, false, "If true, always draw implicit dependency. This property can be changed by the GUI");
 		BQ_Settings.urlDebug = config.getBoolean("Highlight detected clickable url hotzone.", Configuration.CATEGORY_GENERAL, false, "If true, render each hotzone using alternating color.");
 		BQ_Settings.loadDefaultsOnStartup = config.getBoolean("Load the default quest DB on world startup.", Configuration.CATEGORY_GENERAL, true, "Does an equivalent of '/bq_admin default load' on every world load");
+		BQ_Settings.unrestrictAdminCommands = config.getBoolean("Unrestrict Admin Commands", Configuration.CATEGORY_GENERAL, false, "If true, all users can use /bq_admin commands regardless of op-status. Useful for single-player without cheats.");
 
 		config.save();
 	}
