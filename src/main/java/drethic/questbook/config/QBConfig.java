@@ -29,6 +29,7 @@ public class QBConfig {
                 "[NYI]Disable party notifications.  Default: false");
         disableQuestNotifications = configBoolOption(Configuration.CATEGORY_GENERAL, "disableQuestNotifications", false,
                 "[NYI]Disable quest notifications.  Default: false");
+
         qbconfig.save();
     }
 
