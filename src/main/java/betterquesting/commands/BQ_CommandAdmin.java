@@ -11,6 +11,8 @@ import betterquesting.commands.admin.QuestCommandLives;
 import betterquesting.commands.admin.QuestCommandPurge;
 import betterquesting.commands.admin.QuestCommandReportAllProgress;
 import betterquesting.commands.admin.QuestCommandReset;
+import drethic.questbook.config.QBConfig;
+
 import cpw.mods.fml.common.FMLCommonHandler;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.ICommandSender;
@@ -103,6 +105,13 @@ public class BQ_CommandAdmin extends CommandBase
     {
         return 2;
     }
+
+	@Override
+	public boolean canCommandSenderUseCommand(ICommandSender sender)
+	{
+		if(QBConfig.unrestrictAdminCommands) return true;
+		else return super.canCommandSenderUseCommand(sender);
+	}
 
 	@Override
 	public void processCommand(ICommandSender sender, String[] args)
