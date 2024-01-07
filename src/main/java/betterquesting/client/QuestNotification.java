@@ -64,6 +64,12 @@ public class QuestNotification {
             return;
         }
 
+        float alpha = notice.getTime() <= 4F ? Math.min(1F, notice.getTime()) : Math.max(0F, 5F - notice.getTime());
+        alpha = MathHelper.clamp_float(alpha, 0.02F, 1F);
+        final int color = new Color(1F, 1F, 1F, alpha).getRGB();
+
+        if (alpha < 0.2F) return;
+
         GL11.glPushMatrix();
         {
             final float scale = width > 600 ? 1.5F : 1F;
@@ -72,11 +78,7 @@ public class QuestNotification {
             width = MathHelper.ceiling_float_int(width / scale);
             height = MathHelper.ceiling_float_int(height / scale);
 
-            float alpha = notice.getTime() <= 4F ? Math.min(1F, notice.getTime()) : Math.max(0F, 5F - notice.getTime());
-            alpha = MathHelper.clamp_float(alpha, 0.02F, 1F);
-            final int color = new Color(1F, 1F, 1F, alpha).getRGB();
-
-            if (notice.icon != null && alpha > 0.2F) {
+            if (notice.icon != null) {
                 RenderUtils.RenderItemStack(mc, notice.icon, width / 2 - 8, height / 4 - 20, "", color);
             }
 
