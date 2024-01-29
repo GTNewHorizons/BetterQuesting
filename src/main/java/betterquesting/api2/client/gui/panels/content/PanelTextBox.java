@@ -5,6 +5,7 @@ import betterquesting.api.utils.RenderUtils;
 import betterquesting.api2.client.gui.misc.GuiAlign;
 import betterquesting.api2.client.gui.misc.GuiTransform;
 import betterquesting.api2.client.gui.misc.IGuiRect;
+import betterquesting.api2.client.gui.misc.URIHandlers;
 import betterquesting.api2.client.gui.panels.IGuiPanel;
 import betterquesting.api2.client.gui.resources.colors.GuiColorStatic;
 import betterquesting.api2.client.gui.resources.colors.IGuiColor;
@@ -25,6 +26,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -334,36 +336,15 @@ public class PanelTextBox implements IGuiPanel
 				} catch(URISyntaxException ex) {
 					return false;
 				}
-				if (!supportedUrlProtocol.contains(uri.getScheme()))
-					return false;
-				if (Minecraft.getMinecraft().gameSettings.chatLinksPrompt) {
-					// must be anonymous class. lambda doesn't work with reobf
-					GuiScreen oldScreen = Minecraft.getMinecraft().currentScreen;
-					//noinspection Convert2Lambda
-					Minecraft.getMinecraft().displayGuiScreen(new GuiConfirmOpenLink(new GuiYesNoCallback()
-					{
-						@Override
-						public void confirmClicked(boolean result, int id)
-						{
-							if (result)
-							{
-								openURL(uri);
-							}
-
-							Minecraft.getMinecraft().displayGuiScreen(oldScreen);
-						}
-					}, hotZone.url, 0, false));
-				} else {
-					openURL(uri);
-				}
-
-				return true;
+				Predicate<URI> handler = URIHandlers.get(uri.getScheme());
+				if (handler == null) return false;
+				return handler.test(uri);
 			}
 		}
 		return false;
 	}
 
-	private void openURL(URI p_146407_1_)
+	private static void openURL(URI p_146407_1_)
 	{
 		try
 		{

@@ -18,23 +18,30 @@ import betterquesting.api2.client.gui.misc.GuiPadding;
 import betterquesting.api2.client.gui.misc.GuiRectangle;
 import betterquesting.api2.client.gui.misc.GuiTransform;
 import betterquesting.api2.client.gui.misc.IGuiRect;
+import betterquesting.api2.client.gui.misc.TextureSizeHelper;
 import betterquesting.api2.client.gui.panels.CanvasEmpty;
 import betterquesting.api2.client.gui.panels.CanvasTextured;
 import betterquesting.api2.client.gui.panels.IGuiPanel;
 import betterquesting.api2.client.gui.panels.bars.PanelVScrollBar;
+import betterquesting.api2.client.gui.panels.content.PanelGeneric;
 import betterquesting.api2.client.gui.panels.content.PanelLine;
 import betterquesting.api2.client.gui.panels.content.PanelTextBox;
 import betterquesting.api2.client.gui.panels.lists.CanvasScrolling;
+import betterquesting.api2.client.gui.resources.textures.SimpleNoUVTexture;
+import betterquesting.api2.client.gui.resources.textures.SimpleTexture;
 import betterquesting.api2.client.gui.themes.presets.PresetColor;
 import betterquesting.api2.client.gui.themes.presets.PresetLine;
 import betterquesting.api2.client.gui.themes.presets.PresetTexture;
 import betterquesting.api2.storage.DBEntry;
 import betterquesting.api2.utils.QuestTranslation;
+import betterquesting.client.gui2.GuiQuestLines.ScrollPosition;
 import betterquesting.network.handlers.NetQuestAction;
 import betterquesting.questing.QuestDatabase;
 import com.google.common.collect.Maps;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.util.ResourceLocation;
+import org.apache.commons.lang3.StringUtils;
 import org.lwjgl.util.vector.Vector4f;
 
 import java.util.Collections;
@@ -42,6 +49,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeedsRefresh
 {
@@ -49,6 +58,7 @@ public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeeds
      *  Map which contains scrolls positions. <questId, Triple<taskScroll, rewardScroll, descScroll>>
      */
     private static final Map<UUID, ScrollPosition> scrollsPositions = new HashMap<>();
+    private static final Pattern img = Pattern.compile("\\[img height=([1-9]\\d*)] *(.*?:.*?) *\\[/img]");
     private ScrollPosition scrollPosition;
 
     public static class ScrollPosition{
@@ -409,9 +419,7 @@ public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeeds
             csDesc = new CanvasScrolling(new GuiTransform(GuiAlign.HALF_LEFT, new GuiPadding(0, 0, 16, 0), 0));
         }
         cvInner.addPanel(csDesc);
-        PanelTextBox paDesc = new PanelTextBox(new GuiRectangle(0, 0, csDesc.getTransform().getWidth(), 0), QuestTranslation.translateQuestDescription(questID, quest), true, true);
-        paDesc.setColor(PresetColor.TEXT_MAIN.getColor());//.setFontSize(10);
-        csDesc.addCulledPanel(paDesc, false);
+        addQuestDescPanels();
 
         PanelVScrollBar paDescScroll;
         if (hasReward) {
@@ -425,6 +433,56 @@ public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeeds
 
         csDesc.setScrollY(scrollPosition.getDescScrollY());
         csDesc.updatePanelScroll();
+    }
+
+    private void addQuestDescPanels()
+    {
+        String questText = QuestTranslation.translateQuestDescription(questID, quest);
+        Matcher matcher = img.matcher(questText);
+        int last = 0;
+        int y = 0;
+        while(matcher.find())
+        {
+            y += addQuestDescTextSegment(y, questText.substring(last, matcher.start())).getTransform().getHeight();
+            last = matcher.end();
+            int imgHeight = Integer.parseInt(matcher.group(1));
+            // 2px margin around images
+            y += addQuestDescImageSegment(y + 2, new ResourceLocation(matcher.group(2)), imgHeight).getTransform().getHeight() + 2;
+        }
+        if(last < questText.length())
+        {
+            String trailing = questText.substring(last);
+            if(!StringUtils.isBlank(trailing))
+            {
+                addQuestDescTextSegment(y, trailing);
+            }
+        }
+    }
+
+    private IGuiPanel addQuestDescTextSegment(int y, String questText)
+    {
+        PanelTextBox paDesc = new PanelTextBox(new GuiRectangle(0, y, csDesc.getTransform().getWidth(), 0), questText, true, true);
+        paDesc.setColor(PresetColor.TEXT_MAIN.getColor());//.setFontSize(10);
+        csDesc.addCulledPanel(paDesc, false);
+        return paDesc;
+    }
+
+    private IGuiPanel addQuestDescImageSegment(int y, ResourceLocation resourceLocation, int height)
+    {
+        IGuiRect dimension = TextureSizeHelper.getDimension(resourceLocation);
+        int containerWidth = csDesc.getTransform().getWidth();
+        float sx = (float) containerWidth / dimension.getWidth(), sy = (float) height / dimension.getHeight();
+        if (sx < sy) {
+            height = ceilDiv(dimension.getHeight() * containerWidth, dimension.getWidth());
+        }
+        PanelGeneric paDesc = new PanelGeneric(new GuiRectangle(0, y, containerWidth, height), new SimpleNoUVTexture(resourceLocation, dimension).maintainAspect(true));
+        csDesc.addCulledPanel(paDesc, false);
+        return paDesc;
+    }
+
+    private static int ceilDiv(int lhs, int rhs)
+    {
+        return -Math.floorDiv(-lhs, rhs);
     }
 
     private void updateButtons()
