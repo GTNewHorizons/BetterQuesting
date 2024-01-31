@@ -14,9 +14,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.GuiConfirmOpenLink;
-import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.gui.GuiYesNoCallback;
 import net.minecraft.util.MathHelper;
 import org.apache.commons.lang3.StringUtils;
 import org.lwjgl.opengl.GL11;
@@ -34,7 +31,7 @@ import static betterquesting.api.storage.BQ_Settings.textWidthCorrection;
 
 public class PanelTextBox implements IGuiPanel
 {
-	private static final Pattern url = Pattern.compile("\\[url] *(.*?) *\\[/url]");
+	private static final Pattern url = Pattern.compile("\\[url(?: text=([^]]+))?] *(.*?) *\\[/url]");
 	private static final String defaultUrlProtocol = "https";
 	private static final Set<String> supportedUrlProtocol = ImmutableSet.of("http", "https");
 	private final GuiRectText transform;
@@ -62,11 +59,10 @@ public class PanelTextBox implements IGuiPanel
 			"betterquesting:stronghold", "§a§n",
 			"betterquesting:overworld", "§a§n");
 
-	private static final Pattern urlTagStart = Pattern.compile("\\[url]");
 	private static final Pattern warningTagStart = Pattern.compile("\\[warn]");
 	private static final Pattern noteTagStart = Pattern.compile("\\[note]");
 	private static final Pattern questRefTagStart = Pattern.compile("\\[quest]");
-	private static final Pattern allTagEnds = Pattern.compile("\\[/url]|\\[/warn]|\\[/note]|\\[/quest]");
+	private static final Pattern allTagEnds = Pattern.compile("\\[/warn]|\\[/note]|\\[/quest]");
 
 	private String text = "", rawText = "";
 	private boolean shadow = false;
@@ -119,12 +115,33 @@ public class PanelTextBox implements IGuiPanel
 			String noteColor = noteColors.getOrDefault(currentTheme, "§3"); // default dark aqua
 			String questRefColor = questReferenceColors.getOrDefault(currentTheme, "§2§n"); // default dark green + bold
 
-			this.rawText = text;
 			coloredText = warningTagStart.matcher(text).replaceAll(warningColor);
 			coloredText = noteTagStart.matcher(coloredText).replaceAll(noteColor);
 			coloredText = questRefTagStart.matcher(coloredText).replaceAll(questRefColor);
-			coloredText = urlTagStart.matcher(coloredText).replaceAll(urlColor);
-			this.text = allTagEnds.matcher(coloredText).replaceAll("§r");
+			coloredText = allTagEnds.matcher(coloredText).replaceAll("§r");
+			coloredText = url.matcher(coloredText).replaceAll(urlColor + "$0§r");
+			this.rawText = coloredText;
+			StringBuilder sb = new StringBuilder();
+			Matcher matcher = url.matcher(coloredText);
+			int last = 0;
+			while(matcher.find())
+			{
+				sb.append(coloredText, last, matcher.start());
+				if (matcher.start(1) != -1)
+				{
+					sb.append(coloredText, matcher.start(1), matcher.end(1));
+				}
+				else
+				{
+					sb.append(coloredText, matcher.start(2), matcher.end(2));
+				}
+				last = matcher.end();
+			}
+			if (last < coloredText.length())
+			{
+				sb.append(coloredText, last, coloredText.length());
+			}
+			this.text = sb.toString();
 		} else
 		{
 			this.text = text;
@@ -168,9 +185,10 @@ public class PanelTextBox implements IGuiPanel
 
 		while(matcher.find())
 		{
-			String url = matcher.group(1);
+			String url = matcher.group(2);
+			int displayTextLength = matcher.start(1) == -1 ? url.length() : matcher.end(1) - matcher.start(1);
 			int start = matcher.start() - toDeduct;
-			int end = start + url.length();
+			int end = start + displayTextLength;
 
 			int currentPos = 0;
 			boolean foundUrlStart = false;
@@ -215,7 +233,7 @@ public class PanelTextBox implements IGuiPanel
 					}
 				}
 			}
-			toDeduct += matcher.end() - matcher.start() - url.length();
+			toDeduct += matcher.end() - matcher.start() - displayTextLength;
 		}
 	}
 
