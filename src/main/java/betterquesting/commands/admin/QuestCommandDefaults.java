@@ -237,7 +237,7 @@ public class QuestCommandDefaults extends QuestCommandBase {
                 return;
             }
 
-            File questLineFile = new File(questLineSubdir, "questLine.json");
+            File questLineFile = new File(questLineSubdir, "QuestLine.json");
             NBTTagCompound questLineTag = questLine.writeToNBT(new NBTTagCompound(), true);
             NBTConverter.UuidValueType.QUEST_LINE.writeId(questLineId, questLineTag);
             JsonHelper.WriteToFile(questLineFile, NBTConverter.NBTtoJSON_Compound(questLineTag, new JsonObject(), true));
@@ -350,7 +350,7 @@ public class QuestCommandDefaults extends QuestCommandBase {
         File questLineDir = new File(dataDir, QUEST_LINE_DIR);
         Map<UUID, IQuestLine> questLines = new HashMap<>();
         for (File questLineSubdir : questLineDir.listFiles()) {
-            File questLineFile = new File(questLineSubdir, "questLine.json");
+            File questLineFile = new File(questLineSubdir, "QuestLine.json");
             if (!questLineFile.exists()) {
                 QuestingAPI.getLogger().log(Level.ERROR, "Missing quest line file\n" + questLineSubdir);
                 sendChatMessage(sender, "betterquesting.cmd.error");
@@ -365,7 +365,7 @@ public class QuestCommandDefaults extends QuestCommandBase {
             questLines.put(questLineId, questLine);
 
             for (File questLineEntryFile : questLineSubdir.listFiles()) {
-                if (questLineEntryFile.getName().equals("questLine.json")) {
+                if (questLineEntryFile.getName().equals("QuestLine.json")) {
                     continue;
                 }
 
