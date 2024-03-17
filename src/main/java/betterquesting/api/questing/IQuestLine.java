@@ -26,9 +26,6 @@ public interface IQuestLine extends IUuidDatabase<IQuestLineEntry>, INBTPartial<
      * we want to try to avoid merge conflicts. The fact that quests are exported to NBT in
      * sequential order (as an {@code NBTTagList}) makes this format particularly prone to merge
      * conflicts.
-     *
-     * <p>Instead of using the exported NBT to find quests belonging to a quest line, we will find
-     * them by subdirectory within the exported quests directory.
      */
     NBTTagCompound writeToNBT(NBTTagCompound json, boolean skipQuests);
 }
