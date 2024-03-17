@@ -63,6 +63,7 @@ public class QuestCommandDefaults extends QuestCommandBase {
     public static final String LANG_FILE = "template.lang";
     public static final String SETTINGS_FILE = "QuestSettings.json";
     public static final String QUEST_LINE_DIR = "QuestLines";
+    public static final String QUEST_LINE_FILE = "QuestLine.json";
     public static final String QUEST_LINE_ORDER_FILE = "QuestLinesOrder.txt";
     public static final String QUEST_DIR = "Quests";
     public static final String MULTI_QUEST_LINE_DIRECTORY = "MultipleQuestLine";
@@ -237,7 +238,7 @@ public class QuestCommandDefaults extends QuestCommandBase {
                 return;
             }
 
-            File questLineFile = new File(questLineSubdir, "QuestLine.json");
+            File questLineFile = new File(questLineSubdir, QUEST_LINE_FILE);
             NBTTagCompound questLineTag = questLine.writeToNBT(new NBTTagCompound(), true);
             NBTConverter.UuidValueType.QUEST_LINE.writeId(questLineId, questLineTag);
             JsonHelper.WriteToFile(questLineFile, NBTConverter.NBTtoJSON_Compound(questLineTag, new JsonObject(), true));
@@ -357,7 +358,7 @@ public class QuestCommandDefaults extends QuestCommandBase {
         File questLineDir = new File(dataDir, QUEST_LINE_DIR);
         Map<UUID, IQuestLine> questLines = new HashMap<>();
         for (File questLineSubdir : questLineDir.listFiles()) {
-            File questLineFile = new File(questLineSubdir, "QuestLine.json");
+            File questLineFile = new File(questLineSubdir, QUEST_LINE_FILE);
             if (!questLineFile.exists()) {
                 QuestingAPI.getLogger().log(Level.ERROR, "Missing quest line file\n" + questLineSubdir);
                 sendChatMessage(sender, "betterquesting.cmd.error");
@@ -372,7 +373,7 @@ public class QuestCommandDefaults extends QuestCommandBase {
             questLines.put(questLineId, questLine);
 
             for (File questLineEntryFile : questLineSubdir.listFiles()) {
-                if (questLineEntryFile.getName().equals("QuestLine.json")) {
+                if (questLineEntryFile.getName().equals(QUEST_LINE_FILE)) {
                     continue;
                 }
 
