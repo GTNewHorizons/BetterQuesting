@@ -243,9 +243,16 @@ public class QuestCommandDefaults extends QuestCommandBase {
             JsonHelper.WriteToFile(questLineFile, NBTConverter.NBTtoJSON_Compound(questLineTag, new JsonObject(), true));
 
             for (Map.Entry<UUID, IQuestLineEntry> questLineEntry : questLine.entrySet()) {
-                File questLineEntryFile = new File(questLineSubdir, UuidConverter.encodeUuid(questLineEntry.getKey()) + ".json");
+                // Unfortunately, we must prepend the quest name to the filename.
+                // This is because Windows treats filenames which differ only in casing, as the same
+                // file. This causes problems for us as many UUIDs differ only in casing, so we must
+                // disambiguate using the quest name as a prefix.
+                UUID questId = questLineEntry.getKey();
+                String questName = QuestDatabase.INSTANCE.get(questId).getProperty(NativeProps.NAME);
+
+                File questLineEntryFile = new File(questLineSubdir, buildFileName.apply(questName, questId) + ".json");
                 NBTTagCompound questLineEntryTag = questLineEntry.getValue().writeToNBT(new NBTTagCompound());
-                NBTConverter.UuidValueType.QUEST.writeId(questLineEntry.getKey(), questLineEntryTag);
+                NBTConverter.UuidValueType.QUEST.writeId(questId, questLineEntryTag);
                 JsonHelper.WriteToFile(questLineEntryFile, NBTConverter.NBTtoJSON_Compound(questLineEntryTag, new JsonObject(), true));
             }
         }
