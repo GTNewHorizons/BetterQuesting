@@ -115,7 +115,7 @@ public class QuestLine extends UuidDatabase<IQuestLineEntry> implements IQuestLi
 	@Override
     public NBTTagCompound writeToNBT(NBTTagCompound nbt)
     {
-        return writeToNBT(nbt, null);
+        return writeToNBT(nbt, false);
     }
     
     @Override
@@ -132,21 +132,38 @@ public class QuestLine extends UuidDatabase<IQuestLineEntry> implements IQuestLi
             throw new UnsupportedOperationException("subset not supported");
         }
 
-		json.setTag("properties", info.writeToNBT(new NBTTagCompound()));
-		
-		NBTTagList jArr = new NBTTagList();
-
-        orderedEntries().forEach(entry ->
-		{
-			NBTTagCompound qle = entry.getValue().writeToNBT(new NBTTagCompound());
-            NBTConverter.UuidValueType.QUEST.writeId(entry.getKey(), qle);
-			jArr.appendTag(qle);
-		});
-		
-		json.setTag("quests", jArr);
-		return json;
+        return writeToNBT(json, false);
 	}
-	
+
+    /**
+     * The reason why we want to skip writing quests is that, when exporting the quest database, we
+     * want to try to avoid merge conflicts. The fact that quests are exported in a sequential order
+     * (as an {@code NBTTagList}) makes this format particularly prone to merge conflicts.
+     *
+     * <p>Instead of using the exported NBT to find quests belonging to a quest line, we will find
+     * them by subdirectory within the exported quests directory.
+     */
+    @Override
+    public NBTTagCompound writeToNBT(NBTTagCompound json, boolean skipQuests)
+    {
+        json.setTag("properties", info.writeToNBT(new NBTTagCompound()));
+
+        if (!skipQuests) {
+            NBTTagList jArr = new NBTTagList();
+
+            orderedEntries().forEach(entry ->
+            {
+                NBTTagCompound qle = entry.getValue().writeToNBT(new NBTTagCompound());
+                NBTConverter.UuidValueType.QUEST.writeId(entry.getKey(), qle);
+                jArr.appendTag(qle);
+            });
+
+            json.setTag("quests", jArr);
+        }
+
+        return json;
+    }
+
 	@Override
 	public void readFromNBT(NBTTagCompound json, boolean merge)
 	{
