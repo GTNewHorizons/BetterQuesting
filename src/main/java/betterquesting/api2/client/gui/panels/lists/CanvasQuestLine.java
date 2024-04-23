@@ -244,4 +244,14 @@ public class CanvasQuestLine extends CanvasScrolling
         this.setScrollY(bounds.getY() + bounds.getHeight()/2);
         this.updatePanelScroll();
     }
+
+    public void centerOn(PanelButtonQuest btn)
+    {
+        int x = btn.rect.x;
+        int y = btn.rect.y;
+        int width = btn.rect.w;
+        int height = btn.rect.h;
+        this.setScrollX(x - width + lsx);
+        this.setScrollY(y + height + lsy);
+    }
 }

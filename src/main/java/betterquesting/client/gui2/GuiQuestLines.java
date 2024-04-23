@@ -472,11 +472,13 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
             targetQuestButton.ifPresent(panelButtonQuest -> {
                 GuiTextureColored newTexture = new GuiTextureColored(panelButtonQuest.txFrame,
                         new GuiColorPulse(
-                                new GuiColorStatic(255, 220, 115, 255),
+                                new GuiColorStatic(0, 0, 0, 255),
                                 new GuiColorStatic(255, 191, 0, 255),
                                 1, 0
                         ));
                 panelButtonQuest.setTextures(newTexture, newTexture, newTexture);
+                cvQuest.setZoom(2f);
+                cvQuest.centerOn(panelButtonQuest);
             });
         });
 
