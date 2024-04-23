@@ -474,7 +474,7 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
                         new GuiColorPulse(
                                 new GuiColorStatic(0, 0, 0, 255),
                                 new GuiColorStatic(255, 191, 0, 255),
-                                1, 0
+                                0.7, 0
                         ));
                 panelButtonQuest.setTextures(newTexture, newTexture, newTexture);
                 cvQuest.setZoom(2f);
