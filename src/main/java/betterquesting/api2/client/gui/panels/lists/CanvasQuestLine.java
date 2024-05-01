@@ -24,6 +24,7 @@ import betterquesting.api2.client.gui.themes.presets.PresetColor;
 import betterquesting.api2.client.gui.themes.presets.PresetLine;
 import com.google.common.collect.Maps;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.StringUtils;
@@ -251,7 +252,10 @@ public class CanvasQuestLine extends CanvasScrolling
         int y = btn.rect.y;
         int width = btn.rect.w;
         int height = btn.rect.h;
-        this.setScrollX(x - width + lsx);
-        this.setScrollY(y + height + lsy);
+        int btnCenterX = x + width / 2;
+        int btnCenterY = y + height / 2;
+
+        this.setScrollX(btnCenterX - scrollWindow.w / 2);
+        this.setScrollY(btnCenterY - scrollWindow.h / 2);
     }
 }

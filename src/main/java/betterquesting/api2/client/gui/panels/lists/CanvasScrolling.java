@@ -25,7 +25,7 @@ public class CanvasScrolling implements IGuiCanvas
 	
 	// Scrolling bounds
 	protected final GuiRectangle scrollBounds = new GuiRectangle(0, 0, 0, 0);
-	private final GuiRectangle scrollWindow = new GuiRectangle(0, 0 ,0, 0);
+	protected final GuiRectangle scrollWindow = new GuiRectangle(0, 0 ,0, 0);
 	protected boolean extendedScroll = false;
 	protected boolean zoomMode = false;
 	protected int margin = 0;
