@@ -491,7 +491,7 @@ public class QuestCommandDefaults extends QuestCommandBase {
         QuestLineDatabase.INSTANCE.values()
                 .forEach(questLine -> questOccurrenceCount.addAll(questLine.keySet()));
 
-        if (!dataDir.mkdirs()) {
+        if (!dataDir.exists() && !dataDir.mkdirs()) {
             QuestingAPI.getLogger().log(Level.ERROR, "Failed to create directory\n{}", dataDir);
             sendChatMessage(sender, "betterquesting.cmd.error");
             return;
