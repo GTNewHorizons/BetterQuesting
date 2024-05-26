@@ -90,7 +90,13 @@ public class PanelTextBox implements IGuiPanel {
             StringBuilder textBuilder = new StringBuilder();
             urlRanges.clear();
 
+            // This variable should hold the start text position of the unique [url] tag currently
+            // on the stack, or -1 if there is no [url] tag on the stack.
+            // Behavior is undefined if there are multiple [url] tags on the stack; consumers of
+            // this value should take care not to throw an exception even if this occurs.
+            // Perhaps we will want to move this value into the [url] TagInstance itself, some day.
             int currUrlStart = -1;
+
             Deque<FormattingTag.TagInstance> tags = new ArrayDeque<>();
             Scanner scanner = new Scanner(text).useDelimiter(TOKEN_DELIMITER);
             while (scanner.hasNext()) {
@@ -145,6 +151,7 @@ public class PanelTextBox implements IGuiPanel {
                                             .getOrDefault(
                                                     "link", textBuilder.substring(currUrlStart));
                             urlRanges.add(new UrlRange(currUrlStart, textBuilder.length(), url));
+                            currUrlStart = -1;
                         }
 
                         // Reset the formatting, then reapply all active tags
