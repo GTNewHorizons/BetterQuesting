@@ -139,7 +139,7 @@ public class PanelTextBox implements IGuiPanel {
 
                     if (!tags.isEmpty() && closingTag == tags.peek().getTag()) {
                         FormattingTag.TagInstance openingTag = tags.pop();
-                        if (closingTag == FormattingTag.URL) {
+                        if (closingTag == FormattingTag.URL && currUrlStart >= 0) {
                             String url =
                                     openingTag.getParams()
                                             .getOrDefault(
