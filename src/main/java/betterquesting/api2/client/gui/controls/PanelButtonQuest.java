@@ -28,6 +28,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Items;
 import net.minecraft.nbt.NBTTagCompound;
 
+import javax.annotation.Nullable;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -44,7 +45,7 @@ public class PanelButtonQuest extends PanelButtonStorage<Map.Entry<UUID, IQuest>
 
 	private boolean isBookmarked = false;
 
-	public PanelButtonQuest(GuiRectangle rect, int id, String txt, Map.Entry<UUID, IQuest> value)
+	public PanelButtonQuest(GuiRectangle rect, int id, String txt, @Nullable Map.Entry<UUID, IQuest> value)
     {
 		super(rect, id, txt, value);
         this.rect = rect;
@@ -52,7 +53,7 @@ public class PanelButtonQuest extends PanelButtonStorage<Map.Entry<UUID, IQuest>
         player = Minecraft.getMinecraft().thePlayer;
         EnumQuestState qState = value == null ? EnumQuestState.LOCKED : value.getValue().getState(player);
         IGuiColor txIconCol = null;
-        boolean main = value == null ? false : value.getValue().getProperty(NativeProps.MAIN);
+        boolean main = value != null && value.getValue().getProperty(NativeProps.MAIN);
         boolean lock = false;
         
         switch(qState)
@@ -85,9 +86,9 @@ public class PanelButtonQuest extends PanelButtonStorage<Map.Entry<UUID, IQuest>
 		IGuiTexture btnTx = new GuiTextureColored(txFrame, txIconCol);
         setTextures(btnTx, btnTx, btnTx);
         setIcon(new OreDictTexture(1F, value == null ? new BigItemStack(Items.nether_star) : value.getValue().getProperty(NativeProps.ICON), false, true), 4);
-        //setTooltip(value == null ? Collections.emptyList() : value.getValue().getTooltip(player));
         setActive(QuestingAPI.getAPI(ApiReference.SETTINGS).canUserEdit(player) || !lock || BQ_Settings.viewMode);
-		setBookmarked(BookmarkHandler.isBookmarked(value.getKey()));
+		boolean bookmarked = value != null && BookmarkHandler.isBookmarked(value.getKey());
+		setBookmarked(bookmarked);
     }
 
 	@Override
@@ -204,7 +205,7 @@ public class PanelButtonQuest extends PanelButtonStorage<Map.Entry<UUID, IQuest>
 		list.add(ChatFormatting.GRAY + QuestTranslation.translate("betterquesting.tooltip.quest_logic", quest.getProperty(NativeProps.LOGIC_QUEST).toString().toUpperCase()));
 		list.add(ChatFormatting.GRAY + QuestTranslation.translate("betterquesting.tooltip.simultaneous", quest.getProperty(NativeProps.SIMULTANEOUS)));
 		list.add(ChatFormatting.GRAY + QuestTranslation.translate("betterquesting.tooltip.auto_claim", quest.getProperty(NativeProps.AUTO_CLAIM)));
-		if(quest.getProperty(NativeProps.REPEAT_TIME).intValue() >= 0)
+		if(quest.getProperty(NativeProps.REPEAT_TIME) >= 0)
 		{
 			long time = quest.getProperty(NativeProps.REPEAT_TIME)/20;
 			DecimalFormat df = new DecimalFormat("00");
