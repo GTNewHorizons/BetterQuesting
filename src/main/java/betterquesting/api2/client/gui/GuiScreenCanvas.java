@@ -323,7 +323,7 @@ public class GuiScreenCanvas extends GuiScreen implements IScene
 
 		if(!used && click == 1) {
 			if(parent != null && parent instanceof GuiScreenCanvas &&
-					!(this instanceof GuiQuestLines & parent instanceof GuiHome)) {
+					!(this instanceof GuiQuestLines && parent instanceof GuiHome)) {
 				mc.displayGuiScreen(parent);
 				return false;
 			}
