@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 
 public enum FormattingTag {
     NOTE("note"),
-    WARNING("warning"),
+    WARNING("warn"),
     QUEST("quest"),
 
     BOLD("bold"),
