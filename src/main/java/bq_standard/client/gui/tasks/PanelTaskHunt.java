@@ -34,7 +34,7 @@ public class PanelTaskHunt extends CanvasMinimum {
 
         if (EntityList.stringToClassMapping.containsKey(task.idName)) {
             target = EntityList.createEntityByName(task.idName, Minecraft.getMinecraft().theWorld);
-            if (target != null) target.readFromNBT(task.targetTags);
+            if (target != null && !task.ignoreNBT) target.readFromNBT(task.targetTags);
         } else {
             target = null;
         }
