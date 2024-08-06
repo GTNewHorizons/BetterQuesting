@@ -22,8 +22,11 @@ import betterquesting.questing.rewards.RewardStorage;
 import betterquesting.questing.tasks.TaskStorage;
 import betterquesting.storage.PropertyContainer;
 import betterquesting.storage.QuestSettings;
+import drethic.questbook.config.QBConfig;
+
 import com.google.common.collect.Maps;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Items;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
@@ -33,6 +36,8 @@ import org.apache.logging.log4j.Level;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -248,31 +253,35 @@ public class QuestInstance implements IQuest
 	{
         UUID questID = QuestDatabase.INSTANCE.lookupKey(this);
         Map.Entry<UUID, IQuest> mapEntry = Maps.immutableEntry(questID, this);
-		for (DBEntry<IReward> rew : rewards.getEntries())
-		{
-			rew.getValue().claimReward(player, mapEntry);
-		}
-
-		UUID pID = QuestingAPI.getQuestingUUID(player);
-        QuestCache qc = (QuestCache)player.getExtendedProperties(QuestCache.LOC_QUEST_CACHE.toString());
+        for (DBEntry<IReward> rew : rewards.getEntries())
+        {
+            rew.getValue().claimReward(player, mapEntry);
+        }
+        
+        ParticipantInfo pInfo = new ParticipantInfo(player);
+        List<UUID> playersToMark = QBConfig.fullySyncQuests ? pInfo.ALL_UUIDS : Collections.singletonList(pInfo.UUID);
 
         synchronized (completeUsers)
         {
-            NBTTagCompound entry = getCompletionInfo(pID);
+            for (UUID user : playersToMark) {
+                NBTTagCompound entry = getCompletionInfo(user);
+                if (entry == null) {
+                    entry = new NBTTagCompound();
+                }
+                entry.setBoolean("claimed", true);
+                entry.setLong("timestamp", System.currentTimeMillis());
+                this.completeUsers.put(user, entry);
+                DirtyPlayerMarker.markDirty(user);
 
-            if (entry == null)
-            {
-                entry = new NBTTagCompound();
-                this.completeUsers.put(pID, entry);
+                EntityPlayerMP dirtyPlayerEntity = QuestingAPI.getPlayer(user);
+                if (dirtyPlayerEntity == null){
+                    continue;
+                }
+                QuestCache qc = (QuestCache)dirtyPlayerEntity.getExtendedProperties(QuestCache.LOC_QUEST_CACHE.toString());
+                if (qc != null) {
+                    qc.markQuestDirty(QuestDatabase.INSTANCE.lookupKey(this));
+                }
             }
-
-            entry.setBoolean("claimed", true);
-            entry.setLong("timestamp", System.currentTimeMillis());
-
-            DirtyPlayerMarker.markDirty(pID);
-        }
-		if (qc != null) {
-            qc.markQuestDirty(QuestDatabase.INSTANCE.lookupKey(this));
         }
 	}
 

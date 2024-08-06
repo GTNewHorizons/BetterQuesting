@@ -7,6 +7,7 @@ import betterquesting.api.questing.IQuest;
 import betterquesting.api.questing.tasks.ITask;
 import betterquesting.api.utils.NBTConverter;
 import betterquesting.api2.cache.QuestCache;
+import betterquesting.api2.utils.ParticipantInfo;
 import betterquesting.api2.utils.Tuple2;
 import bq_standard.tasks.TaskCheckbox;
 import cpw.mods.fml.relauncher.Side;
@@ -14,7 +15,10 @@ import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ResourceLocation;
+import drethic.questbook.config.QBConfig;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -40,15 +44,22 @@ public class NetTaskCheckbox {
         int tId = !data.hasKey("taskID", 99) ? -1 : data.getInteger("taskID");
 
         if (qId.isPresent() && tId >= 0) {
-            QuestCache qc = (QuestCache) sender.getExtendedProperties(QuestCache.LOC_QUEST_CACHE.toString());
             IQuest quest = QuestingAPI.getAPI(ApiReference.QUEST_DB).get(qId.get());
             ITask task = quest == null ? null : quest.getTasks().getValue(tId);
 
             if (task instanceof TaskCheckbox) {
-                task.setComplete(QuestingAPI.getQuestingUUID(sender));
-                if (qc != null)
-                {
-                    qc.markQuestDirty(qId.get());
+                ParticipantInfo pInfo = new ParticipantInfo(sender);
+                List<UUID> playersToMark = QBConfig.fullySyncQuests ? pInfo.ALL_UUIDS : Collections.singletonList(pInfo.UUID);
+                for (UUID user : playersToMark) {
+                    task.setComplete(user);
+                    if (QuestingAPI.getPlayer(user) == null){
+                        continue;
+                    }
+                    QuestCache qc = (QuestCache) QuestingAPI.getPlayer(user).getExtendedProperties(QuestCache.LOC_QUEST_CACHE.toString());
+                    if (qc != null)
+                    {
+                        qc.markQuestDirty(qId.get());
+                    }
                 }
             }
         }

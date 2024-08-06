@@ -1,5 +1,6 @@
 package bq_standard.tasks;
 
+import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.questing.IQuest;
 import betterquesting.api.questing.tasks.IFluidTask;
 import betterquesting.api.questing.tasks.IItemTask;
@@ -26,6 +27,7 @@ import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.fluids.FluidContainerRegistry;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.IFluidContainerItem;
+import drethic.questbook.config.QBConfig;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -155,7 +157,7 @@ public class TaskFluid extends TaskProgressableBase<int[]> implements ITaskInven
         for (InventoryPlayer invo : invoList) {
             IntStream.range(0, invo.getSizeInventory()).forEachOrdered(i -> {
                 ItemStack stack = invo.getStackInSlot(i);
-                detector.run(stack, (drain, drainAmount) -> getFluid(invo, i, drain, drainAmount));
+                detector.run(stack, (drain, drainAmount) -> getFluid(invo, i, drain, drainAmount), pInfo.UUID);
             });
         }
 
@@ -165,7 +167,7 @@ public class TaskFluid extends TaskProgressableBase<int[]> implements ITaskInven
 
     private void checkAndComplete(ParticipantInfo pInfo, Map.Entry<UUID, IQuest> quest, boolean resync) {
         final List<Tuple2<UUID, int[]>> progress =
-                getBulkProgress(consume ? Collections.singletonList(pInfo.UUID) : pInfo.ALL_UUIDS);
+                getBulkProgress((consume && !QBConfig.fullySyncQuests) ? Collections.singletonList(pInfo.UUID) : pInfo.ALL_UUIDS);
         boolean updated = resync;
 
         topLoop:
@@ -177,7 +179,7 @@ public class TaskFluid extends TaskProgressableBase<int[]> implements ITaskInven
 
             updated = true;
 
-            if (consume) {
+            if (consume && !QBConfig.fullySyncQuests) {
                 setComplete(value.getFirst());
             } else {
                 progress.forEach((pair) -> setComplete(pair.getFirst()));
@@ -186,7 +188,7 @@ public class TaskFluid extends TaskProgressableBase<int[]> implements ITaskInven
         }
 
         if (updated) {
-            if (consume) {
+            if (consume && !QBConfig.fullySyncQuests) {
                 pInfo.markDirty(quest.getKey());
             } else {
                 pInfo.markDirtyParty(quest.getKey());
@@ -282,7 +284,8 @@ public class TaskFluid extends TaskProgressableBase<int[]> implements ITaskInven
             return input;
         }
 
-        Detector detector = new Detector(this, Collections.singletonList(owner));
+        ParticipantInfo pInfo = new ParticipantInfo(QuestingAPI.getPlayer(owner));
+        Detector detector = new Detector(this, QBConfig.fullySyncQuests ? pInfo.ALL_UUIDS : Collections.singletonList(pInfo.UUID));
 
         final FluidStack fluid = input.copy();
 
@@ -292,7 +295,7 @@ public class TaskFluid extends TaskProgressableBase<int[]> implements ITaskInven
             removedFluid.amount = removed;
             fluid.amount -= removed;
             return removedFluid;
-        });
+        }, pInfo.UUID);
 
         if (detector.updated) {
             setBulkProgress(detector.progress);
@@ -305,10 +308,10 @@ public class TaskFluid extends TaskProgressableBase<int[]> implements ITaskInven
     public void retrieveFluids(ParticipantInfo pInfo, Map.Entry<UUID, IQuest> quest, FluidStack[] fluids) {
         if (consume || isComplete(pInfo.UUID)) return;
 
-        Detector detector = new Detector(this, consume ? Collections.singletonList(pInfo.UUID) : pInfo.ALL_UUIDS);
+        Detector detector = new Detector(this, pInfo.ALL_UUIDS);
 
         for (FluidStack fluid : fluids) {
-            detector.run(fluid, (remaining) -> null); // Never execute consumer
+            detector.run(fluid, (remaining) -> null, pInfo.UUID); // Never execute consumer
         }
 
         if (detector.updated) {
@@ -338,7 +341,8 @@ public class TaskFluid extends TaskProgressableBase<int[]> implements ITaskInven
     public ItemStack submitItem(UUID owner, Map.Entry<UUID, IQuest> quest, ItemStack input) {
         if (owner == null || input == null || input.stackSize != 1 || !consume || isComplete(owner)) return input;
 
-        Detector detector = new Detector(this, Collections.singletonList(owner));
+        ParticipantInfo pInfo = new ParticipantInfo(QuestingAPI.getPlayer(owner));
+        Detector detector = new Detector(this, QBConfig.fullySyncQuests ? pInfo.ALL_UUIDS : Collections.singletonList(pInfo.UUID));
 
         final ItemStack[] wrapper = new ItemStack[] {input.copy()};
 
@@ -352,7 +356,7 @@ public class TaskFluid extends TaskProgressableBase<int[]> implements ITaskInven
                 }
                 return fluid;
             }
-        });
+        }, pInfo.UUID);
 
         if (detector.updated) {
             setBulkProgress(detector.progress);
@@ -365,7 +369,7 @@ public class TaskFluid extends TaskProgressableBase<int[]> implements ITaskInven
     public void retrieveItems(ParticipantInfo pInfo, Map.Entry<UUID, IQuest> quest, ItemStack[] stacks) {
         if (consume || isComplete(pInfo.UUID)) return;
 
-        Detector detector = new Detector(this, consume ? Collections.singletonList(pInfo.UUID) : pInfo.ALL_UUIDS);
+        Detector detector = new Detector(this, pInfo.ALL_UUIDS);
 
         IntStream.range(0, stacks.length).forEachOrdered(i -> {
             final ItemStack stack = stacks[i];
@@ -385,7 +389,7 @@ public class TaskFluid extends TaskProgressableBase<int[]> implements ITaskInven
                     fluid.amount += Math.min(drainAmount - fluid.amount, unitFluidAmount);
                 }
                 return fluid;
-            });
+            }, pInfo.UUID);
         });
 
         if (detector.updated) {
@@ -416,8 +420,8 @@ public class TaskFluid extends TaskProgressableBase<int[]> implements ITaskInven
             // restricted to detect only
             this.progress = task.getBulkProgress(uuids);
             if (!task.consume) {
-                if (task.groupDetect) // Reset all detect progress
-                {
+                if (task.groupDetect) {
+                    // Reset all detect progress
                     progress.forEach((value) -> Arrays.fill(value.getSecond(), 0));
                 } else {
                     for (int i = 0; i < task.requiredFluids.size(); i++) {
@@ -438,7 +442,7 @@ public class TaskFluid extends TaskProgressableBase<int[]> implements ITaskInven
          * @param fluidGetter
          *     Args: (drain, drainAmount)
          */
-        public void run(ItemStack stack, BiFunction<Boolean, Integer, FluidStack> fluidGetter) {
+        public void run(ItemStack stack, BiFunction<Boolean, Integer, FluidStack> fluidGetter, UUID runner) {
             if (stack == null || stack.stackSize <= 0) return;
             if (!(stack.getItem() instanceof IFluidContainerItem || FluidContainerRegistry.isFilledContainer(stack)))
                 return;
@@ -474,7 +478,7 @@ public class TaskFluid extends TaskProgressableBase<int[]> implements ITaskInven
          * @param consumer
          *     Args: (remaining)
          */
-        public void run(FluidStack fluid, IntFunction<FluidStack> consumer) {
+        public void run(FluidStack fluid, IntFunction<FluidStack> consumer, UUID runner) {
             if (fluid == null || fluid.amount <= 0) return;
 
             for (int i = 0; i < task.requiredFluids.size(); i++) {
@@ -490,10 +494,13 @@ public class TaskFluid extends TaskProgressableBase<int[]> implements ITaskInven
                     int remaining = rStack.amount - value.getSecond()[i];
 
                     if (task.consume) {
-                        FluidStack removed = consumer.apply(remaining);
-                        if (removed != null && removed.amount > 0) {
+                        if (QBConfig.fullySyncQuests && runner.equals(value.getFirst())){
+                            FluidStack removed = consumer.apply(remaining);
+                            int temp = i;
+                            progress.forEach(p -> p.getSecond()[temp] += removed.amount);
+                        } else if (!QBConfig.fullySyncQuests){
+                            FluidStack removed = consumer.apply(remaining);
                             value.getSecond()[i] += removed.amount;
-                            updated = true;
                         }
                     } else {
                         FluidStack drain = rStack.copy();
