@@ -24,7 +24,6 @@ public class PanelItemSlot extends PanelButtonStorage<BigItemStack>
 {
     private final boolean showCount;
     private final boolean oreDict;
-    private final boolean isWildCardOrOreDict;
     private final float interval;
     private final List<BigItemStack> oreVariants = new ArrayList<>();
 
@@ -49,7 +48,6 @@ public class PanelItemSlot extends PanelButtonStorage<BigItemStack>
         this.showCount = showCount;
         this.oreDict = oreDict;
         this.interval = interval;
-        this.isWildCardOrOreDict = oreDict || value.getBaseStack().getItemDamage() == OreDictionary.WILDCARD_VALUE;
         this.setTextures(PresetTexture.ITEM_FRAME.getTexture(), PresetTexture.ITEM_FRAME.getTexture(), new LayeredTexture(PresetTexture.ITEM_FRAME.getTexture(), new ColorTexture(PresetColor.ITEM_HIGHLIGHT.getColor(), new GuiPadding(1, 1, 1, 1))));
         this.setStoredValue(value); // Need to run this again because of the instatiation order of showCount
     }
