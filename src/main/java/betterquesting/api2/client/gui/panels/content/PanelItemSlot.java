@@ -118,7 +118,7 @@ public class PanelItemSlot extends PanelButtonStorage<BigItemStack>
 
         BigItemStack stack = getStoredValue();
         if(stack == null) return;
-
+        
         if(!stack.hasOreDict())
         {
             if(stack.getBaseStack().getItemDamage() == OreDictionary.WILDCARD_VALUE)
