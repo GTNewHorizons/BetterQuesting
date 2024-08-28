@@ -344,9 +344,7 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
                     int remaining = rStack.stackSize - value.getSecond()[i];
 
                     if (task.consume) {
-                        QuestingAPI.getLogger().error(task.getUnlocalisedName() + ", RUNNER: " + runner + ", FIRST: " + value.getFirst());
                         if (QBConfig.fullySyncQuests && runner.equals(value.getFirst())){
-                            QuestingAPI.getLogger().error("RUN THROUGH");
                             ItemStack removed = consumer.apply(remaining);
                             int temp = i;
                             progress.forEach(p -> p.getSecond()[temp] += removed.stackSize);
