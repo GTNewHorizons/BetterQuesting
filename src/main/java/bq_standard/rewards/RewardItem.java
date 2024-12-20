@@ -16,6 +16,7 @@ import org.apache.logging.log4j.Level;
 
 import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.questing.IQuest;
+import betterquesting.api.questing.rewards.AbstractReward;
 import betterquesting.api.questing.rewards.IReward;
 import betterquesting.api.utils.BigItemStack;
 import betterquesting.api.utils.JsonHelper;
@@ -26,7 +27,7 @@ import bq_standard.client.gui.rewards.PanelRewardItem;
 import bq_standard.core.BQ_Standard;
 import bq_standard.rewards.factory.FactoryRewardItem;
 
-public class RewardItem implements IReward, IRewardItemOutput {
+public class RewardItem extends AbstractReward implements IReward, IRewardItemOutput {
 
     public final List<BigItemStack> items = new ArrayList<>();
 
@@ -46,7 +47,7 @@ public class RewardItem implements IReward, IRewardItemOutput {
     }
 
     @Override
-    public void claimReward(EntityPlayer player, Map.Entry<UUID, IQuest> quest) {
+    protected void claimReward0(EntityPlayer player, Map.Entry<UUID, IQuest> quest) {
         for (BigItemStack r : items) {
             BigItemStack stack = r.copy();
 
@@ -71,6 +72,7 @@ public class RewardItem implements IReward, IRewardItemOutput {
 
     @Override
     public void readFromNBT(NBTTagCompound nbt) {
+        super.readFromNBT(nbt);
         items.clear();
         NBTTagList rList = nbt.getTagList("rewards", 10);
         for (int i = 0; i < rList.tagCount(); i++) {
@@ -85,6 +87,7 @@ public class RewardItem implements IReward, IRewardItemOutput {
 
     @Override
     public NBTTagCompound writeToNBT(NBTTagCompound nbt) {
+        super.writeToNBT(nbt);
         NBTTagList rJson = new NBTTagList();
         for (BigItemStack stack : items) {
             rJson.appendTag(JsonHelper.ItemStackToJson(stack, new NBTTagCompound()));

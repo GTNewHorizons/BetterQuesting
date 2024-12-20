@@ -14,6 +14,7 @@ import net.minecraft.world.World;
 
 import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.questing.IQuest;
+import betterquesting.api.questing.rewards.AbstractReward;
 import betterquesting.api.questing.rewards.IReward;
 import betterquesting.api2.client.gui.misc.IGuiRect;
 import betterquesting.api2.client.gui.panels.IGuiPanel;
@@ -23,7 +24,7 @@ import bq_standard.handlers.EventHandler;
 import bq_standard.rewards.factory.FactoryRewardCommand;
 import io.netty.buffer.ByteBuf;
 
-public class RewardCommand implements IReward {
+public class RewardCommand extends AbstractReward implements IReward {
 
     public String command = "/say VAR_NAME Claimed a reward";
     public boolean hideCmd = false;
@@ -45,7 +46,12 @@ public class RewardCommand implements IReward {
     }
 
     @Override
-    public void claimReward(final EntityPlayer player, Map.Entry<UUID, IQuest> quest) {
+    protected boolean getDefaultIgnoreDisabled() {
+        return true;
+    }
+
+    @Override
+    protected void claimReward0(final EntityPlayer player, Map.Entry<UUID, IQuest> quest) {
         if (player.worldObj.isRemote) return;
 
         String tmp = command.replaceAll("VAR_NAME", player.getCommandSenderName());
@@ -74,6 +80,7 @@ public class RewardCommand implements IReward {
 
     @Override
     public void readFromNBT(NBTTagCompound nbt) {
+        super.readFromNBT(nbt);
         command = nbt.getString("command");
         hideCmd = nbt.getBoolean("hideCommand");
         viaPlayer = nbt.getBoolean("viaPlayer");
@@ -81,6 +88,7 @@ public class RewardCommand implements IReward {
 
     @Override
     public NBTTagCompound writeToNBT(NBTTagCompound nbt) {
+        super.writeToNBT(nbt);
         nbt.setString("command", command);
         nbt.setBoolean("hideCommand", hideCmd);
         nbt.setBoolean("viaPlayer", viaPlayer);

@@ -17,6 +17,7 @@ import org.apache.logging.log4j.Level;
 
 import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.questing.IQuest;
+import betterquesting.api.questing.rewards.AbstractReward;
 import betterquesting.api.questing.rewards.IReward;
 import betterquesting.api.utils.BigItemStack;
 import betterquesting.api.utils.JsonHelper;
@@ -29,7 +30,7 @@ import bq_standard.rewards.factory.FactoryRewardChoice;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
-public class RewardChoice implements IReward, IRewardItemOutput {
+public class RewardChoice extends AbstractReward implements IReward, IRewardItemOutput {
 
     /**
      * The selected reward index to be claimed.<br>
@@ -70,7 +71,7 @@ public class RewardChoice implements IReward, IRewardItemOutput {
     }
 
     @Override
-    public void claimReward(EntityPlayer player, Map.Entry<UUID, IQuest> quest) {
+    protected void claimReward0(EntityPlayer player, Map.Entry<UUID, IQuest> quest) {
         UUID playerID = QuestingAPI.getQuestingUUID(player);
 
         if (choices.size() <= 0) {
@@ -117,6 +118,7 @@ public class RewardChoice implements IReward, IRewardItemOutput {
 
     @Override
     public void readFromNBT(NBTTagCompound nbt) {
+        super.readFromNBT(nbt);
         choices.clear();
         NBTTagList cList = nbt.getTagList("choices", 10);
         for (int i = 0; i < cList.tagCount(); i++) {
@@ -126,6 +128,7 @@ public class RewardChoice implements IReward, IRewardItemOutput {
 
     @Override
     public NBTTagCompound writeToNBT(NBTTagCompound nbt) {
+        super.writeToNBT(nbt);
         NBTTagList rJson = new NBTTagList();
         for (BigItemStack stack : choices) {
             rJson.appendTag(JsonHelper.ItemStackToJson(stack, new NBTTagCompound()));
