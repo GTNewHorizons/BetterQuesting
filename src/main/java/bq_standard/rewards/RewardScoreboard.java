@@ -16,6 +16,7 @@ import net.minecraft.util.ResourceLocation;
 import org.apache.logging.log4j.Level;
 
 import betterquesting.api.questing.IQuest;
+import betterquesting.api.questing.rewards.AbstractReward;
 import betterquesting.api.questing.rewards.IReward;
 import betterquesting.api2.client.gui.misc.IGuiRect;
 import betterquesting.api2.client.gui.panels.IGuiPanel;
@@ -25,7 +26,7 @@ import bq_standard.rewards.factory.FactoryRewardScoreboard;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
-public class RewardScoreboard implements IReward {
+public class RewardScoreboard extends AbstractReward implements IReward {
 
     public String score = "Reputation";
     public String type = "dummy";
@@ -48,7 +49,12 @@ public class RewardScoreboard implements IReward {
     }
 
     @Override
-    public void claimReward(EntityPlayer player, Map.Entry<UUID, IQuest> quest) {
+    protected boolean getDefaultIgnoreDisabled() {
+        return true;
+    }
+
+    @Override
+    protected void claimReward0(EntityPlayer player, Map.Entry<UUID, IQuest> quest) {
         Scoreboard board = player.getWorldScoreboard();
         if (board == null) return;
 
@@ -82,6 +88,7 @@ public class RewardScoreboard implements IReward {
 
     @Override
     public void readFromNBT(NBTTagCompound json) {
+        super.readFromNBT(json);
         score = json.getString("score");
         type = json.getString("type");
         value = json.getInteger("value");
@@ -90,6 +97,7 @@ public class RewardScoreboard implements IReward {
 
     @Override
     public NBTTagCompound writeToNBT(NBTTagCompound json) {
+        super.writeToNBT(json);
         json.setString("score", score);
         json.setString("type", "dummy");
         json.setInteger("value", value);

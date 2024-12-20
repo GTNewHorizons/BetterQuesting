@@ -12,6 +12,7 @@ import net.minecraft.util.ResourceLocation;
 import betterquesting.api.api.ApiReference;
 import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.questing.IQuest;
+import betterquesting.api.questing.rewards.AbstractReward;
 import betterquesting.api.questing.rewards.IReward;
 import betterquesting.api.utils.NBTConverter;
 import betterquesting.api.utils.UuidConverter;
@@ -22,7 +23,7 @@ import betterquesting.questing.QuestDatabase;
 import bq_standard.client.gui.rewards.PanelRewardQuestCompletion;
 import bq_standard.rewards.factory.FactoryRewardQuestCompletion;
 
-public class RewardQuestCompletion implements IReward {
+public class RewardQuestCompletion extends AbstractReward implements IReward {
 
     public UUID questNum = null;
 
@@ -42,7 +43,12 @@ public class RewardQuestCompletion implements IReward {
     }
 
     @Override
-    public void claimReward(EntityPlayer player, Map.Entry<UUID, IQuest> quest) {
+    protected boolean getDefaultIgnoreDisabled() {
+        return true;
+    }
+
+    @Override
+    protected void claimReward0(EntityPlayer player, Map.Entry<UUID, IQuest> quest) {
         if (questNum == null) {
             return;
         }
@@ -72,6 +78,7 @@ public class RewardQuestCompletion implements IReward {
 
     @Override
     public void readFromNBT(NBTTagCompound nbt) {
+        super.readFromNBT(nbt);
         Optional<UUID> uuid = NBTConverter.UuidValueType.QUEST.tryReadIdString(nbt);
         if (uuid.isPresent()) {
             questNum = uuid.get();
@@ -85,6 +92,7 @@ public class RewardQuestCompletion implements IReward {
 
     @Override
     public NBTTagCompound writeToNBT(NBTTagCompound nbt) {
+        super.writeToNBT(nbt);
         NBTConverter.UuidValueType.QUEST.writeIdString(questNum, nbt);
         return nbt;
     }

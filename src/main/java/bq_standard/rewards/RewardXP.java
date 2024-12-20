@@ -9,6 +9,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ResourceLocation;
 
 import betterquesting.api.questing.IQuest;
+import betterquesting.api.questing.rewards.AbstractReward;
 import betterquesting.api.questing.rewards.IReward;
 import betterquesting.api2.client.gui.misc.IGuiRect;
 import betterquesting.api2.client.gui.panels.IGuiPanel;
@@ -18,7 +19,7 @@ import bq_standard.rewards.factory.FactoryRewardXP;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
-public class RewardXP implements IReward {
+public class RewardXP extends AbstractReward implements IReward {
 
     public int amount = 1;
     public boolean levels = true;
@@ -39,18 +40,20 @@ public class RewardXP implements IReward {
     }
 
     @Override
-    public void claimReward(EntityPlayer player, Map.Entry<UUID, IQuest> quest) {
+    protected void claimReward0(EntityPlayer player, Map.Entry<UUID, IQuest> quest) {
         XPHelper.addXP(player, !levels ? amount : XPHelper.getLevelXP(amount));
     }
 
     @Override
     public void readFromNBT(NBTTagCompound nbt) {
+        super.readFromNBT(nbt);
         amount = nbt.getInteger("amount");
         levels = nbt.getBoolean("isLevels");
     }
 
     @Override
     public NBTTagCompound writeToNBT(NBTTagCompound nbt) {
+        super.writeToNBT(nbt);
         nbt.setInteger("amount", amount);
         nbt.setBoolean("isLevels", levels);
         return nbt;

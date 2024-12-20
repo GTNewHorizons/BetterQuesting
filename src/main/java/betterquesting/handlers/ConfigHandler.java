@@ -133,6 +133,11 @@ public class ConfigHandler {
             true,
             "Posts useful information in the log when encountering a null quest during loading.");
 
+        BQ_Settings.noRewards = config.getBoolean(
+            "Disable rewards",
+            Configuration.CATEGORY_GENERAL,
+            false,
+            "If true, rewards will be disabled. This might not be supported by reward types.");
         config.save();
     }
 }

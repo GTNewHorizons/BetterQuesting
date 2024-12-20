@@ -40,4 +40,5 @@ public class BQ_Settings {
     public static boolean loadDefaultsOnStartup = true;
     public static boolean logNullQuests = true;
     public static boolean unrestrictAdminCommands = false;
+    public static boolean noRewards = false;
 }
