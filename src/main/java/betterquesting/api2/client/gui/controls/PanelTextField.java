@@ -748,7 +748,7 @@ public class PanelTextField<T> implements IGuiPanel {
             }
             dragging = true;
 
-            // return true;
+            return true;
         } else if (this.isFocused && !lockFocus) {
             this.isFocused = false;
             this.text = filter.parseValue(this.text)
