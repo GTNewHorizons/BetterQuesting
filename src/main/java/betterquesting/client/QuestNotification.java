@@ -83,6 +83,7 @@ public class QuestNotification {
 
             if (notice.icon != null) {
                 RenderUtils.RenderItemStack(mc, notice.icon, width / 2 - 8, height / 4 - 20, "", color);
+                GL11.glEnable(GL11.GL_DEPTH_TEST);
             }
 
             GL11.glEnable(GL11.GL_BLEND);
