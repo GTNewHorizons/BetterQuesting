@@ -84,6 +84,12 @@ public class ConfigHandler {
             true,
             "If true, then when you click on Claim all, a warning dialog will be displayed");
 
+        BQ_Settings.claimAllRandomChoice = config.getBoolean(
+            "Claim all random select choice rewards",
+            Configuration.CATEGORY_GENERAL,
+            false,
+            "If true, then when you Claim all quests, choice rewards will be randomly selected");
+
         BQ_Settings.skipHome = config.getBoolean(
             "Skip home",
             Configuration.CATEGORY_GENERAL,

@@ -19,8 +19,12 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraftforge.common.config.Configuration;
+import net.minecraftforge.common.config.Property;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.lwjgl.util.vector.Vector4f;
+
+import com.google.common.collect.ImmutableList;
 
 import betterquesting.api.api.ApiReference;
 import betterquesting.api.api.QuestingAPI;
@@ -31,6 +35,7 @@ import betterquesting.api.properties.NativeProps;
 import betterquesting.api.questing.IQuest;
 import betterquesting.api.questing.IQuestLine;
 import betterquesting.api.questing.IQuestLineEntry;
+import betterquesting.api.questing.rewards.IReward;
 import betterquesting.api.storage.BQ_Settings;
 import betterquesting.api.utils.RenderUtils;
 import betterquesting.api.utils.UuidConverter;
@@ -56,7 +61,7 @@ import betterquesting.api2.client.gui.panels.content.PanelTextBox;
 import betterquesting.api2.client.gui.panels.lists.CanvasHoverTray;
 import betterquesting.api2.client.gui.panels.lists.CanvasQuestLine;
 import betterquesting.api2.client.gui.panels.lists.CanvasScrolling;
-import betterquesting.api2.client.gui.popups.PopChoice;
+import betterquesting.api2.client.gui.popups.PopChoiceExt;
 import betterquesting.api2.client.gui.popups.PopContextMenu;
 import betterquesting.api2.client.gui.resources.colors.GuiColorPulse;
 import betterquesting.api2.client.gui.resources.colors.GuiColorStatic;
@@ -65,6 +70,7 @@ import betterquesting.api2.client.gui.resources.textures.OreDictTexture;
 import betterquesting.api2.client.gui.themes.presets.PresetColor;
 import betterquesting.api2.client.gui.themes.presets.PresetIcon;
 import betterquesting.api2.client.gui.themes.presets.PresetTexture;
+import betterquesting.api2.storage.DBEntry;
 import betterquesting.api2.utils.QuestTranslation;
 import betterquesting.api2.utils.Tuple2;
 import betterquesting.client.BookmarkHandler;
@@ -75,6 +81,7 @@ import betterquesting.handlers.ConfigHandler;
 import betterquesting.network.handlers.NetQuestAction;
 import betterquesting.questing.QuestDatabase;
 import betterquesting.questing.QuestLineDatabase;
+import bq_standard.rewards.RewardChoice;
 
 public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, INeedsRefresh {
 
@@ -354,32 +361,63 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
         claimAll = new PanelButton(new GuiTransform(GuiAlign.TOP_LEFT, 8, yOff, 32, 16, -2), -1, "");
         claimAll.setIcon(PresetIcon.ICON_CHEST_ALL.getTexture());
         claimAll.setClickAction((b) -> {
-            if (BQ_Settings.claimAllConfirmation) {
-                openPopup(
-                    new PopChoice(
-                        QuestTranslation.translate("betterquesting.gui.claim_all_warning") + "\n\n"
-                            + QuestTranslation.translate("betterquesting.gui.claim_all_confirm"),
-                        PresetIcon.ICON_CHEST_ALL.getTexture(),
-                        integer -> {
-                            if (integer == 1) {
-                                ConfigHandler.config
-                                    .get(Configuration.CATEGORY_GENERAL, "Claim all requires confirmation", true)
-                                    .set(false);
-                                ConfigHandler.config.save();
-                                ConfigHandler.initConfigs();
-                            }
-                            if (integer <= 1) {
-                                claimAll();
-                            }
-                        },
-                        QuestTranslation.translate("gui.yes"),
-                        QuestTranslation.translate("betterquesting.gui.yes_always"),
-                        QuestTranslation.translate("gui.no")));
+            if (BQ_Settings.claimAllConfirmation || isShiftKeyDown()) {
+                Pair<List<UUID>, Integer> data = getAllPossibleClaims();
+                List<UUID> claimIdList = data != null ? data.getLeft() : null;
+                int numChoiceQuests = data != null ? data.getRight() : 0;
+
+                PopChoiceExt popup = new PopChoiceExt(
+                    QuestTranslation.translate("betterquesting.gui.claim_all_warning") + "\n\n"
+                        + QuestTranslation.translate("betterquesting.gui.claim_all_confirm")
+                        + "\n\n"
+                        + QuestTranslation.translate(
+                            "betterquesting.gui.claim_all_quest_count",
+                            claimIdList != null ? claimIdList.size() : 0)
+                        + "\n"
+                        + QuestTranslation
+                            .translate("betterquesting.gui.claim_all_choice_quest_count", numChoiceQuests),
+                    PresetIcon.ICON_CHEST_ALL.getTexture());
+
+                popup.addOption(
+                    QuestTranslation.translate("gui.yes"),
+                    btn -> claimAll(claimIdList, BQ_Settings.claimAllRandomChoice),
+                    true);
+                popup.addOption(QuestTranslation.translate("betterquesting.gui.yes_always"), btn -> {
+                    ConfigHandler.config.get(Configuration.CATEGORY_GENERAL, "Claim all requires confirmation", true)
+                        .set(false);
+                    ConfigHandler.config.save();
+                    ConfigHandler.initConfigs();
+                    claimAll(claimIdList, BQ_Settings.claimAllRandomChoice);
+                }, true);
+                popup.addOption(QuestTranslation.translate("gui.no"), null, true);
+
+                String startingChoice = BQ_Settings.claimAllRandomChoice ? "betterquesting.gui.force_choice_yes"
+                    : "betterquesting.gui.force_choice_no";
+                popup.addOption(QuestTranslation.translate(startingChoice), btn -> {
+                    // Always save the result of the checkbox, this way it is "remembered" for next time
+                    Property prop = ConfigHandler.config
+                        .get(Configuration.CATEGORY_GENERAL, "Claim all random select choice rewards", false);
+                    prop.set(!prop.getBoolean());
+                    ConfigHandler.config.save();
+                    ConfigHandler.initConfigs();
+
+                    String resultChoice = BQ_Settings.claimAllRandomChoice ? "betterquesting.gui.force_choice_yes"
+                        : "betterquesting.gui.force_choice_no";
+                    btn.setText(QuestTranslation.translate(resultChoice));
+                },
+                    false,
+                    QuestTranslation.translate("betterquesting.gui.force_choice_detailed_1"),
+                    QuestTranslation.translate("betterquesting.gui.force_choice_detailed_2"));
+
+                openPopup(popup);
             } else {
-                claimAll();
+                claimAll(BQ_Settings.claimAllRandomChoice);
             }
         });
-        claimAll.setTooltip(Collections.singletonList(QuestTranslation.translate("betterquesting.btn.claim_all")));
+        claimAll.setTooltip(
+            ImmutableList.of(
+                QuestTranslation.translate("betterquesting.btn.claim_all"),
+                QuestTranslation.translate("betterquesting.btn.claim_all_detailed")));
         cvBackground.addPanel(claimAll);
         yOff += 16;
 
@@ -620,26 +658,52 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
         }
     }
 
-    private void claimAll() {
+    private Pair<List<UUID>, Integer> getAllPossibleClaims() {
         if (cvQuest.getQuestButtons()
             .isEmpty()) {
-            return;
+            return null;
         }
 
         List<UUID> claimIdList = new ArrayList<>();
+        int numChoiceRewards = 0;
+
         for (PanelButtonQuest pbQuest : cvQuest.getQuestButtons()) {
             IQuest q = pbQuest.getStoredValue()
                 .getValue();
+
             if (q.getRewards()
-                .size() > 0 && q.canClaim(mc.thePlayer)) {
+                .size() == 0) continue;
+
+            // always true here for the maximum possible quests
+            if (q.canClaim(mc.thePlayer, true)) {
                 claimIdList.add(
                     pbQuest.getStoredValue()
                         .getKey());
             }
+
+            for (DBEntry<IReward> rewardEntry : q.getRewards()
+                .getEntries()) {
+                IReward reward = rewardEntry.getValue();
+                if (reward instanceof RewardChoice) {
+                    numChoiceRewards++;
+                    break;
+                }
+            }
         }
 
-        NetQuestAction.requestClaim(claimIdList);
+        return Pair.of(claimIdList, numChoiceRewards);
+    }
+
+    private void claimAll(List<UUID> claimIdList, boolean forceChoice) {
+        if (claimIdList == null || claimIdList.isEmpty()) return;
+        NetQuestAction.requestClaim(claimIdList, forceChoice);
         claimAll.setIcon(PresetIcon.ICON_CHEST_ALL.getTexture(), new GuiColorStatic(0xFF444444), 0);
+    }
+
+    private void claimAll(boolean forceChoice) {
+        Pair<List<UUID>, Integer> data = getAllPossibleClaims();
+        if (data == null) return;
+        claimAll(data.getLeft(), forceChoice);
     }
 
     @Override
@@ -898,16 +962,18 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
 
     private void refreshClaimAll() {
         if (cvQuest.getQuestLine() == null || cvQuest.getQuestButtons()
-            .size() <= 0) {
+            .isEmpty()) {
             claimAll.setActive(false);
             claimAll.setIcon(PresetIcon.ICON_CHEST_ALL.getTexture(), new GuiColorStatic(0xFF444444), 0);
             return;
         }
 
         for (PanelButtonQuest btn : cvQuest.getQuestButtons()) {
+            // Always check with forceChoice true to ensure the button can appear even if
+            // there are only choice reward quests available to claim currently
             if (btn.getStoredValue()
                 .getValue()
-                .canClaim(mc.thePlayer)) {
+                .canClaim(mc.thePlayer, true)) {
                 claimAll.setActive(true);
                 claimAll.setIcon(
                     PresetIcon.ICON_CHEST_ALL.getTexture(),

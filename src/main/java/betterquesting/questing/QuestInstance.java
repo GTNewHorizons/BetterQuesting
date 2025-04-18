@@ -47,6 +47,7 @@ import betterquesting.questing.rewards.RewardStorage;
 import betterquesting.questing.tasks.TaskStorage;
 import betterquesting.storage.PropertyContainer;
 import betterquesting.storage.QuestSettings;
+import bq_standard.rewards.RewardChoice;
 import drethic.questbook.config.QBConfig;
 
 public class QuestInstance implements IQuest {
@@ -220,26 +221,29 @@ public class QuestInstance implements IQuest {
     }
 
     @Override
-    public boolean canClaim(EntityPlayer player) {
+    public boolean canClaim(EntityPlayer player, boolean forceChoice) {
         if (!canClaimBasically(player)) return false;
         Map.Entry<UUID, IQuest> mapEntry = Maps.immutableEntry(QuestDatabase.INSTANCE.lookupKey(this), this);
         for (DBEntry<IReward> rew : rewards.getEntries()) {
-            if (!rew.getValue()
-                .canClaim(player, mapEntry)) {
-                return false;
-            }
+            IReward unwrapped = rew.getValue();
+            if (unwrapped instanceof RewardChoice && forceChoice) continue;
+            if (!unwrapped.canClaim(player, mapEntry)) return false;
         }
 
         return true;
     }
 
     @Override
-    public void claimReward(EntityPlayer player) {
+    public void claimReward(EntityPlayer player, boolean forceChoice) {
         UUID questID = QuestDatabase.INSTANCE.lookupKey(this);
         Map.Entry<UUID, IQuest> mapEntry = Maps.immutableEntry(questID, this);
         for (DBEntry<IReward> rew : rewards.getEntries()) {
-            rew.getValue()
-                .claimReward(player, mapEntry);
+            IReward unwrapped = rew.getValue();
+            if (forceChoice && unwrapped instanceof RewardChoice choiceReward) {
+                // Force a randomly selected choice reward
+                choiceReward.selectRandomChoice(player);
+            }
+            unwrapped.claimReward(player, mapEntry);
         }
 
         ParticipantInfo pInfo = new ParticipantInfo(player);

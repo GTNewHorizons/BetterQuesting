@@ -32,13 +32,13 @@ public class NetQuestAction {
     }
 
     @SideOnly(Side.CLIENT)
-    public static void requestClaim(@Nonnull Collection<UUID> questIDs) {
+    public static void requestClaim(@Nonnull Collection<UUID> questIDs, boolean forceChoice) {
         if (questIDs.isEmpty()) {
             return;
         }
 
         NBTTagCompound payload = new NBTTagCompound();
-        payload.setInteger("action", 0);
+        payload.setInteger("action", forceChoice ? 2 : 0);
         payload.setTag("questIDs", NBTConverter.UuidValueType.QUEST.writeIds(questIDs));
 
         PacketSender.INSTANCE.sendToServer(new QuestingPacket(ID_NAME, payload));
@@ -75,6 +75,10 @@ public class NetQuestAction {
                 detectQuest(getQuestIDs.get(), message.getSecond());
                 break;
             }
+            case 2: {
+                forceClaimQuest(getQuestIDs.get(), message.getSecond());
+                break;
+            }
             default: {
                 BetterQuesting.logger.log(
                     Level.ERROR,
@@ -90,6 +94,12 @@ public class NetQuestAction {
         QuestDatabase.INSTANCE.getAll(questIDs)
             .filter(q -> q.canClaim(player))
             .forEach(q -> q.claimReward(player));
+    }
+
+    public static void forceClaimQuest(Collection<UUID> questIDs, EntityPlayerMP player) {
+        QuestDatabase.INSTANCE.getAll(questIDs)
+            .filter(q -> q.canClaim(player, true))
+            .forEach(q -> q.claimReward(player, true));
     }
 
     public static void detectQuest(Collection<UUID> questIDs, EntityPlayerMP player) {

@@ -54,7 +54,11 @@ public interface IQuest extends INBTSaveLoad<NBTTagCompound>, INBTProgress<NBTTa
     /**
      * Can claim now. (Basically includes info from rewards (is choice reward chosen, for example))
      */
-    boolean canClaim(EntityPlayer player);
+    boolean canClaim(EntityPlayer player, boolean forceChoice);
+
+    default boolean canClaim(EntityPlayer player) {
+        return canClaim(player, false);
+    }
 
     /**
      * Can we claim reward at all. (If reward available but we can't claim cuz a rewards not ready (choice reward not
@@ -64,7 +68,11 @@ public interface IQuest extends INBTSaveLoad<NBTTagCompound>, INBTProgress<NBTTa
 
     boolean hasClaimed(UUID uuid);
 
-    void claimReward(EntityPlayer player);
+    void claimReward(EntityPlayer player, boolean forceChoice);
+
+    default void claimReward(EntityPlayer player) {
+        claimReward(player, false);
+    }
 
     void setClaimed(UUID uuid, long timestamp);
 

@@ -71,6 +71,10 @@ public class PopChoice extends CanvasEmpty {
             new PanelTextBox(new GuiTransform(GuiAlign.FULL_BOX, new GuiPadding(8, 8, 8, 8), 0), message)
                 .setAlignment(1));
 
+        addButtons();
+    }
+
+    public void addButtons() {
         final int maxW = 3;
         for (int i = 0; i < options.length; i++) {
             final int index = i;
@@ -88,7 +92,7 @@ public class PopChoice extends CanvasEmpty {
                     0),
                 -1,
                 options[i]);
-            btn.setClickAction((b) -> {
+            btn.setClickAction(b -> {
                 callback.accept(index);
                 if (SceneController.getActiveScene() != null) SceneController.getActiveScene()
                     .closePopup();

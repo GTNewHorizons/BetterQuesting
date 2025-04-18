@@ -27,6 +27,8 @@ import bq_standard.NBTReplaceUtil;
 import bq_standard.client.gui.rewards.PanelRewardChoice;
 import bq_standard.core.BQ_Standard;
 import bq_standard.rewards.factory.FactoryRewardChoice;
+import cpw.mods.fml.common.registry.GameRegistry;
+import cpw.mods.fml.common.registry.GameRegistry.UniqueIdentifier;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
@@ -62,19 +64,52 @@ public class RewardChoice extends AbstractReward implements IReward, IRewardItem
         selected.put(uuid, value);
     }
 
+    public void selectRandomChoice(EntityPlayer player) {
+        // No choices somehow, just exit early
+        if (choices.isEmpty()) return;
+
+        // Reward is already selected, no need to select anything
+        UUID playerUUID = QuestingAPI.getQuestingUUID(player);
+        if (selected.containsKey(playerUUID)) return;
+
+        // Try to prioritize any Lootbags in the choice rewards
+        List<Integer> candidates = new ArrayList<>();
+        for (int i = 0; i < choices.size(); i++) {
+            BigItemStack choice = choices.get(i);
+
+            // Sanity check
+            ItemStack baseStack = choice.getBaseStack();
+            UniqueIdentifier id = GameRegistry.findUniqueIdentifierFor(baseStack.getItem());
+            if (id == null) continue;
+            if (id.modId.equals("enhancedlootbags")) {
+                candidates.add(i);
+            }
+        }
+
+        int selection;
+        if (!candidates.isEmpty()) {
+            // If Lootbags were found, randomly select one of the Lootbags
+            selection = candidates.get((int) (Math.random() * candidates.size()));
+        } else {
+            // If Lootbags were not found, randomly select any reward
+            selection = (int) (Math.random() * choices.size());
+        }
+        setSelection(playerUUID, selection);
+    }
+
     @Override
     public boolean canClaim(EntityPlayer player, Map.Entry<UUID, IQuest> quest) {
         if (!selected.containsKey(QuestingAPI.getQuestingUUID(player))) return false;
 
         int tmp = selected.get(QuestingAPI.getQuestingUUID(player));
-        return choices.size() <= 0 || (tmp >= 0 && tmp < choices.size());
+        return choices.isEmpty() || (tmp >= 0 && tmp < choices.size());
     }
 
     @Override
     protected void claimReward0(EntityPlayer player, Map.Entry<UUID, IQuest> quest) {
         UUID playerID = QuestingAPI.getQuestingUUID(player);
 
-        if (choices.size() <= 0) {
+        if (choices.isEmpty()) {
             return;
         } else if (!selected.containsKey(playerID)) {
             return;

@@ -324,7 +324,7 @@ public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeeds
             mc.displayGuiScreen(new betterquesting.client.gui2.editors.GuiQuestEditor(this, questID));
         } else if (btn.getButtonID() == 6) // Reward claim
         {
-            NetQuestAction.requestClaim(Collections.singletonList(questID));
+            NetQuestAction.requestClaim(Collections.singletonList(questID), false);
         } else if (btn.getButtonID() == 7) // Task detect/submit
         {
             NetQuestAction.requestDetect(Collections.singletonList(questID));
