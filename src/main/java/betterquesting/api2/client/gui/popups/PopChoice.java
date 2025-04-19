@@ -1,5 +1,6 @@
 package betterquesting.api2.client.gui.popups;
 
+import java.util.List;
 import java.util.function.Consumer;
 
 import javax.annotation.Nonnull;
@@ -71,16 +72,12 @@ public class PopChoice extends CanvasEmpty {
             new PanelTextBox(new GuiTransform(GuiAlign.FULL_BOX, new GuiPadding(8, 8, 8, 8), 0), message)
                 .setAlignment(1));
 
-        addButtons();
-    }
-
-    public void addButtons() {
         final int maxW = 3;
-        for (int i = 0; i < options.length; i++) {
-            final int index = i;
+        final int count = getChoicesCount();
+        for (int i = 0; i < count; i++) {
             int rowY = i / maxW;
             int rowX = i % maxW;
-            int rowW = Math.min(3, options.length - (rowY * maxW)) * 112 - 16;
+            int rowW = Math.min(3, count - (rowY * maxW)) * 112 - 16;
 
             PanelButton btn = new PanelButton(
                 new GuiTransform(
@@ -91,14 +88,33 @@ public class PopChoice extends CanvasEmpty {
                     16,
                     0),
                 -1,
-                options[i]);
-            btn.setClickAction(b -> {
-                callback.accept(index);
-                if (SceneController.getActiveScene() != null) SceneController.getActiveScene()
-                    .closePopup();
-            });
+                getOptionString(i));
+
+            List<String> tooltips = getButtonTooltip(i);
+            if (tooltips != null) btn.setTooltip(tooltips);
+            setButtonAction(btn, i);
             this.addPanel(btn);
         }
+    }
+
+    protected int getChoicesCount() {
+        return options.length;
+    }
+
+    protected String getOptionString(int index) {
+        return options[index];
+    }
+
+    protected List<String> getButtonTooltip(int index) {
+        return null;
+    }
+
+    protected void setButtonAction(PanelButton btn, int index) {
+        btn.setClickAction(b -> {
+            callback.accept(index);
+            if (SceneController.getActiveScene() != null) SceneController.getActiveScene()
+                .closePopup();
+        });
     }
 
     // == TRAP ALL UI USAGE UNTIL CLOSED ===

@@ -8,11 +8,8 @@ import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import org.lwjgl.util.vector.Vector4f;
-
 import betterquesting.api2.client.gui.SceneController;
 import betterquesting.api2.client.gui.controls.PanelButton;
-import betterquesting.api2.client.gui.misc.GuiTransform;
 import betterquesting.api2.client.gui.resources.textures.IGuiTexture;
 
 /**
@@ -39,32 +36,28 @@ public class PopChoiceExt extends PopChoice {
     }
 
     @Override
-    public void addButtons() {
-        final int maxW = 3;
-        for (int i = 0; i < choices.size(); i++) {
-            int rowY = i / maxW;
-            int rowX = i % maxW;
-            int rowW = Math.min(3, choices.size() - (rowY * maxW)) * 112 - 16;
+    protected int getChoicesCount() {
+        return choices.size();
+    }
 
-            ChoiceData data = choices.get(i);
-            PanelButton btn = new PanelButton(
-                new GuiTransform(
-                    new Vector4f(0.5F, 0.6F, 0.5F, 0.6F),
-                    -rowW / 2 + rowX * 112,
-                    8 + 24 * rowY,
-                    96,
-                    16,
-                    0),
-                -1,
-                data.option);
-            btn.setTooltip(data.tooltips);
-            btn.setClickAction(b -> {
-                if (data.callback != null) data.callback.accept(b);
-                if (data.closesPanel && SceneController.getActiveScene() != null) SceneController.getActiveScene()
-                    .closePopup();
-            });
-            this.addPanel(btn);
-        }
+    @Override
+    protected String getOptionString(int index) {
+        return choices.get(index).option;
+    }
+
+    @Override
+    protected List<String> getButtonTooltip(int index) {
+        return choices.get(index).tooltips;
+    }
+
+    @Override
+    protected void setButtonAction(PanelButton btn, int index) {
+        ChoiceData data = choices.get(index);
+        btn.setClickAction(b -> {
+            if (data.callback != null) data.callback.accept(b);
+            if (data.closesPanel && SceneController.getActiveScene() != null) SceneController.getActiveScene()
+                .closePopup();
+        });
     }
 
     private static class ChoiceData {

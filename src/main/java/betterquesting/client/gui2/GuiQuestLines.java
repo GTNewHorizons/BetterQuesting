@@ -361,11 +361,11 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
         claimAll = new PanelButton(new GuiTransform(GuiAlign.TOP_LEFT, 8, yOff, 32, 16, -2), -1, "");
         claimAll.setIcon(PresetIcon.ICON_CHEST_ALL.getTexture());
         claimAll.setClickAction((b) -> {
-            if (BQ_Settings.claimAllConfirmation || isShiftKeyDown()) {
-                Pair<List<UUID>, Integer> data = getAllPossibleClaims();
-                List<UUID> claimIdList = data != null ? data.getLeft() : null;
-                int numChoiceQuests = data != null ? data.getRight() : 0;
+            Pair<List<UUID>, Integer> data = getAllPossibleClaims();
+            List<UUID> claimIdList = data != null ? data.getLeft() : null;
+            int numChoiceQuests = data != null ? data.getRight() : 0;
 
+            if (BQ_Settings.claimAllConfirmation || isShiftKeyDown()) {
                 PopChoiceExt popup = new PopChoiceExt(
                     QuestTranslation.translate("betterquesting.gui.claim_all_warning") + "\n\n"
                         + QuestTranslation.translate("betterquesting.gui.claim_all_confirm")
@@ -390,20 +390,14 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
                     claimAll(claimIdList, BQ_Settings.claimAllRandomChoice);
                 }, true);
                 popup.addOption(QuestTranslation.translate("gui.no"), null, true);
-
-                String startingChoice = BQ_Settings.claimAllRandomChoice ? "betterquesting.gui.force_choice_yes"
-                    : "betterquesting.gui.force_choice_no";
-                popup.addOption(QuestTranslation.translate(startingChoice), btn -> {
+                popup.addOption(getForceChoiceString(), btn -> {
                     // Always save the result of the checkbox, this way it is "remembered" for next time
                     Property prop = ConfigHandler.config
                         .get(Configuration.CATEGORY_GENERAL, "Claim all random select choice rewards", false);
                     prop.set(!prop.getBoolean());
                     ConfigHandler.config.save();
                     ConfigHandler.initConfigs();
-
-                    String resultChoice = BQ_Settings.claimAllRandomChoice ? "betterquesting.gui.force_choice_yes"
-                        : "betterquesting.gui.force_choice_no";
-                    btn.setText(QuestTranslation.translate(resultChoice));
+                    btn.setText(getForceChoiceString());
                 },
                     false,
                     QuestTranslation.translate("betterquesting.gui.force_choice_detailed_1"),
@@ -411,7 +405,7 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
 
                 openPopup(popup);
             } else {
-                claimAll(BQ_Settings.claimAllRandomChoice);
+                claimAll(claimIdList, BQ_Settings.claimAllRandomChoice);
             }
         });
         claimAll.setTooltip(
@@ -599,6 +593,12 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
         cvLines.updatePanelScroll();
     }
 
+    private String getForceChoiceString() {
+        String key = BQ_Settings.claimAllRandomChoice ? "betterquesting.gui.force_choice_yes"
+            : "betterquesting.gui.force_choice_no";
+        return QuestTranslation.translate(key);
+    }
+
     private GuiBookmarks initBookmarksPanel() {
         GuiBookmarks pinsGui = new GuiBookmarks(this);
         pinsGui.setCallback(entry -> {
@@ -696,14 +696,12 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
 
     private void claimAll(List<UUID> claimIdList, boolean forceChoice) {
         if (claimIdList == null || claimIdList.isEmpty()) return;
-        NetQuestAction.requestClaim(claimIdList, forceChoice);
+        if (forceChoice) {
+            NetQuestAction.requestClaimForced(claimIdList);
+        } else {
+            NetQuestAction.requestClaim(claimIdList);
+        }
         claimAll.setIcon(PresetIcon.ICON_CHEST_ALL.getTexture(), new GuiColorStatic(0xFF444444), 0);
-    }
-
-    private void claimAll(boolean forceChoice) {
-        Pair<List<UUID>, Integer> data = getAllPossibleClaims();
-        if (data == null) return;
-        claimAll(data.getLeft(), forceChoice);
     }
 
     @Override
