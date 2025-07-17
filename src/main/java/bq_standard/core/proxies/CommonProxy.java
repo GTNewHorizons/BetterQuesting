@@ -24,7 +24,6 @@ import bq_standard.rewards.factory.FactoryRewardItem;
 import bq_standard.rewards.factory.FactoryRewardQuestCompletion;
 import bq_standard.rewards.factory.FactoryRewardScoreboard;
 import bq_standard.rewards.factory.FactoryRewardXP;
-import bq_standard.rewards.loot.LootRegistry;
 import bq_standard.tasks.factory.FactoryTaskBlockBreak;
 import bq_standard.tasks.factory.FactoryTaskCheckbox;
 import bq_standard.tasks.factory.FactoryTaskCrafting;
