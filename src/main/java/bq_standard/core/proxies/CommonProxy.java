@@ -47,7 +47,6 @@ public class CommonProxy {
     }
 
     public void registerHandlers() {
-        MinecraftForge.EVENT_BUS.register(LootRegistry.INSTANCE);
         EventHandler evHandle = new EventHandler();
         FMLCommonHandler.instance()
             .bus()
