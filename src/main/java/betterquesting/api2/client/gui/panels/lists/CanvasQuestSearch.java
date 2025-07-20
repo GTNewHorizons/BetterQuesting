@@ -131,6 +131,9 @@ public class CanvasQuestSearch extends CanvasSearch<QuestSearchEntry, QuestSearc
 
     @Override
     protected boolean addResult(QuestSearchEntry entry, int index, int cachedWidth) {
+        if (entry.getQuest() == null || entry.getQuest()
+            .getValue() == null) return false;
+
         PanelButtonCustom buttonContainer = createContainerButton(entry, index, cachedWidth);
 
         addTextBox(
