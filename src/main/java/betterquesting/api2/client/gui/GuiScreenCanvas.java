@@ -12,12 +12,12 @@ import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.item.ItemStack;
 
+import net.minecraft.util.EnumChatFormatting;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 
 import com.caedis.duradisplay.render.DurabilityRenderer;
-import com.mojang.realmsclient.gui.ChatFormatting;
 
 import betterquesting.api.client.gui.misc.IVolatileScreen;
 import betterquesting.api.storage.BQ_Settings;
@@ -467,7 +467,7 @@ public class GuiScreenCanvas extends GuiScreen implements IScene {
             if (i == 0) {
                 list.set(i, stack.getRarity().rarityColor + list.get(i));
             } else {
-                list.set(i, ChatFormatting.GRAY + list.get(i));
+                list.set(i, EnumChatFormatting.GRAY + list.get(i));
             }
         }
 

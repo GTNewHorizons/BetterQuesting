@@ -10,10 +10,10 @@ import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 
+import net.minecraft.util.EnumChatFormatting;
 import org.lwjgl.util.vector.Vector4f;
 
 import com.google.common.collect.Maps;
-import com.mojang.realmsclient.gui.ChatFormatting;
 
 import betterquesting.api.client.gui.misc.INeedsRefresh;
 import betterquesting.api.client.gui.misc.IVolatileScreen;
@@ -253,7 +253,7 @@ public class GuiTaskEditor extends GuiScreenCanvas implements IPEventListener, I
                 new PanelButtonStorage<>(
                     new GuiRectangle(w - 16, i * 16, 16, 16, 0),
                     2,
-                    "" + ChatFormatting.RED + ChatFormatting.BOLD + "x",
+                    "" + EnumChatFormatting.RED + EnumChatFormatting.BOLD + "x",
                     task));
         }
     }

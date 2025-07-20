@@ -11,12 +11,11 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.ChatComponentText;
+import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
 
 import org.apache.logging.log4j.Level;
-
-import com.mojang.realmsclient.gui.ChatFormatting;
 
 import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.events.DatabaseEvent;
@@ -69,7 +68,7 @@ public class NetChapterEdit {
                     + QuestingAPI.getQuestingUUID(sender)
                     + ") tried to edit chapters without OP permissions!");
             sender.addChatComponentMessage(
-                new ChatComponentText(ChatFormatting.RED + "You need to be OP to edit quests!"));
+                new ChatComponentText(EnumChatFormatting.RED + "You need to be OP to edit quests!"));
             return; // Player is not operator. Do nothing
         }
 

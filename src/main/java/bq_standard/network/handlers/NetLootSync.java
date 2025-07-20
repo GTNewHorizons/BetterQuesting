@@ -5,11 +5,10 @@ import javax.annotation.Nullable;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ChatComponentText;
+import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.ResourceLocation;
 
 import org.apache.logging.log4j.Level;
-
-import com.mojang.realmsclient.gui.ChatFormatting;
 
 import betterquesting.api.api.ApiReference;
 import betterquesting.api.api.QuestingAPI;
@@ -69,7 +68,7 @@ public class NetLootSync {
                     + QuestingAPI.getQuestingUUID(sender)
                     + ") tried to edit loot chests without OP permissions!");
             sender
-                .addChatComponentMessage(new ChatComponentText(ChatFormatting.RED + "You need to be OP to edit loot!"));
+                .addChatComponentMessage(new ChatComponentText(EnumChatFormatting.RED + "You need to be OP to edit loot!"));
             return; // Player is not operator. Do nothing
         }
 

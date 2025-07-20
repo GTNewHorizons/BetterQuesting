@@ -13,13 +13,13 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.ChatComponentText;
+import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.ResourceLocation;
 
 import org.apache.logging.log4j.Level;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
-import com.mojang.realmsclient.gui.ChatFormatting;
 
 import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.network.QuestingPacket;
@@ -71,7 +71,7 @@ public class NetImport {
                     + QuestingAPI.getQuestingUUID(sender)
                     + ") tried to import quests without OP permissions!");
             sender.addChatComponentMessage(
-                new ChatComponentText(ChatFormatting.RED + "You need to be OP to edit quests!"));
+                new ChatComponentText(EnumChatFormatting.RED + "You need to be OP to edit quests!"));
             return; // Player is not operator. Do nothing
         }
 
