@@ -54,9 +54,8 @@ public class PanelButtonQuest extends PanelButtonStorage<Map.Entry<UUID, IQuest>
         player = Minecraft.getMinecraft().thePlayer;
 
         if (value == null) {
-            value = Maps.immutableEntry(UUID.randomUUID(), new QuestInstance());
-        } else if (value.getValue() == null) {
-            value.setValue(new QuestInstance());
+            IQuest dummyQuest = new QuestInstance();
+            value = Maps.immutableEntry(UUID.randomUUID(), dummyQuest);
         }
 
         EnumQuestState qState = value.getValue()
