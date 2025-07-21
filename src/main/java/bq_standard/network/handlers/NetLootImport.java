@@ -50,8 +50,8 @@ public class NetLootImport {
                     + " (UUID:"
                     + QuestingAPI.getQuestingUUID(sender)
                     + ") tried to import loot without OP permissions!");
-            sender
-                .addChatComponentMessage(new ChatComponentText(EnumChatFormatting.RED + "You need to be OP to edit loot!"));
+            sender.addChatComponentMessage(
+                new ChatComponentText(EnumChatFormatting.RED + "You need to be OP to edit loot!"));
             return; // Player is not operator. Do nothing
         }
 

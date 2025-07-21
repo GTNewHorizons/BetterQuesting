@@ -9,8 +9,8 @@ import java.util.UUID;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
-
 import net.minecraft.util.EnumChatFormatting;
+
 import org.lwjgl.util.vector.Vector4f;
 
 import com.google.common.collect.Maps;

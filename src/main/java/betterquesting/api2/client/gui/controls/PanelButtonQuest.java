@@ -12,6 +12,7 @@ import javax.annotation.Nullable;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.EnumChatFormatting;
 
 import com.google.common.collect.Maps;
 
@@ -37,7 +38,6 @@ import betterquesting.client.BookmarkHandler;
 import betterquesting.questing.QuestDatabase;
 import betterquesting.questing.QuestInstance;
 import betterquesting.storage.QuestSettings;
-import net.minecraft.util.EnumChatFormatting;
 
 public class PanelButtonQuest extends PanelButtonStorage<Map.Entry<UUID, IQuest>> {
 
@@ -160,7 +160,8 @@ public class PanelButtonQuest extends PanelButtonStorage<Map.Entry<UUID, IQuest>
             list.add(EnumChatFormatting.GREEN + QuestTranslation.translate("betterquesting.tooltip.complete"));
 
             if (quest.canClaimBasically(player)) {
-                list.add(EnumChatFormatting.GRAY + QuestTranslation.translate("betterquesting.tooltip.rewards_pending"));
+                list.add(
+                    EnumChatFormatting.GRAY + QuestTranslation.translate("betterquesting.tooltip.rewards_pending"));
             } else if (!quest.hasClaimed(playerID)) {
                 list.add(EnumChatFormatting.GRAY + QuestTranslation.translate("betterquesting.tooltip.repeatable"));
             } else if (quest.getProperty(NativeProps.REPEAT_TIME) > 0) {
@@ -180,7 +181,8 @@ public class PanelButtonQuest extends PanelButtonStorage<Map.Entry<UUID, IQuest>
 
                 timeTxt += df.format(time % 60) + "s";
 
-                list.add(EnumChatFormatting.GRAY + QuestTranslation.translate("betterquesting.tooltip.repeat", timeTxt));
+                list.add(
+                    EnumChatFormatting.GRAY + QuestTranslation.translate("betterquesting.tooltip.repeat", timeTxt));
                 if (QuestSettings.INSTANCE.getProperty(NativeProps.EDIT_MODE)) {
                     list.add(
                         EnumChatFormatting.RED
