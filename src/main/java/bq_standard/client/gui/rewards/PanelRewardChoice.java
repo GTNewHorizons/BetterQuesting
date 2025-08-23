@@ -56,7 +56,6 @@ public class PanelRewardChoice extends CanvasMinimum {
             BigItemStack stack = reward.choices.get(i);
             GuiRectangle guiRectangle = new GuiRectangle(40, i * 18, 18, 18, 0);
             PanelItemSlot is = PanelItemSlotBuilder.forValue(stack, guiRectangle)
-                .showCount(true)
                 .build();
             this.addPanel(is);
 
