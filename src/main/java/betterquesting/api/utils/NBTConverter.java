@@ -292,13 +292,18 @@ public class NBTConverter {
             if (!format) {
                 tags.setTag(key, JSONtoNBT_Element(entry.getValue(), (byte) 0, false));
             } else {
-                String[] s = key.split(":");
+                // Optimized key parsing without String.split()
                 byte id = 0;
+                String keyToUse = key;
 
                 try {
-                    id = Byte.parseByte(s[s.length - 1]);
-                    key = key.substring(0, key.lastIndexOf(":" + id));
-                } catch (Exception e) {
+                    int lastColonIndex = key.lastIndexOf(':');
+                    if (lastColonIndex != -1) {
+                        id = Byte.parseByte(key.substring(lastColonIndex + 1));
+                        keyToUse = key.substring(0, lastColonIndex);
+                    }
+                } catch (NumberFormatException e) {
+                    // Invalid ID format, use original key and id=0
                     if (tags.hasKey(key)) {
                         QuestingAPI.getLogger()
                             .log(Level.WARN, "JSON/NBT formatting conflict on key '" + key + "'. Skipping...");
@@ -306,7 +311,7 @@ public class NBTConverter {
                     }
                 }
 
-                tags.setTag(key, JSONtoNBT_Element(entry.getValue(), id, true));
+                tags.setTag(keyToUse, JSONtoNBT_Element(entry.getValue(), id, true));
             }
         }
 
@@ -362,9 +367,8 @@ public class NBTConverter {
 
                 if (jObj.isJsonArray()) {
                     JsonArray jAry = jObj.getAsJsonArray();
-
-                    for (int i = 0; i < jAry.size(); i++) {
-                        JsonElement jElm = jAry.get(i);
+                    // enhanced for-loop for better performance
+                    for (JsonElement jElm : jAry) {
                         tList.appendTag(JSONtoNBT_Element(jElm, (byte) 0, format));
                     }
                 } else if (jObj.isJsonObject()) {
@@ -372,10 +376,10 @@ public class NBTConverter {
 
                     for (Entry<String, JsonElement> entry : jAry.entrySet()) {
                         try {
-                            String[] s = entry.getKey()
-                                .split(":");
-                            byte id2 = Byte.parseByte(s[s.length - 1]);
-                            // String key = entry.getKey().substring(0, entry.getKey().lastIndexOf(":" + id));
+                            // Avoid String.split() for better performance
+                            String key = entry.getKey();
+                            int lastColonIndex = key.lastIndexOf(':');
+                            byte id2 = lastColonIndex != -1 ? Byte.parseByte(key.substring(lastColonIndex + 1)) : 0;
                             tList.appendTag(JSONtoNBT_Element(entry.getValue(), id2, format));
                         } catch (Exception e) {
                             tList.appendTag(JSONtoNBT_Element(entry.getValue(), (byte) 0, format));

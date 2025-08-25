@@ -135,11 +135,15 @@ public class QuestDatabase extends UuidDatabase<IQuest> implements IQuestDatabas
 
     @Override
     public synchronized void readProgressFromNBT(NBTTagList json, boolean merge) {
-        for (int i = 0; i < json.tagCount(); i++) {
+        // Cache tagCount to avoid repeated method calls
+        final int tagCount = json.tagCount();
+
+        for (int i = 0; i < tagCount; i++) {
             NBTTagCompound qTag = json.getCompoundTagAt(i);
 
-            Optional<UUID> questIDOptional = NBTConverter.UuidValueType.QUEST.tryReadId(qTag);
+            // Streamlined UUID reading with early returns
             UUID questID = null;
+            Optional<UUID> questIDOptional = NBTConverter.UuidValueType.QUEST.tryReadId(qTag);
             if (questIDOptional.isPresent()) {
                 questID = questIDOptional.get();
             } else if (qTag.hasKey("questID", 99)) {
@@ -147,10 +151,8 @@ public class QuestDatabase extends UuidDatabase<IQuest> implements IQuestDatabas
                 questID = UuidConverter.convertLegacyId(qTag.getInteger("questID"));
             }
 
-            if (questID == null) {
-                // Quest was deleted
-                continue;
-            }
+            // Single null check with continue
+            if (questID == null) continue;
 
             IQuest quest = get(questID);
             if (quest != null) {
