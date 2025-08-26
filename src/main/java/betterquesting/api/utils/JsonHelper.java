@@ -175,7 +175,8 @@ public class JsonHelper {
 
             // NOTE: These are now split due to an edge case in the previous implementation where resource leaking can
             // occur should the outer constructor fail
-            // Added BufferedReader for better performance with large files (and doesn't need to close since is try-with-resources handles it)
+            // Added BufferedReader for better performance with large files (and doesn't need to close since is
+            // try-with-resources handles it)
             try (FileInputStream fis = new FileInputStream(file);
                 InputStreamReader fr = new InputStreamReader(fis, StandardCharsets.UTF_8);
                 java.io.BufferedReader br = new java.io.BufferedReader(fr, 32768)) { // 32KB buffer
