@@ -296,11 +296,8 @@ public class NBTConverter {
                 byte id = 0;
 
                 try {
-                    int lastColonIndex = key.lastIndexOf(':');
-                    if (lastColonIndex != -1) {
-                        id = Byte.parseByte(key.substring(lastColonIndex + 1));
-                        key = key.substring(0, key.lastIndexOf(":" + id));
-                    }
+                    id = Byte.parseByte(key.substring(key.lastIndexOf(':') + 1));
+                    key = key.substring(0, key.lastIndexOf(":" + id));
                 } catch (Exception e) { // Catch all exceptions
                     // Invalid ID format, use original key and id=0
                     if (tags.hasKey(key)) {
