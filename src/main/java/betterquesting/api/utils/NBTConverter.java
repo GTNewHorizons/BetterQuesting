@@ -294,15 +294,14 @@ public class NBTConverter {
             } else {
                 // Optimized key parsing without String.split()
                 byte id = 0;
-                String keyToUse = key;
 
                 try {
                     int lastColonIndex = key.lastIndexOf(':');
                     if (lastColonIndex != -1) {
                         id = Byte.parseByte(key.substring(lastColonIndex + 1));
-                        keyToUse = key.substring(0, lastColonIndex);
+                        key = key.substring(0, key.lastIndexOf(":" + id));
                     }
-                } catch (NumberFormatException e) {
+                } catch (Exception e) { // Catch all exceptions
                     // Invalid ID format, use original key and id=0
                     if (tags.hasKey(key)) {
                         QuestingAPI.getLogger()
@@ -311,7 +310,7 @@ public class NBTConverter {
                     }
                 }
 
-                tags.setTag(keyToUse, JSONtoNBT_Element(entry.getValue(), id, true));
+                tags.setTag(key, JSONtoNBT_Element(entry.getValue(), id, true));
             }
         }
 
@@ -457,7 +456,7 @@ public class NBTConverter {
             if (prim.isNumber()) {
                 if (prim.getAsString()
                     .contains(".")) // Just in case we'll choose the largest possible container supporting this number
-                                    // type (Long or Double)
+                // type (Long or Double)
                 {
                     tagID = 6;
                 } else {
@@ -473,8 +472,8 @@ public class NBTConverter {
 
             for (JsonElement entry : array) {
                 if (entry.isJsonPrimitive() && tagID == 0) // Note: TagLists can only support Integers, Bytes and
-                                                           // Compounds (Strings can be stored but require special
-                                                           // handling)
+                // Compounds (Strings can be stored but require special
+                // handling)
                 {
                     try {
                         for (JsonElement element : array) {
