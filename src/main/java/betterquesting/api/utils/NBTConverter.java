@@ -294,10 +294,14 @@ public class NBTConverter {
             } else {
                 // Optimized key parsing without String.split()
                 byte id = 0;
+                String keyToUse = key;
 
                 try {
-                    id = Byte.parseByte(key.substring(key.lastIndexOf(':') + 1));
-                    key = key.substring(0, key.lastIndexOf(":" + id));
+                    int lastColonIndex = key.lastIndexOf(':');
+                    if (lastColonIndex != -1) {
+                        id = Byte.parseByte(key.substring(lastColonIndex + 1));
+                        keyToUse = key.substring(0, lastColonIndex); // Simple colon cut
+                    }
                 } catch (Exception e) { // Catch all exceptions
                     // Invalid ID format, use original key and id=0
                     if (tags.hasKey(key)) {
@@ -307,7 +311,7 @@ public class NBTConverter {
                     }
                 }
 
-                tags.setTag(key, JSONtoNBT_Element(entry.getValue(), id, true));
+                tags.setTag(keyToUse, JSONtoNBT_Element(entry.getValue(), id, true));
             }
         }
 
@@ -374,8 +378,11 @@ public class NBTConverter {
                         try {
                             // Avoid String.split() for better performance
                             String key = entry.getKey();
+                            byte id2 = 0;
                             int lastColonIndex = key.lastIndexOf(':');
-                            byte id2 = lastColonIndex != -1 ? Byte.parseByte(key.substring(lastColonIndex + 1)) : 0;
+                            if (lastColonIndex != -1) {
+                                id2 = Byte.parseByte(key.substring(lastColonIndex + 1));
+                            }
                             tList.appendTag(JSONtoNBT_Element(entry.getValue(), id2, format));
                         } catch (Exception e) {
                             tList.appendTag(JSONtoNBT_Element(entry.getValue(), (byte) 0, format));
