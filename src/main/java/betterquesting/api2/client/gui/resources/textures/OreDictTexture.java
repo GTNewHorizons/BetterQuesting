@@ -47,7 +47,7 @@ public class OreDictTexture extends SlideShowTexture {
                     list.add(new ItemTexture(bis, showCount, keepAspect));
                 });
             } else {
-                list.add(new ItemTexture(stack));
+                list.add(new ItemTexture(stack, showCount, keepAspect));
             }
             return list;
         }
