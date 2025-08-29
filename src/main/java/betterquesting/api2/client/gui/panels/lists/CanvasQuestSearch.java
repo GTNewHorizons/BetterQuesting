@@ -76,57 +76,75 @@ public class CanvasQuestSearch extends CanvasSearch<QuestSearchEntry, QuestSearc
 
     @Override
     protected void queryMatches(QuestSearchEntry entry, String query, ArrayDeque<QuestSearchEntry> results) {
-        // claimable quests
-        if ("@complete".startsWith(query) && 1 < query.length()) {
-            if (entry.getQuest()
-                .getValue()
-                .isComplete(questingUUID)
-                && entry.getQuest()
+        try {
+            // claimable quests
+            if ("@complete".startsWith(query) && 1 < query.length()) {
+                if (entry.getQuest()
                     .getValue()
-                    .canClaim(player)) {
-                results.add(entry);
-            }
-        } else if (
-        // quest id
-        UuidConverter.encodeUuid(
-            entry.getQuest()
-                .getKey())
-            .toLowerCase()
-            .contains(query)
-            // quest title
-            || entry.getQuest()
-                .getValue()
-                .getProperty(NativeProps.NAME)
-                .toLowerCase()
-                .contains(query)
-            || QuestTranslation.translateQuestName(entry.getQuest())
-                .toLowerCase()
-                .contains(query)
-            // quest desc
-            || entry.getQuest()
-                .getValue()
-                .getProperty(NativeProps.DESC)
-                .toLowerCase()
-                .contains(query)
-            || QuestTranslation.translateQuestDescription(entry.getQuest())
-                .toLowerCase()
-                .contains(query)) {
-                    results.add(entry);
-                } else {
-                    for (DBEntry<ITask> task : entry.getQuest()
+                    .isComplete(questingUUID)
+                    && entry.getQuest()
                         .getValue()
-                        .getTasks()
-                        .getEntries()) {
-                        if (task.getValue()
-                            .getTextsForSearch() == null) continue;
-                        for (String text : task.getValue()
-                            .getTextsForSearch()) {
-                            if (StringUtils.containsIgnoreCase(text, query)) {
-                                results.add(entry);
+                        .canClaim(player)) {
+                    results.add(entry);
+                }
+            } else if (
+            // quest id
+            UuidConverter.encodeUuid(
+                entry.getQuest()
+                    .getKey())
+                .toLowerCase()
+                .contains(query)
+                // quest title
+                || entry.getQuest()
+                    .getValue()
+                    .getProperty(NativeProps.NAME)
+                    .toLowerCase()
+                    .contains(query)
+                || QuestTranslation.translateQuestName(entry.getQuest())
+                    .toLowerCase()
+                    .contains(query)
+                // quest desc
+                || entry.getQuest()
+                    .getValue()
+                    .getProperty(NativeProps.DESC)
+                    .toLowerCase()
+                    .contains(query)
+                || QuestTranslation.translateQuestDescription(entry.getQuest())
+                    .toLowerCase()
+                    .contains(query)) {
+                        results.add(entry);
+                    } else {
+                        for (DBEntry<ITask> task : entry.getQuest()
+                            .getValue()
+                            .getTasks()
+                            .getEntries()) {
+                            if (task.getValue()
+                                .getTextsForSearch() == null) continue;
+                            for (String text : task.getValue()
+                                .getTextsForSearch()) {
+                                if (StringUtils.containsIgnoreCase(text, query)) {
+                                    results.add(entry);
+                                }
                             }
                         }
                     }
-                }
+        } catch (Throwable t) {
+            QuestingAPI.getLogger()
+                .error(
+                    "Unexpected exception while checking if quest with ID '{}' from quest line '{}' matches query '{}'!",
+                    UuidConverter.encodeUuid(
+                        entry.getQuest()
+                            .getKey())
+                        .toLowerCase(),
+                    UuidConverter.encodeUuid(
+                        entry.getQuestLineEntry()
+                            .getKey())
+                        .toLowerCase(),
+                    query);
+            QuestingAPI.getLogger()
+                .error(t);
+            throw new RuntimeException("Unexpected exception while checking if quest matched query", t);
+        }
     }
 
     @Override
