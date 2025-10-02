@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.List;
 
 import javax.annotation.Nonnull;
+
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.oredict.OreDictionary;
@@ -28,7 +29,8 @@ public class OreDictTexture extends SlideShowTexture {
         return list;
     }
 
-    private static List<ItemTexture> splitOreTextures(@Nonnull BigItemStack stack, boolean showCount, boolean keepAspect) {
+    private static List<ItemTexture> splitOreTextures(@Nonnull BigItemStack stack, boolean showCount,
+        boolean keepAspect) {
         List<ItemTexture> list = new ArrayList<>();
 
         if (!stack.hasOreDict()) {

@@ -98,7 +98,7 @@ public class PanelButtonQuest extends PanelButtonStorage<Map.Entry<UUID, IQuest>
             new OreDictTexture(
                 1F,
                 value.getValue()
-                    .getProperty(NativeProps.ICON),
+                    .getOrDefault(NativeProps.ICON, NativeProps.ICON.getDefault()),
                 false,
                 true),
             4);
