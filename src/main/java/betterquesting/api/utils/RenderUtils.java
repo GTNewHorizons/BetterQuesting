@@ -2,7 +2,9 @@ package betterquesting.api.utils;
 
 import java.awt.Color;
 import java.nio.FloatBuffer;
+import java.text.BreakIterator;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Stack;
@@ -40,6 +42,7 @@ public class RenderUtils {
     public static final RenderItem itemRender = new RenderItem();
 
     private static final int SPLIT_STRING_TRIAL_LIMIT = 1000;
+    private static final Stack<IGuiRect> scissorStack = new Stack<>();
 
     public static void RenderItemStack(Minecraft mc, ItemStack stack, int x, int y, String text) {
         RenderItemStack(mc, stack, x, y, 16F, text, 0xFFFFFFFF);
@@ -69,7 +72,7 @@ public class RenderUtils {
 
         GL11.glTranslatef(0.0F, 0.0F, z);
         itemRender.zLevel = -50F; // Counters internal Z depth change so that GL translation makes sense // NOTE:
-                                  // Slightly different depth in 1.7.10
+        // Slightly different depth in 1.7.10
 
         FontRenderer font = stack.getItem()
             .getFontRenderer(stack);
@@ -136,7 +139,7 @@ public class RenderUtils {
             GL11.glEnable(GL11.GL_DEPTH_TEST);
             GL11.glTranslatef(posX, posY, posZ);
             GL11.glScalef((float) -scale, (float) scale, (float) scale); // Not entirely sure why mobs are flipped but
-                                                                         // this is how vanilla GUIs fix it so...
+            // this is how vanilla GUIs fix it so...
             GL11.glRotatef(180F, 0F, 0F, 1F);
             GL11.glRotatef(pitch, 1F, 0F, 0F);
             GL11.glRotatef(rotation, 0F, 1F, 0F);
@@ -242,12 +245,12 @@ public class RenderUtils {
             splitString(string, width, renderer).size() - 1);
     }
 
+    // TODO: Clean this up. The list of parameters is getting a bit excessive
+
     public static void drawSplitString(FontRenderer renderer, String string, int x, int y, int width, int color,
         boolean shadow, int start, int end) {
         drawHighlightedSplitString(renderer, string, x, y, width, color, shadow, start, end, 0, 0, 0);
     }
-
-    // TODO: Clean this up. The list of parameters is getting a bit excessive
 
     public static void drawHighlightedSplitString(FontRenderer renderer, String string, int x, int y, int width,
         int color, boolean shadow, int highlightColor, int highlightStart, int highlightEnd) {
@@ -276,7 +279,7 @@ public class RenderUtils {
 
         List<String> list = splitString(string, width, renderer);
         List<String> noFormat = splitStringWithoutFormat(string, width, renderer); // Needed for accurate highlight
-                                                                                   // index positions
+        // index positions
 
         if (list.size() != noFormat.size()) {
             // BetterQuesting.logger.error("Line count mismatch (" + list.size() + " != " + noFormat.size() + ") while
@@ -442,8 +445,6 @@ public class RenderUtils {
         GL11.glDisable(GL11.GL_BLEND);
     }
 
-    private static final Stack<IGuiRect> scissorStack = new Stack<>();
-
     /**
      * Performs a OpenGL scissor based on Minecraft's resolution instead of display resolution and adds it to the stack
      * of ongoing scissors.
@@ -508,84 +509,94 @@ public class RenderUtils {
         }
     }
 
+    private static Locale getLocale() {
+        var lang = Minecraft.getMinecraft()
+            .getLanguageManager()
+            .getCurrentLanguage();
+        var locale = Locale.forLanguageTag(
+            lang.toString()
+                .replace(" (", "-")
+                .replace(")", ""));
+        if (locale == null) {
+            locale = Locale.forLanguageTag(lang.getLanguageCode());
+        }
+        if (locale == null) {
+            locale = Locale.ENGLISH;
+        }
+        return locale;
+    }
+
     /**
      * Similar to normally splitting a string with the fontRenderer however this variant does
      * not attempt to preserve the formatting between lines. This is particularly important when the
      * index positions in the text are required to match the original unwrapped text.
      */
     public static List<String> splitStringWithoutFormat(String str, int wrapWidth, FontRenderer font) {
-        List<String> list = new ArrayList<>();
-
-        String lastFormat = ""; // Formatting like bold can affect the wrapping width
-        String temp = str;
-
-        int trial = 0;
-
-        while (true) {
-            // in some cases this goes into infinite loop
-            // todo: figure out fundamental fix
-            trial++;
-            if (trial > SPLIT_STRING_TRIAL_LIMIT) break;
-
-            int i = sizeStringToWidth(lastFormat + temp, wrapWidth, font); // Cut to size WITH formatting
-            i -= lastFormat.length(); // Remove formatting characters from count
-
-            if (temp.length() <= i) {
-                list.add(temp);
-                break;
-            } else {
-                String s = temp.substring(0, i);
-                char c0 = temp.charAt(i);
-                boolean flag = c0 == ' ' || c0 == '\n';
-                lastFormat = getFormatFromString(lastFormat + s);
-                temp = temp.substring(i + (flag ? 1 : 0));
-                // NOTE: The index actually stops just before the space/nl so we don't need to remove it from THIS line.
-                // This is why the previous line moves forward by one for the NEXT line
-                list.add(s + (flag ? "\n" : "")); // Although we need to remove the spaces between each line we have to
-                                                  // replace them with invisible new line characters to preserve the
-                                                  // index count
-
-                if (temp.length() <= 0 && !flag) {
-                    break;
-                }
-            }
-        }
-
-        return list;
+        return splitString(str, wrapWidth, font, false);
     }
 
     public static List<String> splitString(String str, int wrapWidth, FontRenderer font) {
-        List<String> list = new ArrayList<>();
+        return splitString(str, wrapWidth, font, true);
+    }
 
-        String temp = str;
+    private static List<String> splitString(final String str, final int wrapWidth, final FontRenderer font,
+        final boolean withFormat) {
+        if (str == null || str.isEmpty()) return Collections.emptyList();
 
-        int trial = 0;
+        var lines = str.split("\n", -1);
+        var locale = getLocale();
+        final List<String> wraps = new ArrayList<>();
+        String format = "";
 
-        while (true) {
-            // in some cases this goes into infinite loop
-            // todo: figure out fundamental fix
-            trial++;
-            if (trial > SPLIT_STRING_TRIAL_LIMIT) break;
+        int l = 1;
+        for (var line : lines) {
+            final BreakIterator breaker = BreakIterator.getLineInstance(locale);
+            breaker.setText(line);
 
-            int i = sizeStringToWidth(temp, wrapWidth, font); // Cut to size WITH formatting
+            int start = breaker.first();
+            int width = 0;
+            StringBuilder buf = new StringBuilder(format);
 
-            if (temp.length() <= i) {
-                list.add(temp);
-                break;
-            } else {
-                String s = temp.substring(0, i);
-                char c0 = temp.charAt(i);
-                boolean flag = c0 == ' ' || c0 == '\n';
-                temp = getFormatFromString(s) + temp.substring(i + (flag ? 1 : 0));
-                list.add(s);
+            for (int end = breaker.next(); end != BreakIterator.DONE;) {
+                String candidate = line.substring(start, end);
+                String stripped = stripTrailing(candidate);
+                int needWidth = getStringWidth(stripped, font);
+                int realWidth = getStringWidth(candidate, font);
 
-                if (temp.length() <= 0 && !flag) {
-                    break;
+                if (width + needWidth < wrapWidth) {
+                    buf.append(candidate);
+                    width += realWidth;
+                    format = withFormat ? getFormatFromString(format + candidate) : "";
+                    start = end;
+                    end = breaker.next();
+                } else if (needWidth > wrapWidth) {
+                    int i = sizeStringToWidth(candidate, wrapWidth, font);
+                    buf.append(candidate, 0, i);
+                    wraps.add(buf.toString());
+                    buf = new StringBuilder(format);
+                    width = 0;
+                    start += i;
+                } else {
+                    wraps.add(buf.toString());
+                    buf = new StringBuilder(format);
+                    width = 0;
                 }
             }
-        }
 
-        return list;
+            if (!withFormat && l++ != lines.length) buf.append('\n');
+            // noinspection SizeReplaceableByIsEmpty
+            wraps.add(buf.length() == 0 ? format : buf.toString());
+        }
+        return wraps;
+
+    }
+
+    private static String stripTrailing(String value) {
+        int length = value.length();
+        while (length > 0 && Character.isWhitespace(value.charAt(length - 1))) {
+            length--;
+        }
+        return value.substring(0, length);
     }
 
     /**
@@ -636,7 +647,7 @@ public class RenderUtils {
     }
 
     public static String getFormatFromString(String p_78282_0_) {
-        String s1 = "";
+        StringBuilder s1 = new StringBuilder();
         int i = -1;
         int j = p_78282_0_.length();
 
@@ -645,14 +656,17 @@ public class RenderUtils {
                 char c0 = p_78282_0_.charAt(i + 1);
 
                 if (isFormatColor(c0)) {
-                    s1 = "\u00a7" + c0;
+                    s1 = new StringBuilder("§" + c0);
                 } else if (isFormatSpecial(c0)) {
-                    s1 = s1 + "\u00a7" + c0;
+                    s1.append("§")
+                        .append(c0);
                 }
             }
         }
+        if (s1.length() <= 0) return "";
+        if (s1.charAt(s1.length() - 1) == 'r') return "";
 
-        return s1;
+        return s1.toString();
     }
 
     private static int sizeStringToWidth(String str, int wrapWidth, FontRenderer font) {
@@ -966,11 +980,11 @@ public class RenderUtils {
         Tessellator var15 = Tessellator.instance;
         var15.startDrawingQuads();
         var15.setColorRGBA_F(var8, var9, var10, var7);
-        var15.addVertex((double) p_drawGradientRect_3_, (double) p_drawGradientRect_2_, (double) zDepth);
-        var15.addVertex((double) p_drawGradientRect_1_, (double) p_drawGradientRect_2_, (double) zDepth);
+        var15.addVertex(p_drawGradientRect_3_, p_drawGradientRect_2_, zDepth);
+        var15.addVertex(p_drawGradientRect_1_, p_drawGradientRect_2_, zDepth);
         var15.setColorRGBA_F(var12, var13, var14, var11);
-        var15.addVertex((double) p_drawGradientRect_1_, (double) p_drawGradientRect_4_, (double) zDepth);
-        var15.addVertex((double) p_drawGradientRect_3_, (double) p_drawGradientRect_4_, (double) zDepth);
+        var15.addVertex(p_drawGradientRect_1_, p_drawGradientRect_4_, zDepth);
+        var15.addVertex(p_drawGradientRect_3_, p_drawGradientRect_4_, zDepth);
         var15.draw();
         GL11.glShadeModel(7424);
         GL11.glDisable(3042);
