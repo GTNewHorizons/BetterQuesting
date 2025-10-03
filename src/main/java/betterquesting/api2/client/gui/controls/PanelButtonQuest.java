@@ -2,7 +2,6 @@ package betterquesting.api2.client.gui.controls;
 
 import static betterquesting.api.placeholders.ItemPlaceholder.placeholder;
 
-import betterquesting.api.utils.BigItemStack;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,6 +25,7 @@ import betterquesting.api.properties.NativeProps;
 import betterquesting.api.questing.IQuest;
 import betterquesting.api.questing.tasks.ITask;
 import betterquesting.api.storage.BQ_Settings;
+import betterquesting.api.utils.BigItemStack;
 import betterquesting.api2.client.gui.misc.GuiRectangle;
 import betterquesting.api2.client.gui.misc.IGuiRect;
 import betterquesting.api2.client.gui.resources.colors.IGuiColor;
