@@ -27,8 +27,7 @@ public class ItemPlaceholder extends Item {
      */
     @Override
     @SideOnly(Side.CLIENT)
-    @SuppressWarnings("unchecked")
-    public void addInformation(ItemStack stack, EntityPlayer player, List tooltip, boolean advanced) {
+    public void addInformation(ItemStack stack, EntityPlayer player, List<String> tooltip, boolean advanced) {
         if (!stack.hasTagCompound()) {
             tooltip.add("ERROR: Original information missing!");
             return;
