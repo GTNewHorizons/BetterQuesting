@@ -1,5 +1,8 @@
 package betterquesting.api2.client.gui.controls;
 
+import static betterquesting.api.placeholders.ItemPlaceholder.placeholder;
+
+import betterquesting.api.utils.BigItemStack;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -98,7 +101,7 @@ public class PanelButtonQuest extends PanelButtonStorage<Map.Entry<UUID, IQuest>
             new OreDictTexture(
                 1F,
                 value.getValue()
-                    .getOrDefault(NativeProps.ICON, NativeProps.ICON.getDefault()),
+                    .getOrDefault(NativeProps.ICON, new BigItemStack(placeholder)),
                 false,
                 true),
             4);
