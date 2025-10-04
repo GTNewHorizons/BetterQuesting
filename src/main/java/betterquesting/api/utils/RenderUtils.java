@@ -25,6 +25,8 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.util.vector.Matrix4f;
 
+import com.gtnewhorizon.gtnhlib.util.font.FontRendering;
+
 import betterquesting.api2.client.gui.misc.GuiRectangle;
 import betterquesting.api2.client.gui.misc.IGuiRect;
 import betterquesting.api2.client.gui.resources.colors.IGuiColor;
@@ -656,6 +658,10 @@ public class RenderUtils {
     }
 
     private static int sizeStringToWidth(String str, int wrapWidth, FontRenderer font) {
+        if (BetterQuesting.isGTNHLibLoaded) {
+            // GTNHLib replacement that works as it should and supports Angelica's custom fonts
+            return FontRendering.sizeStringToWidth(str, wrapWidth, font);
+        }
         int i = str.length();
         int j = 0;
         int k = 0;
@@ -983,6 +989,11 @@ public class RenderUtils {
      * Minecraft's built in one is busted!
      */
     public static int getStringWidth(String text, FontRenderer font) {
+        if (BetterQuesting.isGTNHLibLoaded) {
+            // GTNHLib replacement that works as it should and supports Angelica's custom fonts
+            return FontRendering.getStringWidth(text, font);
+        }
+
         if (text == null || text.length() == 0) return 0;
 
         int i = 0;

@@ -76,6 +76,7 @@ public class ClientProxy extends CommonProxy {
             .registerToolTab(new ResourceLocation(BetterQuesting.MODID, "main"), ToolboxTabMain.INSTANCE);
 
         BetterQuesting.isDuraDisplayLoaded = Loader.isModLoaded("duradisplay");
+        BetterQuesting.isGTNHLibLoaded = Loader.isModLoaded("gtnhlib");
     }
 
     @Override
