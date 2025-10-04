@@ -31,7 +31,7 @@ import betterquesting.api2.client.gui.misc.GuiRectangle;
 import betterquesting.api2.client.gui.misc.IGuiRect;
 import betterquesting.api2.client.gui.resources.colors.IGuiColor;
 import betterquesting.core.BetterQuesting;
-import cpw.mods.fml.common.Loader;
+import codechicken.nei.NEIModContainer;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
@@ -44,7 +44,7 @@ public class RenderUtils {
 
     private static final int SPLIT_STRING_TRIAL_LIMIT = 1000;
 
-    private static final boolean isGTNHLibPresent = Loader.isModLoaded("gtnhlib");
+    private static final boolean isGTNHLibPresent = NEIModContainer.isGTNHLibLoaded();
 
     public static void RenderItemStack(Minecraft mc, ItemStack stack, int x, int y, String text) {
         RenderItemStack(mc, stack, x, y, 16F, text, 0xFFFFFFFF);
