@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Stack;
 
 import net.minecraft.client.Minecraft;
@@ -30,6 +31,7 @@ import betterquesting.api2.client.gui.misc.GuiRectangle;
 import betterquesting.api2.client.gui.misc.IGuiRect;
 import betterquesting.api2.client.gui.resources.colors.IGuiColor;
 import betterquesting.core.BetterQuesting;
+import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
@@ -41,6 +43,8 @@ public class RenderUtils {
     public static final RenderItem itemRender = new RenderItem();
 
     private static final int SPLIT_STRING_TRIAL_LIMIT = 1000;
+
+    private static final boolean isGTNHLibPresent = Loader.isModLoaded("gtnhlib");
 
     public static void RenderItemStack(Minecraft mc, ItemStack stack, int x, int y, String text) {
         RenderItemStack(mc, stack, x, y, 16F, text, 0xFFFFFFFF);
@@ -657,8 +661,60 @@ public class RenderUtils {
     }
 
     private static int sizeStringToWidth(String str, int wrapWidth, FontRenderer font) {
-        // GTNHLib replacement that works as it should and supports Angelica's custom fonts
-        return FontRendering.sizeStringToWidth(str, wrapWidth, font);
+        if (isGTNHLibPresent) {
+            // GTNHLib replacement that works as it should and supports Angelica's custom fonts
+            return FontRendering.sizeStringToWidth(str, wrapWidth, font);
+        }
+        int i = str.length();
+        int j = 0;
+        int k = 0;
+        int l = -1;
+
+        for (boolean flag = false; k < i; ++k) {
+            char c0 = str.charAt(k);
+
+            switch (c0) {
+                case '\n':
+                    --k;
+                    break;
+                case ' ':
+                    l = k;
+                default:
+                    j += font.getCharWidth(c0);
+
+                    if (flag) {
+                        ++j;
+                    }
+
+                    break;
+                case '\u00a7':
+
+                    if (k < i - 1) {
+                        ++k;
+                        char c1 = str.charAt(k);
+
+                        if (c1 != 'l' && c1 != 'L') {
+                            if (c1 == 'r' || c1 == 'R' || isFormatColor(c1)) {
+                                flag = false;
+                            }
+                        } else {
+                            flag = true;
+                        }
+                    }
+            }
+
+            if (c0 == '\n') {
+                ++k;
+                l = k;
+                break;
+            }
+
+            if (j > wrapWidth) {
+                break;
+            }
+        }
+
+        return k != i && l != -1 && l < k ? l : k;
     }
 
     private static boolean isFormatColor(char colorChar) {
@@ -936,7 +992,49 @@ public class RenderUtils {
      * Minecraft's built in one is busted!
      */
     public static int getStringWidth(String text, FontRenderer font) {
-        // GTNHLib replacement that works as it should and supports Angelica's custom fonts
-        return FontRendering.getStringWidth(text, font);
+        if (isGTNHLibPresent) {
+            // GTNHLib replacement that works as it should and supports Angelica's custom fonts
+            return FontRendering.getStringWidth(text, font);
+        }
+
+        if (text == null || text.length() == 0) return 0;
+
+        int i = 0;
+        boolean flag = false;
+
+        for (int j = 0; j < text.length(); ++j) {
+            char c0 = text.charAt(j);
+            int k = font.getCharWidth(c0);
+
+            if (k < 0 && j < text.length() - 1) // k should only be negative when the section sign has been used!
+            {
+                ++j;
+                c0 = text.charAt(j);
+
+                if (c0 != 'l' && c0 != 'L') {
+                    int ci = "0123456789abcdefklmnor".indexOf(
+                        String.valueOf(c0)
+                            .toLowerCase(Locale.ROOT)
+                            .charAt(0));
+                    // if (c0 == 'r' || c0 == 'R') // Minecraft's original implemention. This is broken...
+                    if (ci < 16 || ci == 21) // Colour or reset code!
+                    {
+                        flag = false;
+                    }
+                } else {
+                    flag = true;
+                }
+
+                k = 0;
+            }
+
+            i += k;
+
+            if (flag && k > 0) {
+                ++i;
+            }
+        }
+
+        return i;
     }
 }
