@@ -43,8 +43,6 @@ public class RenderUtils {
 
     private static final int SPLIT_STRING_TRIAL_LIMIT = 1000;
 
-    private static final boolean isGTNHLibPresent = BetterQuesting.isGTNHLibLoaded;
-
     public static void RenderItemStack(Minecraft mc, ItemStack stack, int x, int y, String text) {
         RenderItemStack(mc, stack, x, y, 16F, text, 0xFFFFFFFF);
     }
@@ -660,7 +658,7 @@ public class RenderUtils {
     }
 
     private static int sizeStringToWidth(String str, int wrapWidth, FontRenderer font) {
-        if (isGTNHLibPresent) {
+        if (BetterQuesting.isGTNHLibLoaded) {
             // GTNHLib replacement that works as it should and supports Angelica's custom fonts
             return FontRendering.sizeStringToWidth(str, wrapWidth, font);
         }
@@ -991,7 +989,7 @@ public class RenderUtils {
      * Minecraft's built in one is busted!
      */
     public static int getStringWidth(String text, FontRenderer font) {
-        if (isGTNHLibPresent) {
+        if (BetterQuesting.isGTNHLibLoaded) {
             // GTNHLib replacement that works as it should and supports Angelica's custom fonts
             return FontRendering.getStringWidth(text, font);
         }
