@@ -82,6 +82,7 @@ public class BetterQuesting {
     public static Block submitStation = new BlockSubmitStation();
     public static Block observationStation = new BlockObservationStation();
     public static boolean isDuraDisplayLoaded = false;
+    public static boolean isGTNHLibLoaded = false;
 
     @EventHandler
     public void preInit(FMLPreInitializationEvent event) {
