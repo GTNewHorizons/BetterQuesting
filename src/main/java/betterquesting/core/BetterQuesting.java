@@ -82,6 +82,7 @@ public class BetterQuesting {
     public static Block submitStation = new BlockSubmitStation();
     public static Block observationStation = new BlockObservationStation();
     public static boolean isDuraDisplayLoaded = false;
+    public static boolean isVmLoaded = false;
     public static boolean isGTNHLibLoaded = false;
 
     @EventHandler
@@ -162,7 +163,10 @@ public class BetterQuesting {
     }
 
     @EventHandler
-    public void postInit(FMLPostInitializationEvent event) {}
+    public void postInit(FMLPostInitializationEvent event) {
+        isVmLoaded = Loader.isModLoaded("vendingmachine");
+        BetterQuesting.logger.info("vending machine integration: {}", isVmLoaded);
+    }
 
     @EventHandler
     public void serverStart(FMLServerStartingEvent event) {

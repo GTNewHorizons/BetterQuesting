@@ -61,6 +61,7 @@ import betterquesting.questing.QuestLine;
 import betterquesting.questing.QuestLineDatabase;
 import betterquesting.questing.QuestLineEntry;
 import betterquesting.storage.QuestSettings;
+import bq_standard.integration.vendingmachine.VmAdapter;
 
 public class QuestCommandDefaults extends QuestCommandBase {
 
@@ -459,6 +460,9 @@ public class QuestCommandDefaults extends QuestCommandBase {
             sendChatMessage(sender, "betterquesting.cmd.default.load");
         }
 
+        if (BetterQuesting.isVmLoaded) {
+            VmAdapter.resetCompletedQuests(null);
+        }
         NetSettingSync.sendSync(null);
         NetQuestSync.quickSync(null, true, true);
         NetChapterSync.sendSync(null, null);
@@ -490,6 +494,10 @@ public class QuestCommandDefaults extends QuestCommandBase {
                 sendChatMessage(sender, "betterquesting.cmd.default.load2", databaseName + ".json");
             } else {
                 sendChatMessage(sender, "betterquesting.cmd.default.load");
+            }
+
+            if (BetterQuesting.isVmLoaded) {
+                VmAdapter.resetCompletedQuests(null);
             }
 
             NetSettingSync.sendSync(null);

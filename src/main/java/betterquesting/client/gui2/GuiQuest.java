@@ -1,5 +1,6 @@
 package betterquesting.client.gui2;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -53,8 +54,10 @@ import betterquesting.api2.client.gui.themes.presets.PresetTexture;
 import betterquesting.api2.storage.DBEntry;
 import betterquesting.api2.utils.QuestTranslation;
 import betterquesting.client.gui2.GuiQuestLines.ScrollPosition;
+import betterquesting.core.BetterQuesting;
 import betterquesting.network.handlers.NetQuestAction;
 import betterquesting.questing.QuestDatabase;
+import bq_standard.integration.vendingmachine.VmAdapter;
 
 public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeedsRefresh {
 
@@ -187,19 +190,26 @@ public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeeds
         cvInner = new CanvasEmpty(new GuiTransform(GuiAlign.FULL_BOX, new GuiPadding(16, 32, 16, 24), 0));
         cvBackground.addPanel(cvInner);
 
+        boolean questHasTrades = false;
+        if (BetterQuesting.isVmLoaded) {
+            questHasTrades = VmAdapter.questHasTrades(questID);
+        }
         if (quest.getRewards()
-            .size() > 0) {
+            .size() > 0 || questHasTrades) {
             refreshDescPanel(true);
 
-            btnClaim = new PanelButton(
-                new GuiTransform(new Vector4f(0F, 1F, 0.5F, 1F), new GuiPadding(0, -16, 8, 0), 0),
-                6,
-                QuestTranslation.translate("betterquesting.btn.claim"));
-            btnClaim.setActive(false);
-            cvInner.addPanel(btnClaim);
+            if (quest.getRewards()
+                .size() > 0) {
+                btnClaim = new PanelButton(
+                    new GuiTransform(new Vector4f(0F, 1F, 0.5F, 1F), new GuiPadding(0, -16, 8, 0), 0),
+                    6,
+                    QuestTranslation.translate("betterquesting.btn.claim"));
+                btnClaim.setActive(false);
+                cvInner.addPanel(btnClaim);
 
-            rectReward = new GuiTransform(new Vector4f(0F, 0.5F, 0.5F, 1F), new GuiPadding(0, 0, 8, 16), 0);
-            rectReward.setParent(cvInner.getTransform());
+                rectReward = new GuiTransform(new Vector4f(0F, 0.5F, 0.5F, 1F), new GuiPadding(0, 0, 8, 16), 0);
+                rectReward.setParent(cvInner.getTransform());
+            }
 
             refreshRewardPanel();
         } else {
@@ -387,6 +397,24 @@ public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeeds
                 tempCanvas.addPanel(rewardGui);
                 yOffset += tempCanvas.getTransform()
                     .getHeight();
+            }
+        }
+
+        if (BetterQuesting.isVmLoaded) {
+            List<UUID> unlockedTrades = new ArrayList<>(VmAdapter.getTrades(questID));
+            if (!unlockedTrades.isEmpty()) {
+                PanelTextBox titleTradeUnlock = new PanelTextBox(
+                    new GuiTransform(new Vector4f(), 0, yOffset, rectReward.getWidth(), 12, 0),
+                    QuestTranslation.translate("bq_standard.trade_unlock"));
+                titleTradeUnlock.setColor(PresetColor.TEXT_HEADER.getColor())
+                    .setAlignment(1);
+                titleTradeUnlock.setEnabled(true);
+                csReward.addPanel(titleTradeUnlock);
+                yOffset += 12;
+                for (UUID tradeGroup : unlockedTrades) {
+                    // returns new y offset for next group
+                    yOffset = VmAdapter.addTradePanel(csReward, rectReward, tradeGroup, yOffset);
+                }
             }
         }
 
