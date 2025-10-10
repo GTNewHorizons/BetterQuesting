@@ -5,7 +5,7 @@ dependencies {
     compileOnly 'com.github.GTNewHorizons:DuraDisplay:1.3.4:dev'
     compileOnly 'com.cubefury.vendingmachine:VendingMachine:0.4.1:dev'
 
-    implementation 'com.github.GTNewHorizons:NotEnoughItems:2.8.6-GTNH:dev'
+    implementation 'com.github.GTNewHorizons:NotEnoughItems:2.8.9-GTNH:dev'
     compileOnly 'com.github.GTNewHorizons:GTNHLib:0.7.0:dev'
 
     // For testing translations
