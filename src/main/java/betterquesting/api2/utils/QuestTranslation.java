@@ -41,6 +41,10 @@ public class QuestTranslation {
         return translateProperty(buildQuestNameKey(questId), quest, NativeProps.NAME);
     }
 
+    public static String getQuestNameKeyOrPropertyName(UUID questId, IQuest quest) {
+        return getKeyOrProperty(buildQuestNameKey(questId), quest, NativeProps.NAME);
+    }
+
     public static String translateQuestName(Map.Entry<UUID, IQuest> entry) {
         return translateQuestName(entry.getKey(), entry.getValue());
     }
@@ -104,6 +108,13 @@ public class QuestTranslation {
             return StatCollector.translateToLocalFormatted(key);
         }
 
+        return container.getProperty(property);
+    }
+
+    private static String getKeyOrProperty(String key, IPropertyContainer container, IPropertyType<String> property) {
+        if (StatCollector.canTranslate(key)) {
+            return key;
+        }
         return container.getProperty(property);
     }
 }
