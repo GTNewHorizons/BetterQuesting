@@ -336,7 +336,7 @@ public class EventHandler {
         ItemStack icon = quest.getProperty(NativeProps.ICON)
             .getBaseStack();
         UUID questId = QuestDatabase.INSTANCE.lookupKey(quest);
-        String questName = QuestTranslation.translateQuestName(questId, quest);
+        String questName = QuestTranslation.getQuestNameKeyOrPropertyName(questId, quest);
         String mainText = "";
         String subText = questName == null ? quest.getProperty(NativeProps.NAME) : questName;
         String sound = "";
