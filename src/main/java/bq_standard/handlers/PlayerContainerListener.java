@@ -16,6 +16,11 @@ import betterquesting.api.api.QuestingAPI;
 public class PlayerContainerListener implements ICrafting {
 
     private static final HashMap<UUID, PlayerContainerListener> LISTEN_MAP = new HashMap<>();
+    private EntityPlayer player;
+
+    private PlayerContainerListener(@Nonnull EntityPlayer player) {
+        this.player = player;
+    }
 
     static void refreshListener(@Nonnull EntityPlayer player) {
         UUID uuid = QuestingAPI.getQuestingUUID(player);
@@ -30,12 +35,6 @@ public class PlayerContainerListener implements ICrafting {
         try {
             player.inventoryContainer.addCraftingToCrafters(listener);
         } catch (Exception ignored) {}
-    }
-
-    private EntityPlayer player;
-
-    private PlayerContainerListener(@Nonnull EntityPlayer player) {
-        this.player = player;
     }
 
     @Override
@@ -56,5 +55,9 @@ public class PlayerContainerListener implements ICrafting {
 
     private void updateTasks() {
         EventHandler.schedulePlayerInventoryCheck(player);
+    }
+
+    public static void cleanup() {
+        LISTEN_MAP.clear();
     }
 }

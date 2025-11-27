@@ -282,9 +282,9 @@ public class EventHandler {
 
     @SubscribeEvent
     public void onEntityCreated(EntityJoinWorldEvent event) {
-        if (!(event.entity instanceof EntityPlayer) || event.entity.worldObj.isRemote) return;
-
-        PlayerContainerListener.refreshListener((EntityPlayer) event.entity);
+        if (event.entity instanceof EntityPlayer && !event.entity.worldObj.isRemote) {
+            PlayerContainerListener.refreshListener((EntityPlayer) event.entity);
+        }
     }
 
     @SubscribeEvent
@@ -311,8 +311,7 @@ public class EventHandler {
 
     private static final ArrayDeque<FutureTask> serverTasks = new ArrayDeque<>();
     private static Thread serverThread = null;
-
-    private static HashSet<EntityPlayer> playerInventoryUpdates = new HashSet<>();
+    private static final HashSet<EntityPlayer> playerInventoryUpdates = new HashSet<>();
 
     /**
      * Schedules checking player's inventory on the next server tick.
@@ -321,6 +320,12 @@ public class EventHandler {
     public static void schedulePlayerInventoryCheck(EntityPlayer player) {
         synchronized (playerInventoryUpdates) {
             playerInventoryUpdates.add(player);
+        }
+    }
+
+    public static void cleanup() {
+        synchronized (playerInventoryUpdates) {
+            playerInventoryUpdates.clear();
         }
     }
 
