@@ -8,6 +8,7 @@ import cpw.mods.fml.common.SidedProxy;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
+import cpw.mods.fml.common.event.FMLServerStoppedEvent;
 import drethic.questbook.proxy.CommonProxy;
 
 @Mod(
@@ -40,5 +41,10 @@ public class QuestBook {
     @EventHandler
     public void preInit(FMLPreInitializationEvent e) {
         proxy.preInit(e);
+    }
+
+    @EventHandler
+    public void onServerStopped(FMLServerStoppedEvent e) {
+        proxy.onServerStopped(e);
     }
 }
