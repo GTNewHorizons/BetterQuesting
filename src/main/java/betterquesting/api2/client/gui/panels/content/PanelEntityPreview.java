@@ -115,6 +115,11 @@ public class PanelEntityPreview implements IGuiPanel {
             yawDriver.readValue(),
             pitch,
             entity);
+
+        net.minecraft.entity.boss.BossStatus.bossName = null;
+        net.minecraft.entity.boss.BossStatus.healthScale = 0F;
+        net.minecraft.entity.boss.BossStatus.statusBarTime = 0;
+
         RenderUtils.endScissor();
         GL11.glPopMatrix();
 
