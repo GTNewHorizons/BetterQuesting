@@ -49,6 +49,7 @@ import betterquesting.api2.client.gui.panels.content.PanelTextBox;
 import betterquesting.api2.client.gui.panels.lists.CanvasScrolling;
 import betterquesting.api2.client.gui.resources.textures.SimpleNoUVTexture;
 import betterquesting.api2.client.gui.themes.presets.PresetColor;
+import betterquesting.api2.client.gui.themes.presets.PresetIcon;
 import betterquesting.api2.client.gui.themes.presets.PresetLine;
 import betterquesting.api2.client.gui.themes.presets.PresetTexture;
 import betterquesting.api2.storage.DBEntry;
@@ -186,6 +187,10 @@ public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeeds
                     0,
                     QuestTranslation.translate("gui.back")));
         }
+
+        PanelButton copyButton = new PanelButton(new GuiTransform(GuiAlign.TOP_LEFT, 9, 8, 16, 16, 0), 8, "");
+        copyButton.setIcon(PresetIcon.ICON_COPY.getTexture());
+        cvBackground.addPanel(copyButton);
 
         cvInner = new CanvasEmpty(new GuiTransform(GuiAlign.FULL_BOX, new GuiPadding(16, 32, 16, 24), 0));
         cvBackground.addPanel(cvInner);
@@ -338,6 +343,10 @@ public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeeds
         } else if (btn.getButtonID() == 7) // Task detect/submit
         {
             NetQuestAction.requestDetect(Collections.singletonList(questID));
+        } else if (btn.getButtonID() == 8) // Copy description
+        {
+            String questText = QuestTranslation.translateQuestDescription(questID, quest);
+            setClipboardString(questText);
         }
     }
 
