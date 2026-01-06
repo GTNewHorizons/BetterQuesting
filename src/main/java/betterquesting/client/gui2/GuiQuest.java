@@ -330,23 +330,25 @@ public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeeds
     private void onButtonPress(PEventButton event) {
         IPanelButton btn = event.getButton();
 
-        if (btn.getButtonID() == 0) // Exit
-        {
-            mc.displayGuiScreen(this.parent);
-        } else if (btn.getButtonID() == 1) // Edit
-        {
-            // mc.displayGuiScreen(new GuiQuestEditor(this, quest));
-            mc.displayGuiScreen(new betterquesting.client.gui2.editors.GuiQuestEditor(this, questID));
-        } else if (btn.getButtonID() == 6) // Reward claim
-        {
-            NetQuestAction.requestClaim(Collections.singletonList(questID));
-        } else if (btn.getButtonID() == 7) // Task detect/submit
-        {
-            NetQuestAction.requestDetect(Collections.singletonList(questID));
-        } else if (btn.getButtonID() == 8) // Copy description
-        {
-            String questText = QuestTranslation.translateQuestDescription(questID, quest);
-            setClipboardString(questText);
+        switch (btn.getButtonID()) {
+            case 0: // Exit
+                mc.displayGuiScreen(this.parent);
+                break;
+            case 1: // Edit
+                mc.displayGuiScreen(new betterquesting.client.gui2.editors.GuiQuestEditor(this, questID));
+                break;
+            case 6: // Reward claim
+                NetQuestAction.requestClaim(Collections.singletonList(questID));
+                break;
+            case 7: // Task detect/submit
+                NetQuestAction.requestDetect(Collections.singletonList(questID));
+                break;
+            case 8: // Copy description
+                String questText = QuestTranslation.translateQuestDescription(questID, quest);
+                setClipboardString(questText);
+                break;
+            default:
+                break;
         }
     }
 
