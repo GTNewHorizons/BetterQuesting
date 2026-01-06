@@ -188,7 +188,7 @@ public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeeds
                     QuestTranslation.translate("gui.back")));
         }
 
-        PanelButton copyButton = new PanelButton(new GuiTransform(GuiAlign.TOP_LEFT, 9, 8, 16, 16, 0), 8, "");
+        PanelButton copyButton = new PanelButton(new GuiTransform(GuiAlign.MID_CENTER, -35, -8, 16, 16, 0), 8, "");
         copyButton.setIcon(PresetIcon.ICON_COPY.getTexture());
         cvBackground.addPanel(copyButton);
 
