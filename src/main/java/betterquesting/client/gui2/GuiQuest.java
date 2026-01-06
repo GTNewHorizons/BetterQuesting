@@ -67,6 +67,8 @@ public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeeds
      */
     private static final Map<UUID, ScrollPosition> scrollsPositions = new HashMap<>();
     private static final Pattern img = Pattern.compile("\\[img height=([1-9]\\d*)] *(.*?:.*?) *\\[/img]");
+    private static final Pattern DESCRIPTION_FORMATING_REMOVER = Pattern.compile(
+        "§[0-9a-f|k|n|m|o|l|r]|\\[(url|warn|note|quest)]|\\[\\/\1\\]|\\[img.*?\\]|\\[\\/(url|warn|note|quest|img)\\]");
     private ScrollPosition scrollPosition;
 
     public static class ScrollPosition {
@@ -345,7 +347,9 @@ public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeeds
                 break;
             case 8: // Copy description
                 String questText = QuestTranslation.translateQuestDescription(questID, quest);
-                setClipboardString(questText);
+                Matcher matcher = DESCRIPTION_FORMATING_REMOVER.matcher(questText);
+                String clearedText = matcher.replaceAll("");
+                setClipboardString(clearedText);
                 break;
             default:
                 break;
