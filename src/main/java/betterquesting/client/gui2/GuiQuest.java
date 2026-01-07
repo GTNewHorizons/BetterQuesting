@@ -49,6 +49,7 @@ import betterquesting.api2.client.gui.panels.content.PanelTextBox;
 import betterquesting.api2.client.gui.panels.lists.CanvasScrolling;
 import betterquesting.api2.client.gui.resources.textures.SimpleNoUVTexture;
 import betterquesting.api2.client.gui.themes.presets.PresetColor;
+import betterquesting.api2.client.gui.themes.presets.PresetIcon;
 import betterquesting.api2.client.gui.themes.presets.PresetLine;
 import betterquesting.api2.client.gui.themes.presets.PresetTexture;
 import betterquesting.api2.storage.DBEntry;
@@ -66,6 +67,8 @@ public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeeds
      */
     private static final Map<UUID, ScrollPosition> scrollsPositions = new HashMap<>();
     private static final Pattern img = Pattern.compile("\\[img height=([1-9]\\d*)] *(.*?:.*?) *\\[/img]");
+    private static final Pattern DESCRIPTION_FORMATING_REMOVER = Pattern.compile(
+        "§[0-9a-f|k|n|m|o|l|r]|\\[(url|warn|note|quest)]|\\[\\/\1\\]|\\[img.*?\\]|\\[\\/(url|warn|note|quest|img)\\]");
     private ScrollPosition scrollPosition;
 
     public static class ScrollPosition {
@@ -186,6 +189,10 @@ public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeeds
                     0,
                     QuestTranslation.translate("gui.back")));
         }
+
+        PanelButton copyButton = new PanelButton(new GuiTransform(GuiAlign.TOP_LEFT, 16, 10, 16, 16, 0), 8, "");
+        copyButton.setIcon(PresetIcon.ICON_COPY.getTexture());
+        cvBackground.addPanel(copyButton);
 
         cvInner = new CanvasEmpty(new GuiTransform(GuiAlign.FULL_BOX, new GuiPadding(16, 32, 16, 24), 0));
         cvBackground.addPanel(cvInner);
@@ -325,19 +332,27 @@ public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeeds
     private void onButtonPress(PEventButton event) {
         IPanelButton btn = event.getButton();
 
-        if (btn.getButtonID() == 0) // Exit
-        {
-            mc.displayGuiScreen(this.parent);
-        } else if (btn.getButtonID() == 1) // Edit
-        {
-            // mc.displayGuiScreen(new GuiQuestEditor(this, quest));
-            mc.displayGuiScreen(new betterquesting.client.gui2.editors.GuiQuestEditor(this, questID));
-        } else if (btn.getButtonID() == 6) // Reward claim
-        {
-            NetQuestAction.requestClaim(Collections.singletonList(questID));
-        } else if (btn.getButtonID() == 7) // Task detect/submit
-        {
-            NetQuestAction.requestDetect(Collections.singletonList(questID));
+        switch (btn.getButtonID()) {
+            case 0: // Exit
+                mc.displayGuiScreen(this.parent);
+                break;
+            case 1: // Edit
+                mc.displayGuiScreen(new betterquesting.client.gui2.editors.GuiQuestEditor(this, questID));
+                break;
+            case 6: // Reward claim
+                NetQuestAction.requestClaim(Collections.singletonList(questID));
+                break;
+            case 7: // Task detect/submit
+                NetQuestAction.requestDetect(Collections.singletonList(questID));
+                break;
+            case 8: // Copy description
+                String questText = QuestTranslation.translateQuestDescription(questID, quest);
+                Matcher matcher = DESCRIPTION_FORMATING_REMOVER.matcher(questText);
+                String clearedText = matcher.replaceAll("");
+                setClipboardString(clearedText);
+                break;
+            default:
+                break;
         }
     }
 
