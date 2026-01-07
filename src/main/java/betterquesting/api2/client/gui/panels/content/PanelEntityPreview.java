@@ -6,6 +6,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ActiveRenderInfo;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityList;
+import net.minecraft.entity.boss.BossStatus;
 import net.minecraft.util.MathHelper;
 
 import org.lwjgl.opengl.GL11;
@@ -116,9 +117,9 @@ public class PanelEntityPreview implements IGuiPanel {
             pitch,
             entity);
 
-        net.minecraft.entity.boss.BossStatus.bossName = null;
-        net.minecraft.entity.boss.BossStatus.healthScale = 0F;
-        net.minecraft.entity.boss.BossStatus.statusBarTime = 0;
+        BossStatus.bossName = null;
+        BossStatus.healthScale = 0F;
+        BossStatus.statusBarTime = 0;
 
         RenderUtils.endScissor();
         GL11.glPopMatrix();
