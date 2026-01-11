@@ -117,6 +117,7 @@ public class PanelEntityPreview implements IGuiPanel {
             pitch,
             entity);
 
+// Prevent boss bar from being drawn when rendering boss mob in quest book.
         BossStatus.bossName = null;
         BossStatus.healthScale = 0F;
         BossStatus.statusBarTime = 0;
