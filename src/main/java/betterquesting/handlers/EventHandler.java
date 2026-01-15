@@ -60,7 +60,6 @@ import betterquesting.api2.client.gui.GuiScreenTest;
 import betterquesting.api2.client.gui.themes.gui_args.GArgsNone;
 import betterquesting.api2.client.gui.themes.presets.PresetGUIs;
 import betterquesting.api2.storage.DBEntry;
-import betterquesting.api2.utils.QuestTranslation;
 import betterquesting.client.BQ_Keybindings;
 import betterquesting.client.BookmarkHandler;
 import betterquesting.client.gui2.GuiHome;
@@ -336,9 +335,10 @@ public class EventHandler {
         ItemStack icon = quest.getProperty(NativeProps.ICON)
             .getBaseStack();
         UUID questId = QuestDatabase.INSTANCE.lookupKey(quest);
-        String questName = QuestTranslation.getQuestNameKeyOrPropertyName(questId, quest);
+
+        String questIdStr = questId.toString();
+
         String mainText = "";
-        String subText = questName == null ? quest.getProperty(NativeProps.NAME) : questName;
         String sound = "";
 
         switch (preset) {
@@ -363,7 +363,7 @@ public class EventHandler {
             quest.getProperty(NativeProps.GLOBAL) ? null : new EntityPlayerMP[] { (EntityPlayerMP) player },
             icon,
             mainText,
-            subText,
+            questIdStr,
             sound);
     }
 

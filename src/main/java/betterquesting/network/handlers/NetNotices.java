@@ -1,17 +1,24 @@
 package betterquesting.network.handlers;
 
+import java.util.UUID;
+
 import javax.annotation.Nullable;
 
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.StatCollector;
 
 import betterquesting.api.network.QuestingPacket;
+import betterquesting.api.properties.NativeProps;
+import betterquesting.api.questing.IQuest;
+import betterquesting.api2.utils.QuestTranslation;
 import betterquesting.client.QuestNotification;
 import betterquesting.core.BetterQuesting;
 import betterquesting.network.PacketSender;
 import betterquesting.network.PacketTypeRegistry;
+import betterquesting.questing.QuestDatabase;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
@@ -45,8 +52,29 @@ public class NetNotices {
     private static void onClient(NBTTagCompound message) {
         ItemStack stack = ItemStack.loadItemStackFromNBT(message.getCompoundTag("icon"));
         String mainTxt = message.getString("mainText");
-        String subTxt = message.getString("subText");
+        String questIdStr = message.getString("subText");
         String sound = message.getString("sound");
+
+        if (mainTxt != null && !mainTxt.isEmpty()) {
+            mainTxt = StatCollector.translateToLocal(mainTxt);
+        }
+
+        String subTxt = questIdStr;
+        if (questIdStr != null && !questIdStr.isEmpty()) {
+            try {
+                UUID questId = UUID.fromString(questIdStr);
+                IQuest quest = QuestDatabase.INSTANCE.get(questId);
+                if (quest != null) {
+                    String translatedName = QuestTranslation.getQuestNameKeyOrPropertyName(questId, quest);
+                    if (translatedName != null && !translatedName.isEmpty()) {
+                        subTxt = translatedName;
+                    } else {
+                        subTxt = quest.getProperty(NativeProps.NAME);
+                    }
+                }
+            } catch (IllegalArgumentException e) {}
+        }
+
         QuestNotification.ScheduleNotice(mainTxt, subTxt, stack, sound);
     }
 }
