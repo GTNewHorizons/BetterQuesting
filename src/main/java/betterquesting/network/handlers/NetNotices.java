@@ -8,7 +8,6 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.StatCollector;
 
 import betterquesting.api.network.QuestingPacket;
 import betterquesting.api.properties.NativeProps;
@@ -54,11 +53,6 @@ public class NetNotices {
         String mainTxt = message.getString("mainText");
         String questIdStr = message.getString("subText");
         String sound = message.getString("sound");
-
-        if (mainTxt != null && !mainTxt.isEmpty()) {
-            mainTxt = StatCollector.translateToLocal(mainTxt);
-        }
-
         String subTxt = questIdStr;
         if (questIdStr != null && !questIdStr.isEmpty()) {
             try {
