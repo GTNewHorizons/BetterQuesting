@@ -6,6 +6,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ActiveRenderInfo;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityList;
+import net.minecraft.entity.boss.BossStatus;
 import net.minecraft.util.MathHelper;
 
 import org.lwjgl.opengl.GL11;
@@ -115,6 +116,12 @@ public class PanelEntityPreview implements IGuiPanel {
             yawDriver.readValue(),
             pitch,
             entity);
+
+        // Prevent boss bar from being drawn when rendering boss mob in quest book.
+        BossStatus.bossName = null;
+        BossStatus.healthScale = 0F;
+        BossStatus.statusBarTime = 0;
+
         RenderUtils.endScissor();
         GL11.glPopMatrix();
 
