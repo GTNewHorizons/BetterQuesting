@@ -397,7 +397,8 @@ public class QuestCommandDefaults extends QuestCommandBase {
 
             for (File questLineEntryFile : questLineSubdir.listFiles()) {
                 // Skip unrelated files such as .DS_Store on macOS
-                if (!questLineEntryFile.getName().endsWith(".json")) {
+                if (!questLineEntryFile.getName()
+                    .endsWith(".json")) {
                     continue;
                 }
 
