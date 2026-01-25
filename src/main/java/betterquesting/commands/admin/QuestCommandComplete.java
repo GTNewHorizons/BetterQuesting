@@ -23,7 +23,7 @@ public class QuestCommandComplete extends QuestCommandBase {
 
     @Override
     public String getUsageSuffix() {
-        return "<quest_id|all> [username|uuid]";
+        return "<all|quest_id> [username|uuid]";
     }
 
     @Override
