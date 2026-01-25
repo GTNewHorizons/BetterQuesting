@@ -28,7 +28,6 @@ public class QuestCommandComplete extends QuestCommandBase {
 
     @Override
     public boolean validArgs(String[] args) {
-        // still only 2 or 3 args total: complete <id|all> [player]
         return args.length == 2 || args.length == 3;
     }
 
