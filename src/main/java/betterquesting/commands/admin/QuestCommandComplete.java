@@ -23,11 +23,12 @@ public class QuestCommandComplete extends QuestCommandBase {
 
     @Override
     public String getUsageSuffix() {
-        return "<quest_id> [username|uuid]";
+        return "<quest_id|all> [username|uuid]";
     }
 
     @Override
     public boolean validArgs(String[] args) {
+        // still only 2 or 3 args total: complete <id|all> [player]
         return args.length == 2 || args.length == 3;
     }
 
@@ -37,6 +38,7 @@ public class QuestCommandComplete extends QuestCommandBase {
         ArrayList<String> list = new ArrayList<>();
 
         if (args.length == 2) {
+            list.add("all");
             for (UUID id : QuestDatabase.INSTANCE.keySet()) {
                 list.add(UuidConverter.encodeUuid(id));
             }
@@ -72,11 +74,21 @@ public class QuestCommandComplete extends QuestCommandBase {
 
         String pName = uuid == null ? "NULL" : NameCache.INSTANCE.getName(uuid);
 
+        if ("all".equalsIgnoreCase(args[1].trim())) {
+            ArrayList<UUID> allIds = new ArrayList<>(QuestDatabase.INSTANCE.keySet());
+            NetQuestEdit.setQuestStates(allIds, true, uuid);
+            sender
+                .addChatMessage(new ChatComponentTranslation("betterquesting.cmd.complete_all", allIds.size(), pName));
+            return;
+        }
+
         UUID id = UuidConverter.decodeUuid(args[1].trim());
         IQuest quest = QuestDatabase.INSTANCE.get(id);
+
         if (quest == null) {
             throw getException(command);
         }
+
         NetQuestEdit.setQuestStates(Collections.singletonList(id), true, uuid);
         sender.addChatMessage(
             new ChatComponentTranslation(
