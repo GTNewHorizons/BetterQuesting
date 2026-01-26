@@ -73,7 +73,8 @@ public class QuestCommandComplete extends QuestCommandBase {
 
         String pName = uuid == null ? "NULL" : NameCache.INSTANCE.getName(uuid);
 
-        if ("all".equalsIgnoreCase(args[1].trim())) {
+        if (args[1].trim()
+            .equalsIgnoreCase("all")) {
             ArrayList<UUID> allIds = new ArrayList<>(QuestDatabase.INSTANCE.keySet());
             NetQuestEdit.setQuestStates(allIds, true, uuid);
             sender
