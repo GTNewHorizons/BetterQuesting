@@ -23,7 +23,7 @@ public class QuestCommandComplete extends QuestCommandBase {
 
     @Override
     public String getUsageSuffix() {
-        return "<quest_id> [username|uuid]";
+        return "<all|quest_id> [username|uuid]";
     }
 
     @Override
@@ -37,6 +37,7 @@ public class QuestCommandComplete extends QuestCommandBase {
         ArrayList<String> list = new ArrayList<>();
 
         if (args.length == 2) {
+            list.add("all");
             for (UUID id : QuestDatabase.INSTANCE.keySet()) {
                 list.add(UuidConverter.encodeUuid(id));
             }
@@ -72,11 +73,22 @@ public class QuestCommandComplete extends QuestCommandBase {
 
         String pName = uuid == null ? "NULL" : NameCache.INSTANCE.getName(uuid);
 
+        if (args[1].trim()
+            .equalsIgnoreCase("all")) {
+            ArrayList<UUID> allIds = new ArrayList<>(QuestDatabase.INSTANCE.keySet());
+            NetQuestEdit.setQuestStates(allIds, true, uuid);
+            sender
+                .addChatMessage(new ChatComponentTranslation("betterquesting.cmd.complete_all", allIds.size(), pName));
+            return;
+        }
+
         UUID id = UuidConverter.decodeUuid(args[1].trim());
         IQuest quest = QuestDatabase.INSTANCE.get(id);
+
         if (quest == null) {
             throw getException(command);
         }
+
         NetQuestEdit.setQuestStates(Collections.singletonList(id), true, uuid);
         sender.addChatMessage(
             new ChatComponentTranslation(
