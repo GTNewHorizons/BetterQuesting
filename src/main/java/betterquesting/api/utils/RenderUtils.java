@@ -536,11 +536,16 @@ public class RenderUtils {
      * Similar to normally splitting a string with the fontRenderer however this variant does
      * not attempt to preserve the formatting between lines. This is particularly important when the
      * index positions in the text are required to match the original unwrapped text.
+     * 
+     * @return The lines used for editing, with exact characters matching the original text on each index
      */
     public static List<String> splitStringWithoutFormat(String str, int wrapWidth, FontRenderer font) {
         return splitString(str, wrapWidth, font, false);
     }
 
+    /**
+     * @return The lines used for rendering, preserving formatting codes across lines
+     */
     public static List<String> splitString(String str, int wrapWidth, FontRenderer font) {
         return splitString(str, wrapWidth, font, true);
     }
@@ -589,6 +594,8 @@ public class RenderUtils {
                 }
             }
 
+            // add back newlines eaten in order to keep exact the same text length when !withFormat, used for text
+            // editing calculations
             if (!withFormat && l++ != lines.length) buf.append('\n');
             // noinspection SizeReplaceableByIsEmpty
             wraps.add(buf.length() == 0 ? format : buf.toString());
