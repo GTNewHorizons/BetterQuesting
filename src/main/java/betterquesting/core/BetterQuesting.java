@@ -55,7 +55,8 @@ import cpw.mods.fml.relauncher.Side;
     modid = BetterQuesting.MODID,
     name = BetterQuesting.NAME,
     version = BetterQuesting.VERSION,
-    guiFactory = "betterquesting.handlers.ConfigGuiFactory")
+    guiFactory = "betterquesting.handlers.ConfigGuiFactory",
+    dependencies = "after:gtnhlib@[0.7.0,)")
 public class BetterQuesting {
 
     public static final String MODID = "betterquesting";
@@ -81,6 +82,8 @@ public class BetterQuesting {
     public static Block submitStation = new BlockSubmitStation();
     public static Block observationStation = new BlockObservationStation();
     public static boolean isDuraDisplayLoaded = false;
+    public static boolean isVmLoaded = false;
+    public static boolean isGTNHLibLoaded = false;
 
     @EventHandler
     public void preInit(FMLPreInitializationEvent event) {
@@ -160,7 +163,10 @@ public class BetterQuesting {
     }
 
     @EventHandler
-    public void postInit(FMLPostInitializationEvent event) {}
+    public void postInit(FMLPostInitializationEvent event) {
+        isVmLoaded = Loader.isModLoaded("vendingmachine");
+        BetterQuesting.logger.info("vending machine integration: {}", isVmLoaded);
+    }
 
     @EventHandler
     public void serverStart(FMLServerStartingEvent event) {

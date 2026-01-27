@@ -29,8 +29,10 @@ import betterquesting.api.properties.NativeProps;
 import betterquesting.api.questing.IQuest;
 import betterquesting.api.storage.BQ_Settings;
 import betterquesting.api.utils.NBTConverter;
+import betterquesting.core.BetterQuesting;
 import betterquesting.network.handlers.NetCacheSync;
 import betterquesting.questing.QuestDatabase;
+import bq_standard.integration.vendingmachine.VmAdapter;
 
 public class QuestCache implements IExtendedEntityProperties {
 
@@ -119,6 +121,9 @@ public class QuestCache implements IExtendedEntityProperties {
         List<QResetTime> tmpReset = new ArrayList<>();
         List<UUID> tmpAutoClaim = new ArrayList<>();
 
+        // For Vending Machine Integration, populate and push to
+        List<UUID> tradeAllowed = new ArrayList<>();
+
         long currentTime = System.currentTimeMillis();
         for (Map.Entry<UUID, IQuest> entry : questDB) {
             if (entry.getValue()
@@ -160,6 +165,13 @@ public class QuestCache implements IExtendedEntityProperties {
             if (isQuestShown(entry.getValue(), uuid, player)) {
                 tmpVisible.add(entry.getKey());
             }
+
+            if (entry.getValue()
+                .isComplete(uuid)
+                || entry.getValue()
+                    .canClaimBasically(player)) {
+                tradeAllowed.add(entry.getKey());
+            }
         }
 
         visibleQuests.clear();
@@ -173,6 +185,12 @@ public class QuestCache implements IExtendedEntityProperties {
 
         autoClaims.clear();
         autoClaims.addAll(tmpAutoClaim);
+
+        if (BetterQuesting.isVmLoaded) {
+            // These are only updated serverside, since updateCache is only checked there
+            VmAdapter.addBqConditions(uuid, tradeAllowed);
+            VmAdapter.sendPlayerSatisfiedCache();
+        }
 
         if (player instanceof EntityPlayerMP) {
             NetCacheSync.sendSync((EntityPlayerMP) player);
