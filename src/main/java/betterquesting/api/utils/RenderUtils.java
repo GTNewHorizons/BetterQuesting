@@ -515,14 +515,18 @@ public class RenderUtils {
         var lang = Minecraft.getMinecraft()
             .getLanguageManager()
             .getCurrentLanguage();
+
         var locale = Locale.forLanguageTag(
             lang.toString()
                 .replace(" (", "-")
                 .replace(")", ""));
-        if (locale == null) {
+
+        if (locale.getCountry()
+            .isEmpty()) {
             locale = Locale.forLanguageTag(lang.getLanguageCode());
         }
-        if (locale == null) {
+        if (locale.getCountry()
+            .isEmpty()) {
             locale = Locale.ENGLISH;
         }
         return locale;
@@ -648,6 +652,7 @@ public class RenderUtils {
         return idx + getCursorPos(lastFormat + tLines.get(row), x, font) - lastFormat.length();
     }
 
+    // extract the format codes from one line to be applied to the following lines
     public static String getFormatFromString(String p_78282_0_) {
         StringBuilder s1 = new StringBuilder();
         int i = -1;
@@ -666,6 +671,7 @@ public class RenderUtils {
             }
         }
         if (s1.length() <= 0) return "";
+        // §r means reset, so whenever it appears at the end of a formatting, it implies do nothing.
         if (s1.charAt(s1.length() - 1) == 'r') return "";
 
         return s1.toString();
