@@ -21,6 +21,7 @@ import betterquesting.api2.client.gui.panels.content.PanelTextBox;
 import betterquesting.api2.client.gui.resources.colors.GuiColorStatic;
 import betterquesting.api2.client.gui.resources.textures.ColorTexture;
 import betterquesting.api2.client.gui.resources.textures.IGuiTexture;
+import betterquesting.api2.client.gui.themes.presets.PresetColor;
 import betterquesting.api2.client.gui.themes.presets.PresetTexture;
 
 public class PopChoice extends CanvasEmpty {
@@ -70,7 +71,8 @@ public class PopChoice extends CanvasEmpty {
 
         cvBox.addPanel(
             new PanelTextBox(new GuiTransform(GuiAlign.FULL_BOX, new GuiPadding(8, 8, 8, 8), 0), message)
-                .setAlignment(1));
+                .setAlignment(1)
+                .setColor(PresetColor.TEXT_MAIN.getColor()));
 
         final int maxW = 3;
         final int count = getChoicesCount();
