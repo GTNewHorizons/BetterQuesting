@@ -336,6 +336,7 @@ public class EventHandler {
             .getBaseStack();
         UUID questId = QuestDatabase.INSTANCE.lookupKey(quest);
 
+        String questName = quest.getProperty(NativeProps.NAME);
         String questIdStr = questId.toString();
 
         String mainText = "";
@@ -363,6 +364,7 @@ public class EventHandler {
             quest.getProperty(NativeProps.GLOBAL) ? null : new EntityPlayerMP[] { (EntityPlayerMP) player },
             icon,
             mainText,
+            questName,
             questIdStr,
             sound);
     }
