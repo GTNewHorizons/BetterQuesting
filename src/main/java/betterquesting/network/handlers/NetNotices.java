@@ -33,11 +33,12 @@ public class NetNotices {
     }
 
     public static void sendNotice(@Nullable EntityPlayerMP[] players, ItemStack icon, String mainText, String subText,
-        String sound) {
+        String questId, String sound) {
         NBTTagCompound payload = new NBTTagCompound();
         payload.setTag("icon", icon == null ? new NBTTagCompound() : icon.writeToNBT(new NBTTagCompound()));
         if (mainText != null) payload.setString("mainText", mainText);
         if (subText != null) payload.setString("subText", subText);
+        if (questId != null) payload.setString("questId", questId);
         if (sound != null) payload.setString("sound", sound);
 
         if (players != null) {
@@ -51,9 +52,12 @@ public class NetNotices {
     private static void onClient(NBTTagCompound message) {
         ItemStack stack = ItemStack.loadItemStackFromNBT(message.getCompoundTag("icon"));
         String mainTxt = message.getString("mainText");
-        String questIdStr = message.getString("subText");
+        String subTxt = message.getString("subText");
+        String questIdStr = message.getString("questId");
         String sound = message.getString("sound");
-        String subTxt = questIdStr;
+        if ((subTxt == null || subTxt.isEmpty()) && questIdStr != null && !questIdStr.isEmpty()) {
+            subTxt = questIdStr;
+        }
         if (questIdStr != null && !questIdStr.isEmpty()) {
             try {
                 UUID questId = UUID.fromString(questIdStr);
