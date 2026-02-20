@@ -278,6 +278,7 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
     public List<String> getTextsForSearch() {
         List<String> texts = new ArrayList<>();
         for (BigItemStack bigStack : requiredItems) {
+            if (bigStack == null) continue;
             ItemStack stack = bigStack.getBaseStack();
             texts.add(stack.getDisplayName());
             if (bigStack.hasOreDict()) {
