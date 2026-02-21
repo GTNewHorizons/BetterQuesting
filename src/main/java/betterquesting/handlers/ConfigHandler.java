@@ -118,6 +118,11 @@ public class ConfigHandler {
             Configuration.CATEGORY_GENERAL,
             false,
             "If true, always draw implicit dependency. This property can be changed by the GUI");
+        BQ_Settings.forceMonochromeText = config.getBoolean(
+            "Force Monochrome Text",
+            Configuration.CATEGORY_GENERAL,
+            false,
+            "If true, quest titles and text content will show no color. This property can be changed by the GUI.");
         BQ_Settings.urlDebug = config.getBoolean(
             "Highlight detected clickable url hotzone.",
             Configuration.CATEGORY_GENERAL,
