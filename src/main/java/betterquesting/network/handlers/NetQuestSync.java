@@ -9,7 +9,6 @@ import java.util.UUID;
 
 import javax.annotation.Nullable;
 
-import betterquesting.api.storage.BQ_Settings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
@@ -24,6 +23,7 @@ import betterquesting.api.events.DatabaseEvent;
 import betterquesting.api.events.DatabaseEvent.DBType;
 import betterquesting.api.network.QuestingPacket;
 import betterquesting.api.questing.IQuest;
+import betterquesting.api.storage.BQ_Settings;
 import betterquesting.api.utils.NBTConverter;
 import betterquesting.api2.utils.BQThreadedIO;
 import betterquesting.api2.utils.Tuple2;
@@ -96,16 +96,13 @@ public class NetQuestSync {
 
                 if (config) {
                     final NBTTagCompound configTag = entry.getValue()
-                            .writeToNBT(new NBTTagCompound());
+                        .writeToNBT(new NBTTagCompound());
 
                     if (BQ_Settings.noRewards) {
                         configTag.removeTag("rewards");
                     }
 
-                    tag.setTag(
-                        "config",
-                        configTag
-                    );
+                    tag.setTag("config", configTag);
                 }
 
                 if (progress) {
