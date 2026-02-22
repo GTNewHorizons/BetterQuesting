@@ -38,6 +38,7 @@ import betterquesting.api2.client.gui.themes.presets.PresetTexture;
 import betterquesting.api2.storage.DBEntry;
 import betterquesting.api2.utils.QuestTranslation;
 import betterquesting.client.BookmarkHandler;
+import betterquesting.client.util.GuiTextToggles;
 import betterquesting.questing.QuestDatabase;
 import betterquesting.questing.QuestInstance;
 import betterquesting.storage.QuestSettings;
@@ -155,7 +156,7 @@ public class PanelButtonQuest extends PanelButtonStorage<Map.Entry<UUID, IQuest>
     private List<String> getStandardTooltip(IQuest quest, EntityPlayer player, UUID qID) {
         List<String> list = new ArrayList<>();
 
-        list.add(QuestTranslation.translateQuestName(qID, quest));
+        list.add(GuiTextToggles.applyMonochromeIfEnabled(QuestTranslation.translateQuestName(qID, quest)));
 
         UUID playerID = QuestingAPI.getQuestingUUID(player);
 
@@ -203,14 +204,16 @@ public class PanelButtonQuest extends PanelButtonStorage<Map.Entry<UUID, IQuest>
                         .toUpperCase()
                     + ")");
 
-            // TODO: Make this lookup unnecessary
             QuestDatabase.INSTANCE.filterKeys(quest.getRequirements())
                 .entrySet()
                 .stream()
                 .filter(
                     entry -> !entry.getValue()
                         .isComplete(playerID))
-                .forEach(entry -> list.add(EnumChatFormatting.RED + "- " + QuestTranslation.translateQuestName(entry)));
+                .forEach(
+                    entry -> list.add(
+                        EnumChatFormatting.RED + "- "
+                            + GuiTextToggles.applyMonochromeIfEnabled(QuestTranslation.translateQuestName(entry))));
         } else {
             int n = 0;
 

@@ -1,6 +1,7 @@
 package betterquesting.client.gui2;
 
 import static betterquesting.api.storage.BQ_Settings.alwaysDrawImplicit;
+import static betterquesting.api.storage.BQ_Settings.forceMonochromeText;
 
 import java.awt.Toolkit;
 import java.awt.datatransfer.StringSelection;
@@ -458,6 +459,7 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
             yOff += 16;
         }
 
+        // Always Draw Implicit Dependency Button
         PanelButton btnViewMode = new PanelButton(new GuiTransform(GuiAlign.TOP_LEFT, 8, yOff, 32, 16, -2), -1, "")
             .setIcon(
                 alwaysDrawImplicit ? PresetIcon.ICON_VISIBILITY_IMPLICIT.getTexture()
@@ -487,6 +489,38 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
                 QuestTranslation.translate("betterquesting.btn.always_draw_implicit"),
                 QuestTranslation.translate("betterquesting.tooltip.cycle." + alwaysDrawImplicit)));
         cvBackground.addPanel(btnViewMode);
+        yOff += 16;
+
+        // Quest Color Button
+        final PanelButton btnMonoText = new PanelButton(
+            new GuiTransform(GuiAlign.TOP_LEFT, 8, yOff, 32, 16, -2),
+            -1,
+            "");
+        final Runnable updateMonoButton = () -> {
+            btnMonoText.setIcon(
+                PresetIcon.ICON_PAINT.getTexture(),
+                BQ_Settings.forceMonochromeText ? new GuiColorStatic(0xFF444444) : new GuiColorStatic(0xFFFFFFFF),
+                0);
+            btnMonoText.setTooltip(
+                Arrays.asList(
+                    QuestTranslation.translate("betterquesting.btn.force_monochrome"),
+                    QuestTranslation.translate("betterquesting.tooltip.cycle." + !forceMonochromeText)));
+        };
+        updateMonoButton.run();
+        btnMonoText.setClickAction((b) -> {
+            BQ_Settings.forceMonochromeText = !BQ_Settings.forceMonochromeText;
+            ConfigHandler.config.get(
+                Configuration.CATEGORY_GENERAL,
+                "Force Monochrome Text",
+                false,
+                "If true, quest titles and text content will show no color. This property can be changed by the GUI.")
+                .set(BQ_Settings.forceMonochromeText);
+            ConfigHandler.config.save();
+
+            updateMonoButton.run();
+            refreshGui();
+        });
+        cvBackground.addPanel(btnMonoText);
 
         // === CHAPTER VIEWPORT ===
 
