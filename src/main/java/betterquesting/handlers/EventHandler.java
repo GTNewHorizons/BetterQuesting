@@ -53,6 +53,7 @@ import betterquesting.api.properties.NativeProps;
 import betterquesting.api.questing.IQuest;
 import betterquesting.api.questing.party.IParty;
 import betterquesting.api.storage.BQ_Settings;
+import betterquesting.api.utils.BigItemStack;
 import betterquesting.api.utils.UuidConverter;
 import betterquesting.api2.cache.QuestCache;
 import betterquesting.api2.cache.QuestCache.QResetTime;
@@ -332,8 +333,9 @@ public class EventHandler {
     // TODO: Create a new message inbox system for these things. On screen popups aren't ideal in combat
     private static void postPresetNotice(IQuest quest, EntityPlayer player, int preset) {
         if (!(player instanceof EntityPlayerMP)) return;
-        ItemStack icon = quest.getProperty(NativeProps.ICON)
-            .getBaseStack();
+        final BigItemStack stack = quest.getProperty(NativeProps.ICON);
+        if (stack == null) return;
+        ItemStack icon = stack.getBaseStack();
         UUID questId = QuestDatabase.INSTANCE.lookupKey(quest);
 
         String questName = quest.getProperty(NativeProps.NAME);
