@@ -9,6 +9,7 @@ import java.util.UUID;
 
 import javax.annotation.Nullable;
 
+import betterquesting.api.storage.BQ_Settings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
@@ -94,10 +95,17 @@ public class NetQuestSync {
                 NBTTagCompound tag = new NBTTagCompound();
 
                 if (config) {
+                    final NBTTagCompound configTag = entry.getValue()
+                            .writeToNBT(new NBTTagCompound());
+
+                    if (BQ_Settings.noRewards) {
+                        configTag.removeTag("rewards");
+                    }
+
                     tag.setTag(
                         "config",
-                        entry.getValue()
-                            .writeToNBT(new NBTTagCompound()));
+                        configTag
+                    );
                 }
 
                 if (progress) {
