@@ -23,6 +23,7 @@ import betterquesting.api.events.DatabaseEvent;
 import betterquesting.api.events.DatabaseEvent.DBType;
 import betterquesting.api.network.QuestingPacket;
 import betterquesting.api.questing.IQuest;
+import betterquesting.api.storage.BQ_Settings;
 import betterquesting.api.utils.NBTConverter;
 import betterquesting.api2.utils.BQThreadedIO;
 import betterquesting.api2.utils.Tuple2;
@@ -94,10 +95,14 @@ public class NetQuestSync {
                 NBTTagCompound tag = new NBTTagCompound();
 
                 if (config) {
-                    tag.setTag(
-                        "config",
-                        entry.getValue()
-                            .writeToNBT(new NBTTagCompound()));
+                    final NBTTagCompound configTag = entry.getValue()
+                        .writeToNBT(new NBTTagCompound());
+
+                    if (BQ_Settings.noRewards) {
+                        configTag.removeTag("rewards");
+                    }
+
+                    tag.setTag("config", configTag);
                 }
 
                 if (progress) {
