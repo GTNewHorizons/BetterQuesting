@@ -46,6 +46,7 @@ public enum PresetIcon {
     ICON_REFRESH("icon_refresh"),
     ICON_ITEM("icon_item"),
     ICON_SCALE("icon_scale"),
+    ICON_PAINT("icon_paint"),
 
     ICON_EXIT("icon_exit"),
     ICON_NOTICE("icon_notice"),
@@ -206,6 +207,9 @@ public enum PresetIcon {
         reg.setDefaultTexture(
             ICON_SCALE.key,
             new SimpleTexture(TX_ICONS, new GuiRectangle(144, 16, 16, 16)).maintainAspect(true));
+        reg.setDefaultTexture(
+            ICON_PAINT.key,
+            new SimpleTexture(TX_ICONS, new GuiRectangle(48, 48, 16, 16)).maintainAspect(true));
         reg.setDefaultTexture(
             ICON_EXIT.key,
             new SimpleTexture(TX_ICONS, new GuiRectangle(160, 0, 16, 16)).maintainAspect(true));
