@@ -54,7 +54,7 @@ import betterquesting.api2.client.gui.themes.presets.PresetLine;
 import betterquesting.api2.client.gui.themes.presets.PresetTexture;
 import betterquesting.api2.storage.DBEntry;
 import betterquesting.api2.utils.QuestTranslation;
-import betterquesting.client.gui2.GuiQuestLines.ScrollPosition;
+import betterquesting.client.util.GuiTextToggles;
 import betterquesting.core.BetterQuesting;
 import betterquesting.network.handlers.NetQuestAction;
 import betterquesting.questing.QuestDatabase;
@@ -166,7 +166,8 @@ public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeeds
 
         PanelTextBox panTxt = new PanelTextBox(
             new GuiTransform(GuiAlign.TOP_EDGE, new GuiPadding(0, 16, 0, -32), 0),
-            QuestTranslation.translateQuestName(questID, quest)).setAlignment(1);
+            GuiTextToggles.applyMonochromeIfEnabled(QuestTranslation.translateQuestName(questID, quest)))
+                .setAlignment(1);
         panTxt.setColor(PresetColor.TEXT_HEADER.getColor());
         cvBackground.addPanel(panTxt);
 
@@ -584,7 +585,7 @@ public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeeds
                 csDesc.getTransform()
                     .getWidth(),
                 0),
-            questText,
+            GuiTextToggles.applyMonochromeIfEnabled(questText),
             true,
             true);
         paDesc.setColor(PresetColor.TEXT_MAIN.getColor());// .setFontSize(10);
