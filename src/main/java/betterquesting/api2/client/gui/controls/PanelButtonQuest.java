@@ -212,8 +212,7 @@ public class PanelButtonQuest extends PanelButtonStorage<Map.Entry<UUID, IQuest>
                         .isComplete(playerID))
                 .forEach(
                     entry -> list.add(
-                        EnumChatFormatting.RED + "- "
-                            + GuiTextToggles.applyMonochromeIfEnabled(QuestTranslation.translateQuestName(entry))));
+                        "- " + GuiTextToggles.applyMonochromeIfEnabled(QuestTranslation.translateQuestName(entry))));
         } else {
             int n = 0;
 
