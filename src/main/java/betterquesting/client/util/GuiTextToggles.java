@@ -16,10 +16,10 @@ public final class GuiTextToggles {
     public static String applyMonochromeIfEnabled(String s) {
         if (s == null) return null;
 
+        if (!BQ_Settings.forceMonochromeText) return s;
+
         s = BQ_TAG_REMOVER.matcher(s)
             .replaceAll("");
-
-        if (!BQ_Settings.forceMonochromeText) return s;
 
         return COLOR_CODE_REMOVER.matcher(s)
             .replaceAll("");
