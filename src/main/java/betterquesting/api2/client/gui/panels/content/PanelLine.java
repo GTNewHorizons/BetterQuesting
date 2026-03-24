@@ -23,26 +23,33 @@ public class PanelLine implements IGuiPanel {
     private final IGuiColor color;
     private final int width;
     private final boolean drawArrowHead;
+    private final ScaleSupplier scaleSupplier;
 
     private boolean enabled = true;
 
     public PanelLine(IGuiRect start, IGuiRect end, IGuiLine line, int width, IGuiColor color, int drawOrder) {
-        this(start, end, line, width, color, drawOrder, null, false);
+        this(start, end, line, width, color, drawOrder, null, false, null);
     }
 
     public PanelLine(IGuiRect start, IGuiRect end, IGuiLine line, int width, IGuiColor color, int drawOrder,
         ShouldDrawPredicate shouldDraw) {
-        this(start, end, line, width, color, drawOrder, shouldDraw, false);
+        this(start, end, line, width, color, drawOrder, shouldDraw, false, null);
     }
 
     public PanelLine(IGuiRect start, IGuiRect end, IGuiLine line, int width, IGuiColor color, int drawOrder,
         ShouldDrawPredicate shouldDraw, boolean drawArrowHead) {
+        this(start, end, line, width, color, drawOrder, shouldDraw, drawArrowHead, null);
+    }
+
+    public PanelLine(IGuiRect start, IGuiRect end, IGuiLine line, int width, IGuiColor color, int drawOrder,
+        ShouldDrawPredicate shouldDraw, boolean drawArrowHead, ScaleSupplier scaleSupplier) {
         this.start = start;
         this.end = end;
         this.line = line;
         this.width = width;
         this.color = color;
         this.drawArrowHead = drawArrowHead;
+        this.scaleSupplier = scaleSupplier;
         this.bounds = new GuiRectangle(0, 0, 0, 0, drawOrder);
         this.shouldDraw = shouldDraw;
         this.bounds.setParent(start);
@@ -93,8 +100,10 @@ public class PanelLine implements IGuiPanel {
 
         float dirX = deltaX / lineLength;
         float dirY = deltaY / lineLength;
-        float defaultMarkerLength = Math.max(3F, width * 0.85F);
-        float markerSpacing = 24F;
+        float zoom = scaleSupplier == null ? 1F : Math.max(0.2F, scaleSupplier.getScale());
+        float zoomScale = zoom < 1F ? Math.min(1.75F, (float) Math.pow(1F / zoom, 0.7F)) : 1F;
+        float defaultMarkerLength = Math.max(3F, width * 0.85F) * zoomScale;
+        float markerSpacing = 48F;
         float startEdge = getEdgeDistance(start, dirX, dirY);
         float endEdge = getEdgeDistance(end, dirX, dirY);
         float visibleStart = startEdge;
@@ -114,9 +123,8 @@ public class PanelLine implements IGuiPanel {
         GL11.glDisable(GL11.GL_TEXTURE_2D);
         GL11.glDisable(GL11.GL_LINE_STIPPLE);
         color.applyGlColor();
-        GL11.glLineWidth(Math.max(1F, width * 0.4F));
 
-        GL11.glBegin(GL11.GL_LINES);
+        GL11.glBegin(GL11.GL_TRIANGLES);
         for (int step = 0;; step++) {
             float offset = step * markerSpacing;
             boolean drewAny = false;
@@ -147,7 +155,6 @@ public class PanelLine implements IGuiPanel {
         }
         GL11.glEnd();
 
-        GL11.glLineWidth(1F);
         GL11.glEnable(GL11.GL_TEXTURE_2D);
         GL11.glColor4f(1F, 1F, 1F, 1F);
     }
@@ -165,9 +172,8 @@ public class PanelLine implements IGuiPanel {
         float normalY = dirX;
 
         GL11.glVertex2f(tipX, tipY);
-        GL11.glVertex2f(baseX + normalX * markerWidth, baseY + normalY * markerWidth);
-        GL11.glVertex2f(tipX, tipY);
         GL11.glVertex2f(baseX - normalX * markerWidth, baseY - normalY * markerWidth);
+        GL11.glVertex2f(baseX + normalX * markerWidth, baseY + normalY * markerWidth);
     }
 
     private float getEdgeDistance(IGuiRect rect, float dirX, float dirY) {
@@ -206,5 +212,10 @@ public class PanelLine implements IGuiPanel {
     public interface ShouldDrawPredicate {
 
         boolean shouldDraw(int mx_mc, int my_mc, float partialTicks);
+    }
+
+    public interface ScaleSupplier {
+
+        float getScale();
     }
 }

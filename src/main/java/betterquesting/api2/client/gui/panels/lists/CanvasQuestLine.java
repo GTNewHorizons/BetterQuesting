@@ -216,7 +216,8 @@ public class CanvasQuestLine extends CanvasScrolling {
                             txLineCol,
                             1,
                             predicate,
-                            true));
+                            true,
+                            this::getZoom));
                 }
             }
         }
