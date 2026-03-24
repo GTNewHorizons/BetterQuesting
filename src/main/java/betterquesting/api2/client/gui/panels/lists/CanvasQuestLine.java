@@ -215,7 +215,8 @@ public class CanvasQuestLine extends CanvasScrolling {
                             main ? 8 : 4,
                             txLineCol,
                             1,
-                            predicate));
+                            predicate,
+                            true));
                 }
             }
         }
