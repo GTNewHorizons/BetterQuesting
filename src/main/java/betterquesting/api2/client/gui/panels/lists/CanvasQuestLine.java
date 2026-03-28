@@ -216,7 +216,7 @@ public class CanvasQuestLine extends CanvasScrolling {
                             txLineCol,
                             1,
                             predicate,
-                            true,
+                            BQ_Settings.showDependencyArrows,
                             this::getZoom));
                 }
             }

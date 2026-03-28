@@ -118,6 +118,11 @@ public class ConfigHandler {
             Configuration.CATEGORY_GENERAL,
             false,
             "If true, always draw implicit dependency. This property can be changed by the GUI");
+        BQ_Settings.showDependencyArrows = config.getBoolean(
+            "Show dependency arrows",
+            Configuration.CATEGORY_GENERAL,
+            false,
+            "If true, quest dependency lines will render directional arrows. This property can be changed by the GUI.");
         BQ_Settings.forceMonochromeText = config.getBoolean(
             "Force Monochrome Text",
             Configuration.CATEGORY_GENERAL,
