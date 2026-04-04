@@ -37,11 +37,6 @@ public class PanelLine implements IGuiPanel {
     }
 
     public PanelLine(IGuiRect start, IGuiRect end, IGuiLine line, int width, IGuiColor color, int drawOrder,
-        ShouldDrawPredicate shouldDraw, boolean drawArrowHead) {
-        this(start, end, line, width, color, drawOrder, shouldDraw, drawArrowHead, null);
-    }
-
-    public PanelLine(IGuiRect start, IGuiRect end, IGuiLine line, int width, IGuiColor color, int drawOrder,
         ShouldDrawPredicate shouldDraw, boolean drawArrowHead, ScaleSupplier scaleSupplier) {
         this.start = start;
         this.end = end;
