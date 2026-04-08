@@ -23,10 +23,10 @@ public final class ServerTaskScheduler {
     }
 
     @SuppressWarnings("UnstableApiUsage")
-    public <T> ListenableFuture<T> scheduleServerTask(Callable<T> task) {
+    public <T> ListenableFuture<T> scheduleServerTask(Callable<T> task, boolean allowImmediate) {
         Validate.notNull(task);
 
-        if (Thread.currentThread() != serverThread) {
+        if (!allowImmediate || Thread.currentThread() != serverThread) {
             ListenableFutureTask<T> lft = ListenableFutureTask.create(task);
 
             synchronized (serverTasks) {

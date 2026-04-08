@@ -18,9 +18,9 @@ import betterquesting.api.questing.rewards.AbstractReward;
 import betterquesting.api.questing.rewards.IReward;
 import betterquesting.api2.client.gui.misc.IGuiRect;
 import betterquesting.api2.client.gui.panels.IGuiPanel;
+import betterquesting.core.BetterQuesting;
 import bq_standard.AdminExecute;
 import bq_standard.client.gui.rewards.PanelRewardCommand;
-import bq_standard.handlers.EventHandler;
 import bq_standard.rewards.factory.FactoryRewardCommand;
 import io.netty.buffer.ByteBuf;
 
@@ -59,12 +59,12 @@ public class RewardCommand extends AbstractReward implements IReward {
             "VAR_UUID",
             QuestingAPI.getQuestingUUID(player)
                 .toString());
-        final MinecraftServer server = MinecraftServer.getServer();
-
         if (viaPlayer) {
-            EventHandler.scheduleServerTask(
-                () -> server.getCommandManager()
-                    .executeCommand(new AdminExecute(player), finCom));
+            BetterQuesting.proxy.scheduleServerTask(
+                () -> MinecraftServer.getServer()
+                    .getCommandManager()
+                    .executeCommand(new AdminExecute(player), finCom),
+                false);
         } else {
             final RewardCommandSender cmdSender = new RewardCommandSender(
                 player.worldObj,
@@ -72,9 +72,11 @@ public class RewardCommand extends AbstractReward implements IReward {
                 (int) player.posY,
                 (int) player.posZ);
 
-            EventHandler.scheduleServerTask(
-                () -> server.getCommandManager()
-                    .executeCommand(cmdSender, finCom));
+            BetterQuesting.proxy.scheduleServerTask(
+                () -> MinecraftServer.getServer()
+                    .getCommandManager()
+                    .executeCommand(cmdSender, finCom),
+                false);
         }
     }
 

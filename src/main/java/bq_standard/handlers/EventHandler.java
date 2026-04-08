@@ -1,11 +1,8 @@
 package bq_standard.handlers;
 
-import java.util.ArrayDeque;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.Callable;
-import java.util.concurrent.FutureTask;
 import java.util.function.IntSupplier;
 
 import net.minecraft.block.Block;
@@ -24,11 +21,6 @@ import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent.Action;
 import net.minecraftforge.event.world.BlockEvent.BreakEvent;
 import net.minecraftforge.event.world.WorldEvent;
-
-import org.apache.commons.lang3.Validate;
-
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.ListenableFutureTask;
 
 import betterquesting.api.api.ApiReference;
 import betterquesting.api.api.QuestingAPI;
@@ -56,7 +48,6 @@ import cpw.mods.fml.common.gameevent.PlayerEvent.PlayerLoggedInEvent;
 import cpw.mods.fml.common.gameevent.TickEvent.Phase;
 import cpw.mods.fml.common.gameevent.TickEvent.ServerTickEvent;
 
-@SuppressWarnings("unused")
 public class EventHandler {
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
@@ -309,8 +300,6 @@ public class EventHandler {
         }
     }
 
-    private static final ArrayDeque<FutureTask> serverTasks = new ArrayDeque<>();
-    private static Thread serverThread = null;
     private static final HashSet<EntityPlayer> playerInventoryUpdates = new HashSet<>();
 
     /**
@@ -329,29 +318,9 @@ public class EventHandler {
         }
     }
 
-    // NOTE: This is slightly different to the version in the base mod. This one will not immediately run tasks even if
-    // it's from the same thread.
-    public static <T> ListenableFuture<T> scheduleServerTask(Callable<T> task) {
-        Validate.notNull(task);
-
-        ListenableFutureTask<T> listenablefuturetask = ListenableFutureTask.create(task);
-
-        synchronized (serverTasks) {
-            serverTasks.add(listenablefuturetask);
-            return listenablefuturetask;
-        }
-    }
-
     @SubscribeEvent
     public void onServerTick(ServerTickEvent event) {
         if (event.phase != Phase.START) return;
-        if (serverThread == null) serverThread = Thread.currentThread();
-
-        synchronized (serverTasks) {
-            while (!serverTasks.isEmpty()) serverTasks.poll()
-                .run();
-        }
-
         synchronized (playerInventoryUpdates) {
             for (EntityPlayer player : playerInventoryUpdates) {
                 if (player == null || player.inventory == null) {

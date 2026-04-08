@@ -37,11 +37,12 @@ public class CommonProxy {
     public void registerHandlers() {
         ExpansionLoader.INSTANCE.initCommonAPIs();
 
-        MinecraftForge.EVENT_BUS.register(EventHandler.INSTANCE);
-        MinecraftForge.TERRAIN_GEN_BUS.register(EventHandler.INSTANCE);
+        final EventHandler handler = new EventHandler();
+        MinecraftForge.EVENT_BUS.register(handler);
+        MinecraftForge.TERRAIN_GEN_BUS.register(handler);
         FMLCommonHandler.instance()
             .bus()
-            .register(EventHandler.INSTANCE);
+            .register(handler);
 
         NetworkRegistry.INSTANCE.registerGuiHandler(BetterQuesting.instance, new GuiHandler());
     }
@@ -85,9 +86,9 @@ public class CommonProxy {
         }
     }
 
-    public <T> ListenableFuture<T> scheduleServerTask(Callable<T> callable) {
+    public <T> ListenableFuture<T> scheduleServerTask(Callable<T> callable, boolean allowImmediate) {
         if (this.taskScheduler != null) {
-            return this.taskScheduler.scheduleServerTask(callable);
+            return this.taskScheduler.scheduleServerTask(callable, allowImmediate);
         }
         return null;
     }

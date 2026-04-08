@@ -42,8 +42,8 @@ import betterquesting.client.gui2.editors.nbt.GuiNbtEditor;
 import betterquesting.client.gui2.party.GuiPartyCreate;
 import betterquesting.client.gui2.party.GuiPartyManage;
 import betterquesting.commands.admin.QuestCommandDefaults;
+import betterquesting.core.BetterQuesting;
 import betterquesting.handlers.ConfigHandler;
-import betterquesting.handlers.EventHandler;
 import betterquesting.handlers.SaveLoadHandler;
 import betterquesting.network.handlers.NetSettingSync;
 import betterquesting.questing.party.PartyManager;
@@ -223,18 +223,18 @@ public class GuiHome extends GuiScreenCanvas implements IPEventListener {
             final File qFile = new File(BQ_Settings.defaultDir, "DefaultQuests.json");
 
             if (qDir.exists()) {
-                EventHandler.scheduleServerTask(Executors.callable(() -> {
+                BetterQuesting.proxy.scheduleServerTask(Executors.callable(() -> {
                     QuestCommandDefaults.load(null, null, qDir, false);
                     SaveLoadHandler.INSTANCE.resetUpdate();
-                }));
+                }), true);
 
                 // this.initGui(); // Reset the whole thing
                 doClose();
             } else if (qFile.exists()) {
-                EventHandler.scheduleServerTask(Executors.callable(() -> {
+                BetterQuesting.proxy.scheduleServerTask(Executors.callable(() -> {
                     QuestCommandDefaults.loadLegacy(null, null, qDir, false);
                     SaveLoadHandler.INSTANCE.resetUpdate();
-                }));
+                }), true);
 
                 // this.initGui(); // Reset the whole thing
                 doClose();
