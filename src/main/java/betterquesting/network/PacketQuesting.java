@@ -13,7 +13,6 @@ import org.apache.logging.log4j.Level;
 import betterquesting.api.api.QuestingAPI;
 import betterquesting.api2.utils.Tuple2;
 import betterquesting.core.BetterQuesting;
-import betterquesting.handlers.EventHandler;
 import cpw.mods.fml.common.network.ByteBufUtils;
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
 import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
@@ -74,7 +73,8 @@ public class PacketQuesting implements IMessage {
                     .log(Level.WARN, "Recieved a packet server side with an invalid ID: " + message.getString("ID"));
                 return null;
             } else if (sender != null) {
-                EventHandler.scheduleServerTask(Executors.callable(() -> method.accept(new Tuple2<>(message, sender))));
+                BetterQuesting.proxy
+                    .scheduleServerTask(Executors.callable(() -> method.accept(new Tuple2<>(message, sender))), true);
             }
 
             return null;
