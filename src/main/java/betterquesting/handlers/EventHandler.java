@@ -5,9 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
-import java.util.concurrent.FutureTask;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
@@ -34,12 +32,6 @@ import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent.Clone;
 import net.minecraftforge.event.world.WorldEvent;
-
-import org.apache.commons.lang3.Validate;
-
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.ListenableFutureTask;
 
 import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.client.gui.misc.INeedsRefresh;
@@ -93,8 +85,6 @@ import cpw.mods.fml.relauncher.SideOnly;
  * Event handling for standard quests and core BetterQuesting functionality
  */
 public class EventHandler {
-
-    public static final EventHandler INSTANCE = new EventHandler();
 
     @SubscribeEvent
     @SideOnly(Side.CLIENT)
@@ -504,39 +494,9 @@ public class EventHandler {
     private final ArrayDeque<EntityPlayerMP> opQueue = new ArrayDeque<>();
     private boolean openToLAN = false;
 
-    private static final ArrayDeque<FutureTask> serverTasks = new ArrayDeque<>();
-    private static Thread serverThread = null;
-
-    @SuppressWarnings("UnstableApiUsage")
-    public static <T> ListenableFuture<T> scheduleServerTask(Callable<T> task) {
-        Validate.notNull(task);
-
-        if (Thread.currentThread() != serverThread) {
-            ListenableFutureTask<T> listenablefuturetask = ListenableFutureTask.create(task);
-
-            synchronized (serverTasks) {
-                serverTasks.add(listenablefuturetask);
-                return listenablefuturetask;
-            }
-        } else {
-            try {
-                return Futures.immediateFuture(task.call());
-            } catch (Exception exception) {
-                return Futures.immediateFailedCheckedFuture(exception);
-            }
-        }
-    }
-
     @SubscribeEvent
     public void onServerTick(ServerTickEvent event) {
         if (event.phase == Phase.START) {
-            if (serverThread == null) serverThread = Thread.currentThread();
-
-            synchronized (serverTasks) {
-                while (!serverTasks.isEmpty()) serverTasks.poll()
-                    .run();
-            }
-
             return;
         }
 
