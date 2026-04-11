@@ -5,11 +5,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.util.ResourceLocation;
 
@@ -26,6 +28,7 @@ import betterquesting.api.properties.NativeProps;
 import betterquesting.api.questing.IQuest;
 import betterquesting.api.questing.rewards.IReward;
 import betterquesting.api.questing.tasks.ITask;
+import betterquesting.api.utils.RenderUtils;
 import betterquesting.api2.client.gui.GuiScreenCanvas;
 import betterquesting.api2.client.gui.controls.IPanelButton;
 import betterquesting.api2.client.gui.controls.PanelButton;
@@ -47,6 +50,7 @@ import betterquesting.api2.client.gui.panels.content.PanelGeneric;
 import betterquesting.api2.client.gui.panels.content.PanelLine;
 import betterquesting.api2.client.gui.panels.content.PanelTextBox;
 import betterquesting.api2.client.gui.panels.lists.CanvasScrolling;
+import betterquesting.api2.client.gui.popups.PopContextMenu;
 import betterquesting.api2.client.gui.resources.textures.SimpleNoUVTexture;
 import betterquesting.api2.client.gui.themes.presets.PresetColor;
 import betterquesting.api2.client.gui.themes.presets.PresetIcon;
@@ -194,6 +198,18 @@ public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeeds
         PanelButton copyButton = new PanelButton(new GuiTransform(GuiAlign.TOP_LEFT, 16, 10, 16, 16, 0), 8, "");
         copyButton.setIcon(PresetIcon.ICON_COPY.getTexture());
         cvBackground.addPanel(copyButton);
+
+        PanelButton btnDeps = new PanelButton(new GuiTransform(GuiAlign.TOP_LEFT, 34, 10, 16, 16, 0), 9, "");
+        btnDeps.setIcon(PresetIcon.ICON_LEFT.getTexture());
+        btnDeps
+            .setTooltip(Collections.singletonList(QuestTranslation.translate("betterquesting.btn.view_dependencies")));
+        cvBackground.addPanel(btnDeps);
+
+        PanelButton btnDependants = new PanelButton(new GuiTransform(GuiAlign.TOP_LEFT, 52, 10, 16, 16, 0), 10, "");
+        btnDependants.setIcon(PresetIcon.ICON_RIGHT.getTexture());
+        btnDependants
+            .setTooltip(Collections.singletonList(QuestTranslation.translate("betterquesting.btn.view_dependants")));
+        cvBackground.addPanel(btnDependants);
 
         cvInner = new CanvasEmpty(new GuiTransform(GuiAlign.FULL_BOX, new GuiPadding(16, 32, 16, 24), 0));
         cvBackground.addPanel(cvInner);
@@ -352,9 +368,74 @@ public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeeds
                 String clearedText = matcher.replaceAll("");
                 setClipboardString(clearedText);
                 break;
+            case 9: // View dependencies
+                showDependencyPopup(btn, true);
+                break;
+            case 10: // View dependants
+                showDependencyPopup(btn, false);
+                break;
             default:
                 break;
         }
+    }
+
+    private void showDependencyPopup(IPanelButton btn, boolean isDependencies) {
+        List<Map.Entry<UUID, IQuest>> questEntries;
+        if (isDependencies) {
+            Set<UUID> reqIds = quest.getRequirements();
+            questEntries = new ArrayList<>();
+            for (UUID reqId : reqIds) {
+                IQuest reqQuest = QuestDatabase.INSTANCE.get(reqId);
+                if (reqQuest != null) {
+                    questEntries.add(Maps.immutableEntry(reqId, reqQuest));
+                }
+            }
+        } else {
+            questEntries = findDependants(questID);
+        }
+
+        if (questEntries.isEmpty()) return;
+
+        FontRenderer fr = Minecraft.getMinecraft().fontRenderer;
+        int maxWidth = 0;
+        for (Map.Entry<UUID, IQuest> entry : questEntries) {
+            int w = RenderUtils.getStringWidth(QuestTranslation.translateQuestName(entry), fr);
+            if (w > maxWidth) maxWidth = w;
+        }
+
+        IGuiRect btnRect = btn.getTransform();
+        int popupX = btnRect.getX();
+        int popupY = btnRect.getY() + btnRect.getHeight();
+        int popupW = maxWidth + 12;
+        int popupH = Math.min(questEntries.size() * 16, 160);
+
+        PopContextMenu popup = new PopContextMenu(new GuiRectangle(popupX, popupY, popupW, popupH), true);
+        for (Map.Entry<UUID, IQuest> entry : questEntries) {
+            UUID targetId = entry.getKey();
+            String name = QuestTranslation.translateQuestName(entry);
+            popup.addButton(name, null, () -> { navigateToQuest(targetId); });
+        }
+        openPopup(popup);
+    }
+
+    private void navigateToQuest(UUID targetId) {
+        closePopup();
+        if (parent instanceof GuiQuestLines) {
+            mc.displayGuiScreen(parent);
+            ((GuiQuestLines) parent).navigateToQuest(targetId);
+        }
+    }
+
+    private List<Map.Entry<UUID, IQuest>> findDependants(UUID questId) {
+        List<Map.Entry<UUID, IQuest>> result = new ArrayList<>();
+        for (Map.Entry<UUID, IQuest> entry : QuestDatabase.INSTANCE.entrySet()) {
+            if (entry.getValue() != null && entry.getValue()
+                .getRequirements()
+                .contains(questId)) {
+                result.add(entry);
+            }
+        }
+        return result;
     }
 
     private void refreshRewardPanel() {
