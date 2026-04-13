@@ -19,6 +19,7 @@ import org.lwjgl.input.Keyboard;
 
 import betterquesting.api.client.gui.misc.IVolatileScreen;
 import betterquesting.api.misc.ICallback;
+import betterquesting.api.utils.RenderUtils;
 import betterquesting.api2.client.gui.GuiScreenCanvas;
 import betterquesting.api2.client.gui.controls.IPanelButton;
 import betterquesting.api2.client.gui.controls.PanelButton;
@@ -37,6 +38,7 @@ import betterquesting.api2.client.gui.panels.CanvasTextured;
 import betterquesting.api2.client.gui.panels.bars.PanelVScrollBar;
 import betterquesting.api2.client.gui.panels.content.PanelTextBox;
 import betterquesting.api2.client.gui.panels.lists.CanvasScrolling;
+import betterquesting.api2.client.gui.popups.PopColorInput;
 import betterquesting.api2.client.gui.popups.PopWaitExternalEvent;
 import betterquesting.api2.client.gui.themes.presets.PresetColor;
 import betterquesting.api2.client.gui.themes.presets.PresetTexture;
@@ -138,6 +140,23 @@ public class GuiTextEditor extends GuiScreenCanvas implements IPEventListener, I
                 "§2§nQuest Title§r",
                 "[quest] [/quest]"));
 
+        // RGB color buttons
+        cvFormatList
+            .addPanel(new PanelButton(new GuiRectangle(0, 16 * macroCount++, 100, 16), 4, "\u00a7cHex Color\u00a7r"));
+        cvFormatList.addPanel(
+            new PanelButtonStorage<>(
+                new GuiRectangle(0, 16 * macroCount++, 100, 16),
+                1,
+                "\u00a7yRainbow\u00a7r",
+                "&y"));
+        cvFormatList.addPanel(
+            new PanelButtonStorage<>(new GuiRectangle(0, 16 * macroCount++, 100, 16), 1, "\u00a76Wave\u00a7r", "&w"));
+        cvFormatList.addPanel(
+            new PanelButtonStorage<>(new GuiRectangle(0, 16 * macroCount++, 100, 16), 1, "\u00a75Flip\u00a7r", "&j"));
+        cvFormatList
+            .addPanel(new PanelButton(new GuiRectangle(0, 16 * macroCount++, 100, 16), 5, "\u00a7bGradient\u00a7r"));
+        cvFormatList.addPanel(new PanelButton(new GuiRectangle(0, 16 * macroCount++, 100, 16), 6, "Clear Format"));
+
         for (int i = 0; i < tfValues.length; i++) {
             cvFormatList.addPanel(
                 new PanelButtonStorage<>(
@@ -174,7 +193,12 @@ public class GuiTextEditor extends GuiScreenCanvas implements IPEventListener, I
             mc.displayGuiScreen(this.parent);
         } else if (btn.getButtonID() == 1 && btn instanceof PanelButtonStorage) {
             String format = ((PanelButtonStorage<String>) btn).getStoredValue();
-            flText.writeText(format);
+            String selected = flText.getSelectedText();
+            if (selected.isEmpty()) {
+                flText.writeText(format);
+            } else {
+                flText.writeText(format + selected + "\u00a7r");
+            }
         } else if (btn.getButtonID() == 2 && btn instanceof PanelButtonStorage) {
             String[] tagPair = ((PanelButtonStorage<String>) btn).getStoredValue()
                 .split(" ");
@@ -211,7 +235,118 @@ public class GuiTextEditor extends GuiScreenCanvas implements IPEventListener, I
                     popup.ensureDone();
                 }
             });
+        } else if (btn.getButtonID() == 4) {
+            // Hex Color picker
+            String selected = flText.getSelectedText();
+            this.openPopup(new PopColorInput("Hex Color", false, colorCode -> {
+                if (selected.isEmpty()) {
+                    flText.writeText(colorCode);
+                } else {
+                    flText.writeText(colorCode + selected + "\u00a7r");
+                }
+            }));
+        } else if (btn.getButtonID() == 5) {
+            // Gradient picker
+            String selected = flText.getSelectedText();
+            this.openPopup(new PopColorInput("Gradient", true, colorCode -> {
+                if (selected.isEmpty()) {
+                    flText.writeText(colorCode);
+                } else {
+                    flText.writeText(colorCode + selected + "\u00a7r");
+                }
+            }));
+        } else if (btn.getButtonID() == 6) {
+            // Clear Format
+            String selected = flText.getSelectedText();
+            if (selected.isEmpty()) {
+                flText.writeText("\u00a7r");
+            } else {
+                flText.writeText(stripFormatting(selected));
+            }
         }
+    }
+
+    static boolean isHex6(String str, int start) {
+        if (start + 6 > str.length()) return false;
+        for (int k = 0; k < 6; k++) {
+            char c = str.charAt(start + k);
+            if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'))) return false;
+        }
+        return true;
+    }
+
+    static String stripFormatting(String text) {
+        StringBuilder sb = new StringBuilder();
+        int len = text.length();
+        for (int i = 0; i < len; i++) {
+            char ch = text.charAt(i);
+            if (ch == '&' && i + 1 < len) {
+                char next = text.charAt(i + 1);
+                char nextL = Character.toLowerCase(next);
+                // &g&#RRGGBB&#RRGGBB (18 chars)
+                if (nextL == 'g' && i + 18 <= len
+                    && text.charAt(i + 2) == '&'
+                    && text.charAt(i + 3) == '#'
+                    && isHex6(text, i + 4)
+                    && text.charAt(i + 10) == '&'
+                    && text.charAt(i + 11) == '#'
+                    && isHex6(text, i + 12)) {
+                    i += 17;
+                    continue;
+                }
+                // &#RRGGBB (8 chars)
+                if (next == '#' && isHex6(text, i + 2)) {
+                    i += 7;
+                    continue;
+                }
+                // &X single codes
+                if ((nextL >= '0' && nextL <= '9') || (nextL >= 'a' && nextL <= 'f')
+                    || (nextL >= 'k' && nextL <= 'o')
+                    || nextL == 'r'
+                    || nextL == 'x'
+                    || nextL == 'y'
+                    || nextL == 'w'
+                    || nextL == 'j'
+                    || nextL == 'g') {
+                    i += 1;
+                    continue;
+                }
+                // Literal &
+                sb.append(ch);
+            } else if (ch == '\u00a7' && i + 1 < len) {
+                char next = text.charAt(i + 1);
+                char nextL = Character.toLowerCase(next);
+                // §g + two §x sequences (30 chars)
+                if (nextL == 'g' && i + 30 <= len
+                    && RenderUtils.isValidSectionX(text, i + 2)
+                    && RenderUtils.isValidSectionX(text, i + 16)) {
+                    i += 29;
+                    continue;
+                }
+                // §x§R§R§G§G§B§B (14 chars)
+                if (nextL == 'x' && RenderUtils.isValidSectionX(text, i)) {
+                    i += 13;
+                    continue;
+                }
+                // §X (2 chars) — any known format code
+                if ((nextL >= '0' && nextL <= '9') || (nextL >= 'a' && nextL <= 'f')
+                    || (nextL >= 'k' && nextL <= 'o')
+                    || nextL == 'r'
+                    || nextL == 'x'
+                    || nextL == 'y'
+                    || nextL == 'w'
+                    || nextL == 'j'
+                    || nextL == 'g') {
+                    i += 1;
+                    continue;
+                }
+                // Unknown §, pass through
+                sb.append(ch);
+            } else {
+                sb.append(ch);
+            }
+        }
+        return sb.toString();
     }
 
     private void writeImageTag(String resourceLoc) {
