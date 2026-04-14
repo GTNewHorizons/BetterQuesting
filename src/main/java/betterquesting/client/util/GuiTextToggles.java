@@ -8,16 +8,16 @@ public final class GuiTextToggles {
 
     private GuiTextToggles() {}
 
-    // Strips all color and effect format codes: §x RGB, §g gradient, §y rainbow,
-    // §w wave, §j dinnerbone, legacy §0-f, and their & equivalents.
+    // Strips all color and effect format codes: §x RGB, §g gradient, §q rainbow,
+    // §z wave, §v dinnerbone, legacy §0-f, and their & equivalents.
     // Preserves styles (§k-o) and reset (§r).
     private static final Pattern COLOR_CODE_REMOVER = Pattern.compile(
         "§g§x(?:§[0-9a-fA-F]){6}§x(?:§[0-9a-fA-F]){6}" // §g gradient (30 chars)
             + "|§x(?:§[0-9a-fA-F]){6}" // §x RGB (14 chars)
-            + "|§[0-9a-fA-Fxygwj]" // legacy colors, §x/§y/§g/§w/§j
+            + "|§[0-9a-fA-Fxqgzv]" // legacy colors, §x/§q/§g/§z/§v
             + "|&g&#[0-9a-fA-F]{6}&#[0-9a-fA-F]{6}" // &g gradient (18 chars)
             + "|&#[0-9a-fA-F]{6}" // &#RRGGBB (8 chars)
-            + "|&[0-9a-fA-Fygwj]"); // legacy & colors, &y/&g/&w/&j
+            + "|&[0-9a-fA-Fqgzv]"); // legacy & colors, &q/&g/&z/&v
 
     // Strips BQ formatting tags that add color. URL is excluded so links stay clickable;
     // the §1/§9 color that [url] inserts is already handled by COLOR_CODE_REMOVER.

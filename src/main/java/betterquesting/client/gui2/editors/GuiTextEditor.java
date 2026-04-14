@@ -147,12 +147,12 @@ public class GuiTextEditor extends GuiScreenCanvas implements IPEventListener, I
             new PanelButtonStorage<>(
                 new GuiRectangle(0, 16 * macroCount++, 100, 16),
                 1,
-                "\u00a7yRainbow\u00a7r",
-                "&y"));
+                "\u00a7qRainbow\u00a7r",
+                "&q"));
         cvFormatList.addPanel(
-            new PanelButtonStorage<>(new GuiRectangle(0, 16 * macroCount++, 100, 16), 1, "\u00a76Wave\u00a7r", "&w"));
+            new PanelButtonStorage<>(new GuiRectangle(0, 16 * macroCount++, 100, 16), 1, "\u00a76Wave\u00a7r", "&z"));
         cvFormatList.addPanel(
-            new PanelButtonStorage<>(new GuiRectangle(0, 16 * macroCount++, 100, 16), 1, "\u00a75Flip\u00a7r", "&j"));
+            new PanelButtonStorage<>(new GuiRectangle(0, 16 * macroCount++, 100, 16), 1, "\u00a75Flip\u00a7r", "&v"));
         cvFormatList
             .addPanel(new PanelButton(new GuiRectangle(0, 16 * macroCount++, 100, 16), 5, "\u00a7bGradient\u00a7r"));
         cvFormatList.addPanel(new PanelButton(new GuiRectangle(0, 16 * macroCount++, 100, 16), 6, "Clear Format"));
@@ -304,9 +304,9 @@ public class GuiTextEditor extends GuiScreenCanvas implements IPEventListener, I
                     || (nextL >= 'k' && nextL <= 'o')
                     || nextL == 'r'
                     || nextL == 'x'
-                    || nextL == 'y'
-                    || nextL == 'w'
-                    || nextL == 'j'
+                    || nextL == 'q'
+                    || nextL == 'z'
+                    || nextL == 'v'
                     || nextL == 'g') {
                     i += 1;
                     continue;
@@ -333,9 +333,9 @@ public class GuiTextEditor extends GuiScreenCanvas implements IPEventListener, I
                     || (nextL >= 'k' && nextL <= 'o')
                     || nextL == 'r'
                     || nextL == 'x'
-                    || nextL == 'y'
-                    || nextL == 'w'
-                    || nextL == 'j'
+                    || nextL == 'q'
+                    || nextL == 'z'
+                    || nextL == 'v'
                     || nextL == 'g') {
                     i += 1;
                     continue;
