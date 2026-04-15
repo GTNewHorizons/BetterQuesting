@@ -199,17 +199,30 @@ public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeeds
         copyButton.setIcon(PresetIcon.ICON_COPY.getTexture());
         cvBackground.addPanel(copyButton);
 
-        PanelButton btnDeps = new PanelButton(new GuiTransform(GuiAlign.TOP_LEFT, 34, 10, 16, 16, 0), 9, "");
-        btnDeps.setIcon(PresetIcon.ICON_LEFT.getTexture());
-        btnDeps
-            .setTooltip(Collections.singletonList(QuestTranslation.translate("betterquesting.btn.view_dependencies")));
-        cvBackground.addPanel(btnDeps);
+        int btnOffset = 34;
 
-        PanelButton btnDependants = new PanelButton(new GuiTransform(GuiAlign.TOP_LEFT, 52, 10, 16, 16, 0), 10, "");
-        btnDependants.setIcon(PresetIcon.ICON_RIGHT.getTexture());
-        btnDependants
-            .setTooltip(Collections.singletonList(QuestTranslation.translate("betterquesting.btn.view_dependants")));
-        cvBackground.addPanel(btnDependants);
+        boolean hasDeps = !quest.getRequirements()
+            .isEmpty();
+        if (hasDeps) {
+            PanelButton btnDeps = new PanelButton(new GuiTransform(GuiAlign.TOP_LEFT, btnOffset, 10, 16, 16, 0), 9, "");
+            btnDeps.setIcon(PresetIcon.ICON_LEFT.getTexture());
+            btnDeps.setTooltip(
+                Collections.singletonList(QuestTranslation.translate("betterquesting.btn.view_dependencies")));
+            cvBackground.addPanel(btnDeps);
+            btnOffset += 18;
+        }
+
+        boolean hasDependants = !findDependants(questID).isEmpty();
+        if (hasDependants) {
+            PanelButton btnDependants = new PanelButton(
+                new GuiTransform(GuiAlign.TOP_LEFT, btnOffset, 10, 16, 16, 0),
+                10,
+                "");
+            btnDependants.setIcon(PresetIcon.ICON_RIGHT.getTexture());
+            btnDependants.setTooltip(
+                Collections.singletonList(QuestTranslation.translate("betterquesting.btn.view_dependants")));
+            cvBackground.addPanel(btnDependants);
+        }
 
         cvInner = new CanvasEmpty(new GuiTransform(GuiAlign.FULL_BOX, new GuiPadding(16, 32, 16, 24), 0));
         cvBackground.addPanel(cvInner);
@@ -420,10 +433,25 @@ public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeeds
 
     private void navigateToQuest(UUID targetId) {
         closePopup();
-        if (parent instanceof GuiQuestLines) {
-            mc.displayGuiScreen(parent);
-            ((GuiQuestLines) parent).navigateToQuest(targetId);
+        // Walk the parent chain to find a GuiQuestLines
+        GuiQuestLines questLines = null;
+        GuiScreen screen = this.parent;
+        while (screen != null) {
+            if (screen instanceof GuiQuestLines) {
+                questLines = (GuiQuestLines) screen;
+                break;
+            }
+            if (screen instanceof GuiScreenCanvas) {
+                screen = ((GuiScreenCanvas) screen).parent;
+            } else {
+                break;
+            }
         }
+        if (questLines == null) {
+            questLines = new GuiQuestLines(this.parent);
+        }
+        mc.displayGuiScreen(questLines);
+        questLines.navigateToQuest(targetId);
     }
 
     private List<Map.Entry<UUID, IQuest>> findDependants(UUID questId) {
