@@ -63,7 +63,7 @@ import betterquesting.api2.client.gui.panels.lists.CanvasHoverTray;
 import betterquesting.api2.client.gui.panels.lists.CanvasQuestLine;
 import betterquesting.api2.client.gui.panels.lists.CanvasScrolling;
 import betterquesting.api2.client.gui.popups.PopChoiceExt;
-import betterquesting.api2.client.gui.popups.PopContextMenu;
+import betterquesting.api2.client.gui.popups.PopContextMenuHoverSub;
 import betterquesting.api2.client.gui.resources.colors.GuiColorPulse;
 import betterquesting.api2.client.gui.resources.colors.GuiColorStatic;
 import betterquesting.api2.client.gui.resources.textures.GuiTextureColored;
@@ -540,10 +540,23 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
                     if (btnQuest != null) {
                         UUID questId = btnQuest.getStoredValue()
                             .getKey();
+                        IQuest theQuest = QuestDatabase.INSTANCE.get(questId);
                         int maxWidth = RenderUtils
                             .getStringWidth(QuestTranslation.translate("betterquesting.btn.share_quest"), fr);
+                        maxWidth = Math.max(
+                            maxWidth,
+                            RenderUtils.getStringWidth(
+                                QuestTranslation.translate("betterquesting.btn.view_dependencies"),
+                                fr));
+                        maxWidth = Math.max(
+                            maxWidth,
+                            RenderUtils
+                                .getStringWidth(QuestTranslation.translate("betterquesting.btn.view_dependants"), fr));
 
-                        PopContextMenu popup = new PopContextMenu(new GuiRectangle(mx, my, maxWidth + 12, 48), true);
+                        int menuItemCount = 5; // bookmark, share, copy, deps, dependants
+                        PopContextMenuHoverSub popup = new PopContextMenuHoverSub(
+                            new GuiRectangle(mx, my, maxWidth + 20, menuItemCount * 16),
+                            true);
 
                         Runnable pinQuest = () -> {
                             boolean bookmarked = BookmarkHandler.bookmarkQuest(questId);
@@ -587,6 +600,47 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
                             closePopup();
                         };
                         popup.addButton(QuestTranslation.translate("betterquesting.btn.copy_quest"), null, copyQuestId);
+
+                        // View Dependencies sub-menu
+                        if (theQuest != null) {
+                            UUID playerUUID = QuestingAPI.getQuestingUUID(mc.thePlayer);
+                            List<PopContextMenuHoverSub.SubMenuEntry> depEntries = new ArrayList<>();
+                            for (UUID reqId : theQuest.getRequirements()) {
+                                IQuest reqQuest = QuestDatabase.INSTANCE.get(reqId);
+                                if (reqQuest != null && isQuestInQuestLine(reqId)
+                                    && QuestCache.isQuestShown(reqQuest, playerUUID, mc.thePlayer)) {
+                                    String name = QuestTranslation.translateQuestName(reqId, reqQuest);
+                                    final UUID targetId = reqId;
+                                    depEntries.add(new PopContextMenuHoverSub.SubMenuEntry(name, () -> {
+                                        closePopup();
+                                        navigateToQuest(targetId);
+                                    }));
+                                }
+                            }
+                            popup.addSubMenu(
+                                QuestTranslation.translate("betterquesting.btn.view_dependencies"),
+                                depEntries);
+
+                            // View Dependants sub-menu
+                            List<PopContextMenuHoverSub.SubMenuEntry> dependantEntries = new ArrayList<>();
+                            for (Map.Entry<UUID, IQuest> entry : QuestDatabase.INSTANCE.entrySet()) {
+                                if (entry.getValue() != null && entry.getValue()
+                                    .getRequirements()
+                                    .contains(questId)
+                                    && isQuestInQuestLine(entry.getKey())
+                                    && QuestCache.isQuestShown(entry.getValue(), playerUUID, mc.thePlayer)) {
+                                    String name = QuestTranslation.translateQuestName(entry.getKey(), entry.getValue());
+                                    final UUID targetId = entry.getKey();
+                                    dependantEntries.add(new PopContextMenuHoverSub.SubMenuEntry(name, () -> {
+                                        closePopup();
+                                        navigateToQuest(targetId);
+                                    }));
+                                }
+                            }
+                            popup.addSubMenu(
+                                QuestTranslation.translate("betterquesting.btn.view_dependants"),
+                                dependantEntries);
+                        }
 
                         openPopup(popup);
                         return true;
@@ -1026,5 +1080,33 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
         panelButtonQuest.setTextures(newTexture, newTexture, newTexture);
         cvQuest.setZoom(2f);
         cvQuest.centerOn(panelButtonQuest);
+    }
+
+    public void navigateToQuest(UUID targetQuestId) {
+        for (Map.Entry<UUID, IQuestLine> lineEntry : QuestLineDatabase.INSTANCE.entrySet()) {
+            if (lineEntry.getValue()
+                .containsKey(targetQuestId)) {
+                openQuestLine(lineEntry);
+                Optional<PanelButtonQuest> targetQuestButton = cvQuest.getQuestButtons()
+                    .stream()
+                    .filter(
+                        panelButtonQuest -> panelButtonQuest.getStoredValue()
+                            .getKey()
+                            .equals(targetQuestId))
+                    .findFirst();
+                targetQuestButton.ifPresent(this::highlightButton);
+                return;
+            }
+        }
+    }
+
+    private static boolean isQuestInQuestLine(UUID questId) {
+        for (Map.Entry<UUID, IQuestLine> lineEntry : QuestLineDatabase.INSTANCE.entrySet()) {
+            if (lineEntry.getValue()
+                .containsKey(questId)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
