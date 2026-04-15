@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -26,9 +25,11 @@ import betterquesting.api.client.gui.misc.INeedsRefresh;
 import betterquesting.api.enums.EnumLogic;
 import betterquesting.api.properties.NativeProps;
 import betterquesting.api.questing.IQuest;
+import betterquesting.api.questing.IQuestLine;
 import betterquesting.api.questing.rewards.IReward;
 import betterquesting.api.questing.tasks.ITask;
 import betterquesting.api.utils.RenderUtils;
+import betterquesting.api2.cache.QuestCache;
 import betterquesting.api2.client.gui.GuiScreenCanvas;
 import betterquesting.api2.client.gui.controls.IPanelButton;
 import betterquesting.api2.client.gui.controls.PanelButton;
@@ -62,6 +63,7 @@ import betterquesting.client.util.GuiTextToggles;
 import betterquesting.core.BetterQuesting;
 import betterquesting.network.handlers.NetQuestAction;
 import betterquesting.questing.QuestDatabase;
+import betterquesting.questing.QuestLineDatabase;
 import bq_standard.integration.vendingmachine.VmAdapter;
 
 public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeedsRefresh {
@@ -201,9 +203,8 @@ public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeeds
 
         int btnOffset = 34;
 
-        boolean hasDeps = !quest.getRequirements()
-            .isEmpty();
-        if (hasDeps) {
+        List<Map.Entry<UUID, IQuest>> filteredDeps = getFilteredDependencies();
+        if (!filteredDeps.isEmpty()) {
             PanelButton btnDeps = new PanelButton(new GuiTransform(GuiAlign.TOP_LEFT, btnOffset, 10, 16, 16, 0), 9, "");
             btnDeps.setIcon(PresetIcon.ICON_LEFT.getTexture());
             btnDeps.setTooltip(
@@ -212,8 +213,8 @@ public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeeds
             btnOffset += 18;
         }
 
-        boolean hasDependants = !findDependants(questID).isEmpty();
-        if (hasDependants) {
+        List<Map.Entry<UUID, IQuest>> filteredDependants = getFilteredDependants();
+        if (!filteredDependants.isEmpty()) {
             PanelButton btnDependants = new PanelButton(
                 new GuiTransform(GuiAlign.TOP_LEFT, btnOffset, 10, 16, 16, 0),
                 10,
@@ -393,19 +394,8 @@ public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeeds
     }
 
     private void showDependencyPopup(IPanelButton btn, boolean isDependencies) {
-        List<Map.Entry<UUID, IQuest>> questEntries;
-        if (isDependencies) {
-            Set<UUID> reqIds = quest.getRequirements();
-            questEntries = new ArrayList<>();
-            for (UUID reqId : reqIds) {
-                IQuest reqQuest = QuestDatabase.INSTANCE.get(reqId);
-                if (reqQuest != null) {
-                    questEntries.add(Maps.immutableEntry(reqId, reqQuest));
-                }
-            }
-        } else {
-            questEntries = findDependants(questID);
-        }
+        List<Map.Entry<UUID, IQuest>> questEntries = isDependencies ? getFilteredDependencies()
+            : getFilteredDependants();
 
         if (questEntries.isEmpty()) return;
 
@@ -460,6 +450,41 @@ public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeeds
             if (entry.getValue() != null && entry.getValue()
                 .getRequirements()
                 .contains(questId)) {
+                result.add(entry);
+            }
+        }
+        return result;
+    }
+
+    private boolean isQuestInQuestLine(UUID questId) {
+        for (Map.Entry<UUID, IQuestLine> lineEntry : QuestLineDatabase.INSTANCE.entrySet()) {
+            if (lineEntry.getValue()
+                .containsKey(questId)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private List<Map.Entry<UUID, IQuest>> getFilteredDependencies() {
+        UUID playerUUID = QuestingAPI.getQuestingUUID(mc.thePlayer);
+        List<Map.Entry<UUID, IQuest>> result = new ArrayList<>();
+        for (UUID reqId : quest.getRequirements()) {
+            IQuest reqQuest = QuestDatabase.INSTANCE.get(reqId);
+            if (reqQuest != null && isQuestInQuestLine(reqId)
+                && QuestCache.isQuestShown(reqQuest, playerUUID, mc.thePlayer)) {
+                result.add(Maps.immutableEntry(reqId, reqQuest));
+            }
+        }
+        return result;
+    }
+
+    private List<Map.Entry<UUID, IQuest>> getFilteredDependants() {
+        UUID playerUUID = QuestingAPI.getQuestingUUID(mc.thePlayer);
+        List<Map.Entry<UUID, IQuest>> result = new ArrayList<>();
+        for (Map.Entry<UUID, IQuest> entry : findDependants(questID)) {
+            if (isQuestInQuestLine(entry.getKey())
+                && QuestCache.isQuestShown(entry.getValue(), playerUUID, mc.thePlayer)) {
                 result.add(entry);
             }
         }

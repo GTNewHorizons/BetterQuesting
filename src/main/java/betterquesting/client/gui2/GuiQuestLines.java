@@ -603,10 +603,12 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
 
                         // View Dependencies sub-menu
                         if (theQuest != null) {
+                            UUID playerUUID = QuestingAPI.getQuestingUUID(mc.thePlayer);
                             List<PopContextMenuHoverSub.SubMenuEntry> depEntries = new ArrayList<>();
                             for (UUID reqId : theQuest.getRequirements()) {
                                 IQuest reqQuest = QuestDatabase.INSTANCE.get(reqId);
-                                if (reqQuest != null) {
+                                if (reqQuest != null && isQuestInQuestLine(reqId)
+                                    && QuestCache.isQuestShown(reqQuest, playerUUID, mc.thePlayer)) {
                                     String name = QuestTranslation.translateQuestName(reqId, reqQuest);
                                     final UUID targetId = reqId;
                                     depEntries.add(new PopContextMenuHoverSub.SubMenuEntry(name, () -> {
@@ -624,7 +626,9 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
                             for (Map.Entry<UUID, IQuest> entry : QuestDatabase.INSTANCE.entrySet()) {
                                 if (entry.getValue() != null && entry.getValue()
                                     .getRequirements()
-                                    .contains(questId)) {
+                                    .contains(questId)
+                                    && isQuestInQuestLine(entry.getKey())
+                                    && QuestCache.isQuestShown(entry.getValue(), playerUUID, mc.thePlayer)) {
                                     String name = QuestTranslation.translateQuestName(entry.getKey(), entry.getValue());
                                     final UUID targetId = entry.getKey();
                                     dependantEntries.add(new PopContextMenuHoverSub.SubMenuEntry(name, () -> {
@@ -1094,5 +1098,15 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
                 return;
             }
         }
+    }
+
+    private static boolean isQuestInQuestLine(UUID questId) {
+        for (Map.Entry<UUID, IQuestLine> lineEntry : QuestLineDatabase.INSTANCE.entrySet()) {
+            if (lineEntry.getValue()
+                .containsKey(questId)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
