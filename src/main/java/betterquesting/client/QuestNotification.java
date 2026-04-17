@@ -7,6 +7,7 @@ import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.PositionedSound;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.ResourceLocation;
@@ -18,6 +19,7 @@ import betterquesting.api.properties.NativeProps;
 import betterquesting.api.storage.BQ_Settings;
 import betterquesting.api.utils.RenderUtils;
 import betterquesting.api2.utils.QuestTranslation;
+import com.gtnewhorizon.gtnhlib.client.title.TitleAPI;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -25,11 +27,33 @@ import cpw.mods.fml.relauncher.SideOnly;
 @SideOnly(Side.CLIENT)
 public class QuestNotification {
 
+    private static final boolean HAS_TITLE_API;
+    static {
+        boolean found;
+        try {
+            Class.forName("com.gtnewhorizon.gtnhlib.client.title.TitleAPI");
+            found = true;
+        } catch (ClassNotFoundException e) {
+            found = false;
+        }
+        HAS_TITLE_API = found;
+    }
+
     private static final List<QuestNotice> notices = new ArrayList<>();
 
     public static void ScheduleNotice(String mainTxt, String subTxt, ItemStack icon, String sound) {
         if (BQ_Settings.questNotices) {
             notices.add(new QuestNotice(mainTxt, subTxt, icon, sound));
+            showTitleIfAvailable(mainTxt, subTxt);
+        }
+    }
+
+    private static void showTitleIfAvailable(String mainTxt, String subTxt) {
+        if (!HAS_TITLE_API) return;
+        TitleAPI.setTimes(10, 40, 10);
+        TitleAPI.setTitle(new ChatComponentText(QuestTranslation.translate(mainTxt)));
+        if (subTxt != null && !subTxt.isEmpty()) {
+            TitleAPI.setSubtitle(new ChatComponentText(QuestTranslation.translate(subTxt)));
         }
     }
 
