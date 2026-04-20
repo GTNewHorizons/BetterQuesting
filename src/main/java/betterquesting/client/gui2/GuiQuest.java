@@ -244,10 +244,10 @@ public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeeds
                     QuestTranslation.translate("betterquesting.btn.claim"));
                 btnClaim.setActive(false);
                 cvInner.addPanel(btnClaim);
-
-                rectReward = new GuiTransform(new Vector4f(0F, 0.5F, 0.5F, 1F), new GuiPadding(0, 0, 8, 16), 0);
-                rectReward.setParent(cvInner.getTransform());
             }
+
+            rectReward = new GuiTransform(new Vector4f(0F, 0.5F, 0.5F, 1F), new GuiPadding(0, 0, 8, 16), 0);
+            rectReward.setParent(cvInner.getTransform());
 
             refreshRewardPanel();
         } else {
