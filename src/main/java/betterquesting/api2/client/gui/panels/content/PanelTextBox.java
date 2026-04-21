@@ -45,7 +45,7 @@ public class PanelTextBox implements IGuiPanel {
      * square bracket or formatting code.
      */
     private static final Pattern TOKEN_DELIMITER = Pattern.compile("(?=\\[)|(?=§.)|(?<=])|(?<=§.)");
-    private static final Pattern COLOUR_FORMATTING_CODE_PATTERN = Pattern.compile("§[0-9a-f]");
+    private static final Pattern COLOUR_FORMATTING_CODE_PATTERN = Pattern.compile("§[0-9a-fxgq]");
     private static final String FORMATTING_CODE_RESET = "§r";
 
     private static final String defaultUrlProtocol = "https";
