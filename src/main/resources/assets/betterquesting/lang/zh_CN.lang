@@ -61,6 +61,8 @@ betterquesting.btn.prereq_visbility.implicit=除悬停或按住Shift时，其余
 betterquesting.btn.prereq_visbility.hidden=始终隐藏
 betterquesting.btn.bookmark_quest=Bookmark
 betterquesting.btn.unbookmark_quest=Unbookmark
+betterquesting.btn.view_dependencies=查看前置
+betterquesting.btn.view_dependants=查看附属
 
 betterquesting.home.exit=退出
 betterquesting.home.quests=任务
