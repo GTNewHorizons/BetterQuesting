@@ -321,27 +321,19 @@
       },
       "betterquesting:quest_locked":
       {
-        "lineType": "betterquesting:line_simple",
-        "stippleScale": 1,
-        "stippleMask": "1111111111111111"
+        "lineType": "betterquesting:line_directional"
       },
       "betterquesting:quest_unlocked":
       {
-        "lineType": "betterquesting:line_simple",
-        "stippleScale": 1,
-        "stippleMask": "1111111111111111"
+        "lineType": "betterquesting:line_directional"
       },
       "betterquesting:quest_pending":
       {
-        "lineType": "betterquesting:line_simple",
-        "stippleScale": 1,
-        "stippleMask": "1111111111111111"
+        "lineType": "betterquesting:line_directional"
       },
       "betterquesting:quest_complete":
       {
-        "lineType": "betterquesting:line_simple",
-        "stippleScale": 1,
-        "stippleMask": "1111111111111111"
+        "lineType": "betterquesting:line_directional"
       }
     }
   },
@@ -667,27 +659,19 @@
       },
       "betterquesting:quest_locked":
       {
-        "lineType": "betterquesting:line_simple",
-        "stippleScale": 1,
-        "stippleMask": "1111111111111111"
+        "lineType": "betterquesting:line_directional"
       },
       "betterquesting:quest_unlocked":
       {
-        "lineType": "betterquesting:line_simple",
-        "stippleScale": 1,
-        "stippleMask": "1111111111111111"
+        "lineType": "betterquesting:line_directional"
       },
       "betterquesting:quest_pending":
       {
-        "lineType": "betterquesting:line_simple",
-        "stippleScale": 1,
-        "stippleMask": "1111111111111111"
+        "lineType": "betterquesting:line_directional"
       },
       "betterquesting:quest_complete":
       {
-        "lineType": "betterquesting:line_simple",
-        "stippleScale": 1,
-        "stippleMask": "1111111111111111"
+        "lineType": "betterquesting:line_directional"
       }
     }
   },
@@ -2051,27 +2035,19 @@
       },
       "betterquesting:quest_locked":
       {
-        "lineType": "betterquesting:line_simple",
-        "stippleScale": 1,
-        "stippleMask": "1111111111111111"
+        "lineType": "betterquesting:line_directional"
       },
       "betterquesting:quest_unlocked":
       {
-        "lineType": "betterquesting:line_simple",
-        "stippleScale": 1,
-        "stippleMask": "1111111111111111"
+        "lineType": "betterquesting:line_directional"
       },
       "betterquesting:quest_pending":
       {
-        "lineType": "betterquesting:line_simple",
-        "stippleScale": 1,
-        "stippleMask": "1111111111111111"
+        "lineType": "betterquesting:line_directional"
       },
       "betterquesting:quest_complete":
       {
-        "lineType": "betterquesting:line_simple",
-        "stippleScale": 1,
-        "stippleMask": "1111111111111111"
+        "lineType": "betterquesting:line_directional"
       }
     }
   }

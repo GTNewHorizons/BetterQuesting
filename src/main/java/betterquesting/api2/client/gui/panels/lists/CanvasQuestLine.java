@@ -187,13 +187,21 @@ public class CanvasQuestLine extends CanvasScrolling {
                     RequirementType type = quest.getValue()
                         .getRequirementType(req.getKey());
                     ShouldDrawPredicate predicate = null;
+                    ShouldDrawPredicate animatePredicate = null;
+
+                    PanelButtonQuest reqQuestButton = questBtns.get(req.getKey());
+                    PanelButtonQuest depQuestButton = questBtns.get(quest.getKey());
+
+                    animatePredicate = (mx, my, partialTicks) -> reqQuestButton.rect.contains(mx, my)
+                        || depQuestButton.rect.contains(mx, my);
+
                     switch (type) {
                         case NORMAL:
                             break;
                         case IMPLICIT:
                             if (BQ_Settings.alwaysDrawImplicit) break;
-                            predicate = (mx, my, partialTicks) -> questBtns.get(req.getKey()).rect.contains(mx, my)
-                                || questBtns.get(quest.getKey()).rect.contains(mx, my)
+                            predicate = (mx, my, partialTicks) -> reqQuestButton.rect.contains(mx, my)
+                                || depQuestButton.rect.contains(mx, my)
                                 || Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)
                                 || Keyboard.isKeyDown(Keyboard.KEY_RSHIFT);
                             txLineCol = new GuiColorPulse(
@@ -206,6 +214,7 @@ public class CanvasQuestLine extends CanvasScrolling {
                             // bail early
                             continue;
                     }
+
                     this.addPanel(
                         new PanelLine(
                             parBtn.getTransform(),
@@ -215,7 +224,8 @@ public class CanvasQuestLine extends CanvasScrolling {
                             main ? 8 : 4,
                             txLineCol,
                             1,
-                            predicate));
+                            predicate,
+                            animatePredicate));
                 }
             }
         }

@@ -6,6 +6,7 @@ import betterquesting.api2.client.gui.resources.colors.IGuiColor;
 import betterquesting.api2.client.gui.resources.factories.colors.FactoryColorPulse;
 import betterquesting.api2.client.gui.resources.factories.colors.FactoryColorSequence;
 import betterquesting.api2.client.gui.resources.factories.colors.FactoryColorStatic;
+import betterquesting.api2.client.gui.resources.factories.lines.FactoryDirectionalLine;
 import betterquesting.api2.client.gui.resources.factories.lines.FactorySimpleLine;
 import betterquesting.api2.client.gui.resources.factories.textures.FactoryColorTexture;
 import betterquesting.api2.client.gui.resources.factories.textures.FactoryLayeredTexture;
@@ -40,6 +41,7 @@ public class ResourceRegistry implements IResourceReg {
         COL_REG.register(FactoryColorPulse.INSTANCE);
 
         LIN_REG.register(FactorySimpleLine.INSTANCE);
+        LIN_REG.register(FactoryDirectionalLine.INSTANCE);
     }
 
     @Override

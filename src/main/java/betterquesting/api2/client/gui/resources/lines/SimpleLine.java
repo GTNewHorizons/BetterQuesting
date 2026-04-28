@@ -20,7 +20,7 @@ public class SimpleLine implements IGuiLine {
     }
 
     @Override
-    public void drawLine(IGuiRect start, IGuiRect end, int width, IGuiColor color, float partialTick) {
+    public void drawLine(IGuiRect start, IGuiRect end, int width, IGuiColor color, float partialTick, boolean animate) {
         GL11.glPushMatrix();
 
         GL11.glDisable(GL11.GL_TEXTURE_2D);
