@@ -115,6 +115,10 @@ public enum FormattingTag {
     }
 
     public String getColourFormattingString() {
+        if (BQ_Settings.forceMonochromeText && this == URL) {
+            return "";
+        }
+
         return Objects.firstNonNull(
             THEME_FORMATTING_STRING_TABLE.get(this, BQ_Settings.curTheme),
             DEFAULT_FORMATTING_STRING_MAP.getOrDefault(this, ""));

@@ -1,15 +1,11 @@
 package betterquesting.core;
 
 import net.minecraft.block.Block;
-import net.minecraft.command.ICommandManager;
-import net.minecraft.command.ServerCommandManager;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.launchwrapper.Launch;
-import net.minecraft.server.MinecraftServer;
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.fluids.FluidRegistry;
 
@@ -18,19 +14,13 @@ import org.apache.logging.log4j.Logger;
 import betterquesting.api.placeholders.EntityPlaceholder;
 import betterquesting.api.placeholders.FluidPlaceholder;
 import betterquesting.api.placeholders.ItemPlaceholder;
-import betterquesting.api.storage.BQ_Settings;
 import betterquesting.blocks.BlockObservationStation;
 import betterquesting.blocks.BlockSubmitStation;
 import betterquesting.blocks.TileObservationStation;
 import betterquesting.blocks.TileSubmitStation;
 import betterquesting.client.CreativeTabQuesting;
-import betterquesting.commands.BQ_CommandAdmin;
-import betterquesting.commands.BQ_CommandDebug;
-import betterquesting.commands.BQ_CommandUser;
-import betterquesting.commands.BQ_CopyProgress;
 import betterquesting.core.proxies.CommonProxy;
 import betterquesting.handlers.ConfigHandler;
-import betterquesting.handlers.SaveLoadHandler;
 import betterquesting.items.ItemExtraLife;
 import betterquesting.items.ItemGuideBook;
 import betterquesting.network.PacketQuesting;
@@ -169,30 +159,12 @@ public class BetterQuesting {
     }
 
     @EventHandler
-    public void serverStart(FMLServerStartingEvent event) {
-        MinecraftServer server = event.getServer();
-        ICommandManager command = server.getCommandManager();
-        ServerCommandManager manager = (ServerCommandManager) command;
-
-        manager.registerCommand(new BQ_CopyProgress());
-        manager.registerCommand(new BQ_CommandAdmin());
-        manager.registerCommand(new BQ_CommandUser());
-
-        if ((Boolean) Launch.blackboard.get("fml.deobfuscatedEnvironment"))
-            manager.registerCommand(new BQ_CommandDebug());
-
-        SaveLoadHandler.INSTANCE.loadDatabases(server);
-        if (BQ_Settings.loadDefaultsOnStartup) {
-            try {
-                manager.executeCommand(server, "/bq_admin default load");
-            } catch (Exception e) {
-                logger.error("Could not load the default quest database", e);
-            }
-        }
+    public void serverStarting(FMLServerStartingEvent event) {
+        proxy.serverStarting(event);
     }
 
     @EventHandler
-    public void serverStop(FMLServerStoppedEvent event) {
-        SaveLoadHandler.INSTANCE.unloadDatabases();
+    public void serverStopped(FMLServerStoppedEvent event) {
+        proxy.serverStopped(event);
     }
 }

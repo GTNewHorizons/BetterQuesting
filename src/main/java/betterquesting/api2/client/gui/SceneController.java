@@ -30,5 +30,8 @@ public class SceneController {
             // Would this interfere with an overlay canvas?
             curScene = (IScene) event.gui;
         }
+        if (event.gui == null) {
+            curScene = null;
+        }
     }
 }
