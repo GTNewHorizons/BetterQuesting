@@ -4,6 +4,7 @@ import net.minecraft.util.ResourceLocation;
 
 import com.google.gson.JsonObject;
 
+import betterquesting.api.utils.JsonHelper;
 import betterquesting.api2.client.gui.resources.lines.DirectionalLine;
 import betterquesting.api2.client.gui.resources.lines.IGuiLine;
 import betterquesting.api2.registry.IFactoryData;
@@ -16,7 +17,13 @@ public class FactoryDirectionalLine implements IFactoryData<IGuiLine, JsonObject
 
     @Override
     public DirectionalLine loadFromData(JsonObject data) {
-        return createNew();
+        float arrowWidth = JsonHelper.GetNumber(data, "arrowWidth", DirectionalLine.DefArrowWidth)
+            .floatValue();
+        float arrowSize = JsonHelper.GetNumber(data, "arrowSize", DirectionalLine.DefArrowSize)
+            .floatValue();
+        float arrowOpacity = JsonHelper.GetNumber(data, "arrowOpacity", DirectionalLine.DefArrowOpacity)
+            .floatValue();
+        return new DirectionalLine(arrowWidth, arrowSize, arrowOpacity);
     }
 
     @Override

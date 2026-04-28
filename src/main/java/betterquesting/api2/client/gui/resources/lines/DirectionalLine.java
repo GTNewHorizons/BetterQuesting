@@ -11,6 +11,24 @@ import betterquesting.api2.client.gui.resources.colors.IGuiColor;
 
 public class DirectionalLine implements IGuiLine {
 
+    public static final float DefArrowWidth = 0.5f;
+    public static final float DefArrowSize = 0.75f;
+    public static final float DefArrowOpacity = 0.2f;
+
+    private final float arrowWidthBase;
+    private final float arrowSizeBase;
+    private final float arrowOpacity;
+
+    public DirectionalLine() {
+        this(DefArrowWidth, DefArrowSize, DefArrowOpacity);
+    }
+
+    public DirectionalLine(float arrowWidthBase, float arrowSizeBase, float arrowOpacity) {
+        this.arrowWidthBase = arrowWidthBase;
+        this.arrowSizeBase = arrowSizeBase;
+        this.arrowOpacity = arrowOpacity;
+    }
+
     @Override
     public void drawLine(IGuiRect startRect, IGuiRect endRect, int width, IGuiColor color, float partialTick,
         boolean animate) {
@@ -36,12 +54,12 @@ public class DirectionalLine implements IGuiLine {
 
         // Arrow
         if (BQ_Settings.showDependencyArrows) {
-            GL11.glColor4f(0F, 0F, 0F, 0.2F * color.getAlpha());
+            GL11.glColor4f(0, 0, 0, arrowOpacity * color.getAlpha());
             int numberOfArrows = MathHelper.ceiling_float_int(length / 20f);
 
-            float arrowSize = width * 0.75f;
+            float arrowSize = width * arrowSizeBase;
             float progressOffset = numberOfArrows % 2 == 1 ? 0 : (1f / (numberOfArrows + 1)) / 2f;
-            float arrowWidth = 3.33f * width * 0.15f;
+            float arrowWidth = arrowWidthBase * width;
             for (int i = 0; i <= numberOfArrows; i++) {
                 float progress = (float) i / (numberOfArrows + 1) + progressOffset;
                 if (animate) {
