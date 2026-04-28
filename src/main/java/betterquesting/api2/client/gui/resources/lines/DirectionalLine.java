@@ -5,6 +5,7 @@ import net.minecraft.util.MathHelper;
 import org.joml.Vector2f;
 import org.lwjgl.opengl.GL11;
 
+import betterquesting.api.storage.BQ_Settings;
 import betterquesting.api2.client.gui.misc.IGuiRect;
 import betterquesting.api2.client.gui.resources.colors.IGuiColor;
 
@@ -34,31 +35,33 @@ public class DirectionalLine implements IGuiLine {
         GL11.glVertex2f(0, -width / 2f);
 
         // Arrow
-        GL11.glColor4f(0F, 0F, 0F, 0.2F * color.getAlpha());
-        int numberOfArrows = MathHelper.ceiling_float_int(length / 20f);
+        if (BQ_Settings.showDependencyArrows) {
+            GL11.glColor4f(0F, 0F, 0F, 0.2F * color.getAlpha());
+            int numberOfArrows = MathHelper.ceiling_float_int(length / 20f);
 
-        float arrowSize = width * 0.75f;
-        float progressOffset = numberOfArrows % 2 == 1 ? 0 : (1f / (numberOfArrows + 1)) / 2f;
-        float arrowWidth = 3.33f * width * 0.15f;
-        for (int i = 0; i <= numberOfArrows; i++) {
-            float progress = (float) i / (numberOfArrows + 1) + progressOffset;
-            if (animate) {
-                double period = length * 50;
-                double time = System.currentTimeMillis() % period;
-                progress += (float) (time / period);
-                progress %= 1;
+            float arrowSize = width * 0.75f;
+            float progressOffset = numberOfArrows % 2 == 1 ? 0 : (1f / (numberOfArrows + 1)) / 2f;
+            float arrowWidth = 3.33f * width * 0.15f;
+            for (int i = 0; i <= numberOfArrows; i++) {
+                float progress = (float) i / (numberOfArrows + 1) + progressOffset;
+                if (animate) {
+                    double period = length * 50;
+                    double time = System.currentTimeMillis() % period;
+                    progress += (float) (time / period);
+                    progress %= 1;
+                }
+                float arrowX = length * progress;
+
+                GL11.glVertex2f(arrowX - arrowWidth / 2f, width / 2f);
+                GL11.glVertex2f(arrowX + arrowWidth / 2f, width / 2f);
+                GL11.glVertex2f(arrowX + arrowSize + arrowWidth / 2f, 0f);
+                GL11.glVertex2f(arrowX + arrowSize - arrowWidth / 2f, 0f);
+
+                GL11.glVertex2f(arrowX - arrowWidth / 2f, -width / 2f);
+                GL11.glVertex2f(arrowX + arrowSize - arrowWidth / 2f, 0f);
+                GL11.glVertex2f(arrowX + arrowSize + arrowWidth / 2f, 0f);
+                GL11.glVertex2f(arrowX + arrowWidth / 2f, -width / 2f);
             }
-            float arrowX = length * progress;
-
-            GL11.glVertex2f(arrowX - arrowWidth / 2f, width / 2f);
-            GL11.glVertex2f(arrowX + arrowWidth / 2f, width / 2f);
-            GL11.glVertex2f(arrowX + arrowSize + arrowWidth / 2f, 0f);
-            GL11.glVertex2f(arrowX + arrowSize - arrowWidth / 2f, 0f);
-
-            GL11.glVertex2f(arrowX - arrowWidth / 2f, -width / 2f);
-            GL11.glVertex2f(arrowX + arrowSize - arrowWidth / 2f, 0f);
-            GL11.glVertex2f(arrowX + arrowSize + arrowWidth / 2f, 0f);
-            GL11.glVertex2f(arrowX + arrowWidth / 2f, -width / 2f);
         }
 
         GL11.glEnd();

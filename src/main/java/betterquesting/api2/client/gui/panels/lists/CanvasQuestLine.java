@@ -192,8 +192,10 @@ public class CanvasQuestLine extends CanvasScrolling {
                     PanelButtonQuest reqQuestButton = questBtns.get(req.getKey());
                     PanelButtonQuest depQuestButton = questBtns.get(quest.getKey());
 
-                    animatePredicate = (mx, my, partialTicks) -> reqQuestButton.rect.contains(mx, my)
-                        || depQuestButton.rect.contains(mx, my);
+                    if (BQ_Settings.animateDependencyArrows) {
+                        animatePredicate = (mx, my, partialTicks) -> reqQuestButton.rect.contains(mx, my)
+                            || depQuestButton.rect.contains(mx, my);
+                    }
 
                     switch (type) {
                         case NORMAL:
