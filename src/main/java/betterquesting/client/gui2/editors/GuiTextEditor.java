@@ -143,7 +143,7 @@ public class GuiTextEditor extends GuiScreenCanvas implements IPEventListener, I
                 new PanelButtonStorage<>(
                     new GuiRectangle(0, (i + macroCount) * 16, 100, 16),
                     1,
-                    tfValues[i].getFriendlyName(),
+                    String.format("%s%s§r", tfValues[i].toString(), tfValues[i].getFriendlyName()),
                     tfValues[i].toString()));
         }
 
