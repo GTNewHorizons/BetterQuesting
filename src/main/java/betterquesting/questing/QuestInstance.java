@@ -335,6 +335,15 @@ public class QuestInstance implements IQuest {
 
             DirtyPlayerMarker.markDirty(uuid);
         }
+
+        // If a quest is completed, we treat optional/ignored tasks as "done" for UI consistency.
+        // These tasks are ignored by completion logic, but leaving them unchecked after completion is confusing.
+        for (DBEntry<ITask> entry : tasks.getEntries()) {
+            ITask task = entry.getValue();
+            if (task != null && task.ignored(uuid)) {
+                task.setComplete(uuid);
+            }
+        }
     }
 
     @Override
