@@ -24,6 +24,7 @@ import betterquesting.api2.cache.QuestCache;
 import betterquesting.api2.storage.DBEntry;
 import betterquesting.api2.storage.SimpleDatabase;
 import betterquesting.core.BetterQuesting;
+import betterquesting.network.handlers.NetQuestSync;
 import betterquesting.questing.QuestDatabase;
 import betterquesting.storage.NameCache;
 import betterquesting.storage.QuestSettings;
@@ -69,12 +70,18 @@ public class PartyManager extends SimpleDatabase<IParty> implements IPartyDataba
                         if (prohibitClaim) {
                             quest.setClaimed(target.uuid, completionTime);
                         }
-                        if (target.isPlayerOnline()) {
+                        if (target.isPlayerOnline() && target.questCache != null) {
                             target.questCache.markQuestDirty(questEntry.getKey());
                         }
 
                         target.questsCompleted += 1;
                     }
+                }
+            }
+
+            for (SyncPlayerContainer target : t) {
+                if (target.isPlayerOnline()) {
+                    NetQuestSync.sendSync(target.player, null, false, true, true);
                 }
             }
 

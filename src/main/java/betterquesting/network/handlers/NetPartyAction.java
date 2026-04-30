@@ -59,7 +59,8 @@ public class NetPartyAction {
                 : message.getFirst()
                     .getInteger("partyID");
         IParty party = PartyManager.INSTANCE.getValue(partyID);
-        int permission = party == null ? 0 : checkPermission(QuestingAPI.getQuestingUUID(sender), party);
+        UUID senderID = QuestingAPI.getQuestingUUID(sender);
+        int permission = party == null ? 0 : checkPermission(senderID, party);
 
         switch (action) {
             case 0: {
@@ -204,19 +205,51 @@ public class NetPartyAction {
         if (player != null) uuid = QuestingAPI.getQuestingUUID(player);
         if (uuid == null) uuid = NameCache.INSTANCE.getUUID(username);
         if (uuid == null) {
+            try {
+                uuid = UUID.fromString(username);
+            } catch (IllegalArgumentException ignored) {}
+        }
+        if (uuid == null) {
             BetterQuesting.logger.error("Unable to identify " + username + " to remove them from party " + partyID);
             return; // No idea who this is
         }
 
-        if (uuid.equals(QuestingAPI.getQuestingUUID(sender)) || checkPermission(uuid, party) < permission) // For future
-                                                                                                           // reference,
-                                                                                                           // this is
-                                                                                                           // checking
-                                                                                                           // the target
-                                                                                                           // has a
-                                                                                                           // permission
-                                                                                                           // lower than
-                                                                                                           // the sender
+        if (player == null) {
+            for (Object o : server.getConfigurationManager().playerEntityList) {
+                EntityPlayerMP onlinePlayer = (EntityPlayerMP) o;
+                if (uuid.equals(QuestingAPI.getQuestingUUID(onlinePlayer))) {
+                    player = onlinePlayer;
+                    break;
+                }
+            }
+        }
+
+        EnumPartyStatus targetStatus = party.getStatus(uuid);
+        if (targetStatus == null) {
+            BetterQuesting.logger.error("Tried to kick non-member " + uuid + " from party " + partyID);
+            return;
+        }
+
+        UUID senderID = QuestingAPI.getQuestingUUID(sender);
+        EnumPartyStatus senderStatus = party.getStatus(senderID);
+
+        if (senderStatus == null) {
+            BetterQuesting.logger.error("Non-member " + senderID + " tried to kick from party " + partyID);
+            return;
+        }
+
+        int targetPermission = targetStatus.ordinal() + 1;
+        int senderPermission = senderStatus.ordinal() + 1;
+
+        if (uuid.equals(senderID) || targetPermission < senderPermission) // For future
+                                                                          // reference,
+                                                                          // this is
+                                                                          // checking
+                                                                          // the target
+                                                                          // has a
+                                                                          // permission
+                                                                          // lower than
+                                                                          // the sender
         {
             // Even if the kick isn't confirmed we still need to tell the clients incase of desync
             if (party.getStatus(uuid) != null) party.kickUser(uuid);
@@ -252,10 +285,10 @@ public class NetPartyAction {
         if (server != null) {
             EntityPlayerMP player = null;
             for (Object o : server.getConfigurationManager().playerEntityList) {
-                if (((EntityPlayerMP) o).getGameProfile()
-                    .getId()
-                    .equals(playerID)) {
-                    player = (EntityPlayerMP) o;
+                EntityPlayerMP onlinePlayer = (EntityPlayerMP) o;
+                if (playerID.equals(QuestingAPI.getQuestingUUID(onlinePlayer))) {
+                    player = onlinePlayer;
+                    break;
                 }
             }
             if (player != null && server.getConfigurationManager()

@@ -221,7 +221,7 @@ public class GuiPartyManage extends GuiScreenCanvas implements IPEventListener, 
                 new GuiRectangle(cvWidth - 32, i * 32, 32, 32, 0),
                 3,
                 QuestTranslation.translate("betterquesting.btn.party_kick"),
-                mName);
+                mid.toString());
             cvUserList.addPanel(btnKick);
 
             PanelGeneric pnItem = new PanelGeneric(new GuiRectangle(32, i * 32 + 16, 16, 16, 0), txHeart);

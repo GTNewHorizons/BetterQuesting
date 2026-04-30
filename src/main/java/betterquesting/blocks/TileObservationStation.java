@@ -112,9 +112,7 @@ public class TileObservationStation extends TileEntity {
         if (server == null) return null;
 
         for (EntityPlayerMP player : (List<EntityPlayerMP>) server.getConfigurationManager().playerEntityList) {
-            if (player.getGameProfile()
-                .getId()
-                .equals(uuid)) return player;
+            if (uuid.equals(QuestingAPI.getQuestingUUID(player))) return player;
         }
 
         return null;
