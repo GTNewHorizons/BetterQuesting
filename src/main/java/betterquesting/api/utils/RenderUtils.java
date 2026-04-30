@@ -550,9 +550,12 @@ public class RenderUtils {
         return splitString(str, wrapWidth, font, true);
     }
 
-    private static List<String> splitString(final String str, final int wrapWidth, final FontRenderer font,
+    private static List<String> splitString(String str, final int wrapWidth, final FontRenderer font,
         final boolean withFormat) {
         if (str == null || str.isEmpty()) return Collections.emptyList();
+        // Pre-expand &g gradients into per-character &#RRGGBB colors so that line wrapping
+        // preserves the correct color at every character without gradient continuation math.
+        if (withFormat) str = expandAmpGradients(str);
 
         var lines = str.split("\n", -1);
         var locale = getLocale();
@@ -574,7 +577,7 @@ public class RenderUtils {
                 int needWidth = getStringWidth(stripped, font);
                 int realWidth = getStringWidth(candidate, font);
 
-                if (width + needWidth < wrapWidth) {
+                if (width + needWidth <= wrapWidth) {
                     buf.append(candidate);
                     width += realWidth;
                     format = withFormat ? getFormatFromString(format + candidate) : "";
@@ -583,12 +586,24 @@ public class RenderUtils {
                 } else if (needWidth > wrapWidth) {
                     int i = sizeStringToWidth(candidate, wrapWidth, font);
                     buf.append(candidate, 0, i);
-                    wraps.add(buf.toString());
+                    String currentLine = buf.toString();
+                    wraps.add(currentLine);
+                    // Continue gradient smoothly across wrap
+                    if (withFormat && (isAmpGradient(format) || isSectionGradient(format))) {
+                        String remaining = candidate.substring(i) + line.substring(end < 0 ? line.length() : end);
+                        format = continueGradient(format, currentLine, remaining);
+                    }
                     buf = new StringBuilder(format);
                     width = 0;
                     start += i;
                 } else {
-                    wraps.add(buf.toString());
+                    String currentLine = buf.toString();
+                    wraps.add(currentLine);
+                    // Continue gradient smoothly across wrap
+                    if (withFormat && (isAmpGradient(format) || isSectionGradient(format))) {
+                        String remaining = candidate + line.substring(end < 0 ? line.length() : end);
+                        format = continueGradient(format, currentLine, remaining);
+                    }
                     buf = new StringBuilder(format);
                     width = 0;
                 }
@@ -659,27 +674,395 @@ public class RenderUtils {
         return idx + getCursorPos(lastFormat + tLines.get(row), x, font) - lastFormat.length();
     }
 
+    /**
+     * Validate that at position pos we have §x followed by 6 pairs of §+hex_digit (14 chars total).
+     */
+    public static boolean isValidSectionX(String str, int pos) {
+        // §x§R§R§G§G§B§B = 14 chars
+        if (pos + 14 > str.length()) return false;
+        if (str.charAt(pos) != '\u00a7' || Character.toLowerCase(str.charAt(pos + 1)) != 'x') return false;
+        for (int k = 0; k < 6; k++) {
+            int p = pos + 2 + k * 2;
+            if (str.charAt(p) != '\u00a7') return false;
+            if (!isHexChar(str.charAt(p + 1))) return false;
+        }
+        return true;
+    }
+
+    private static boolean isHex6(String str, int start) {
+        if (start + 6 > str.length()) return false;
+        for (int k = 0; k < 6; k++) {
+            if (!isHexChar(str.charAt(start + k))) return false;
+        }
+        return true;
+    }
+
+    private static boolean isHexChar(char c) {
+        return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+    }
+
+    private static boolean isValidAmpCode(char c) {
+        char cl = Character.toLowerCase(c);
+        return (cl >= '0' && cl <= '9') || (cl >= 'a' && cl <= 'f')
+            || (cl >= 'k' && cl <= 'o')
+            || cl == 'r'
+            || cl == 'x'
+            || cl == 'q'
+            || cl == 'z'
+            || cl == 'v';
+        // Note: 'g' excluded — &g only valid as part of &g&#RRGGBB&#RRGGBB (handled by isAmpGradient)
+    }
+
+    // --- Gradient continuation helpers ---
+
+    /** Check if format string is an &g gradient (18 chars: &g&#RRGGBB&#RRGGBB). */
+    private static boolean isAmpGradient(String fmt) {
+        return fmt.length() >= 18 && fmt.charAt(0) == '&'
+            && Character.toLowerCase(fmt.charAt(1)) == 'g'
+            && fmt.charAt(2) == '&'
+            && fmt.charAt(3) == '#';
+    }
+
+    /** Check if format string is a §g gradient (30 chars). */
+    private static boolean isSectionGradient(String fmt) {
+        return fmt.length() >= 30 && fmt.charAt(0) == '\u00a7' && Character.toLowerCase(fmt.charAt(1)) == 'g';
+    }
+
+    /** Parse 6-digit hex at offset in text (e.g. "FF00AA") into int RGB. Returns -1 on failure. */
+    private static int parseHex6(String text, int offset) {
+        if (offset + 6 > text.length()) return -1;
+        int val = 0;
+        for (int i = 0; i < 6; i++) {
+            int d = Character.digit(text.charAt(offset + i), 16);
+            if (d == -1) return -1;
+            val = (val << 4) | d;
+        }
+        return val;
+    }
+
+    private static int lerpRgb(int from, int to, float t) {
+        int r = (int) (((from >> 16) & 0xFF) * (1 - t) + ((to >> 16) & 0xFF) * t);
+        int g = (int) (((from >> 8) & 0xFF) * (1 - t) + ((to >> 8) & 0xFF) * t);
+        int b = (int) ((from & 0xFF) * (1 - t) + (to & 0xFF) * t);
+        return (r << 16) | (g << 8) | b;
+    }
+
+    private static String buildAmpHexColor(int rgb) {
+        return String.format("&#%06X", rgb & 0xFFFFFF);
+    }
+
+    /**
+     * Count visible characters in text, skipping §X pairs and &-codes.
+     * Stops at gradient-terminating codes (color changes, reset, new gradient, rainbow)
+     * so we only count chars that fall under the current gradient.
+     */
+    private static int countVisibleCharsInGradient(String text, int startIdx) {
+        int count = 0;
+        for (int i = startIdx; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (c == '\u00a7' && i + 1 < text.length()) {
+                char code = Character.toLowerCase(text.charAt(i + 1));
+                // Gradient terminators: reset, color codes, new gradient, rainbow
+                if (code == 'r' || isFormatColor(text.charAt(i + 1)) || code == 'x' || code == 'q' || code == 'g') {
+                    break;
+                }
+                i++; // skip style codes (k-o, z, v)
+            } else if (c == '&' && i + 1 < text.length()) {
+                char next = text.charAt(i + 1);
+                char lo = Character.toLowerCase(next);
+                // &g gradient
+                if (lo == 'g' && i + 17 < text.length()
+                    && text.charAt(i + 2) == '&'
+                    && text.charAt(i + 3) == '#'
+                    && isHex6(text, i + 4)
+                    && text.charAt(i + 10) == '&'
+                    && text.charAt(i + 11) == '#'
+                    && isHex6(text, i + 12)) {
+                    break; // new gradient terminates current
+                }
+                // &#RRGGBB color
+                if (next == '#' && i + 7 < text.length() && isHex6(text, i + 2)) {
+                    break; // explicit color terminates gradient
+                }
+                // &q rainbow or &r reset or &0-f color
+                if (lo == 'q' || lo == 'r' || isFormatColor(next)) {
+                    break;
+                }
+                // &z, &v, &k-o — style toggles, don't terminate gradient
+                if (isValidAmpCode(next)) {
+                    i += 1;
+                } else {
+                    count++; // literal &
+                }
+            } else {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /**
+     * Given a gradient format string and the text already rendered on the current line (beforeWrap)
+     * plus the text remaining after the wrap, compute a continuation gradient prefix.
+     * Preserves style suffixes (bold, wave, etc.) that were active alongside the gradient.
+     */
+    /**
+     * Expand &g&#RRGGBB&#RRGGBB gradients into per-character &#RRGGBB colors so that line wrapping preserves the
+     * correct color at every position without needing gradient continuation math at wrap boundaries.
+     */
+    private static String expandAmpGradients(String text) {
+        int gIdx = text.indexOf("&g&#");
+        if (gIdx == -1) return text;
+
+        StringBuilder sb = new StringBuilder(text.length() + 128);
+        int last = 0;
+
+        while (gIdx != -1 && gIdx + 17 < text.length()) {
+            // Validate &g&#RRGGBB&#RRGGBB (18 chars)
+            if (text.charAt(gIdx + 2) != '&' || text.charAt(gIdx + 3) != '#'
+                || !isHex6(text, gIdx + 4)
+                || text.charAt(gIdx + 10) != '&'
+                || text.charAt(gIdx + 11) != '#'
+                || !isHex6(text, gIdx + 12)) {
+                gIdx = text.indexOf("&g&#", gIdx + 2);
+                continue;
+            }
+
+            int startRgb = parseHex6(text, gIdx + 4);
+            int endRgb = parseHex6(text, gIdx + 12);
+            if (startRgb == -1 || endRgb == -1) {
+                gIdx = text.indexOf("&g&#", gIdx + 2);
+                continue;
+            }
+
+            int textStart = gIdx + 18;
+            int totalVisible = countVisibleCharsInGradient(text, textStart);
+            if (totalVisible <= 0) {
+                gIdx = text.indexOf("&g&#", gIdx + 2);
+                continue;
+            }
+
+            sb.append(text, last, gIdx);
+
+            int visIdx = 0;
+            for (int i = textStart; i < text.length(); i++) {
+                char ch = text.charAt(i);
+                if (ch == '&' && i + 1 < text.length()) {
+                    char next = text.charAt(i + 1);
+                    char lo = Character.toLowerCase(next);
+                    // &g gradient terminator
+                    if (lo == 'g' && isAmpGradient(text.substring(i, Math.min(i + 18, text.length())))) {
+                        last = i;
+                        break;
+                    }
+                    // &#RRGGBB color terminator
+                    if (next == '#' && i + 7 < text.length() && isHex6(text, i + 2)) {
+                        last = i;
+                        break;
+                    }
+                    // &q rainbow, &r reset, &0-f color — terminators
+                    if (lo == 'q' || lo == 'r' || isFormatColor(next)) {
+                        last = i;
+                        break;
+                    }
+                    // Non-terminating & code (style toggle): pass through
+                    if (isValidAmpCode(next)) {
+                        sb.append(ch)
+                            .append(next);
+                        i++;
+                    } else {
+                        // Literal &: treat as visible
+                        float t = totalVisible > 1 ? (float) visIdx / (totalVisible - 1) : 0f;
+                        sb.append(buildAmpHexColor(lerpRgb(startRgb, endRgb, Math.min(t, 1f))));
+                        sb.append(ch);
+                        visIdx++;
+                    }
+                } else if (ch == '\u00a7' && i + 1 < text.length()) {
+                    char code = Character.toLowerCase(text.charAt(i + 1));
+                    if (code == 'r' || isFormatColor(text.charAt(i + 1)) || code == 'x' || code == 'q' || code == 'g') {
+                        last = i;
+                        break;
+                    }
+                    sb.append(ch)
+                        .append(text.charAt(i + 1));
+                    i++;
+                } else {
+                    float t = totalVisible > 1 ? (float) visIdx / (totalVisible - 1) : 0f;
+                    sb.append(buildAmpHexColor(lerpRgb(startRgb, endRgb, Math.min(t, 1f))));
+                    sb.append(ch);
+                    visIdx++;
+                    if (visIdx >= totalVisible) {
+                        last = i + 1;
+                        break;
+                    }
+                }
+                last = i + 1;
+            }
+
+            gIdx = text.indexOf("&g&#", last);
+        }
+
+        if (last == 0) return text;
+        sb.append(text, last, text.length());
+        return sb.toString();
+    }
+
+    static String continueGradient(String gradientFmt, String beforeWrap, String afterWrap) {
+        int startRgb, endRgb;
+        int gradPrefixLen;
+        String styleSuffix;
+
+        if (isAmpGradient(gradientFmt)) {
+            startRgb = parseHex6(gradientFmt, 4);
+            endRgb = parseHex6(gradientFmt, 12);
+            gradPrefixLen = 18;
+            styleSuffix = gradientFmt.length() > 18 ? gradientFmt.substring(18) : "";
+        } else if (isSectionGradient(gradientFmt)) {
+            startRgb = parseRgbFromSectionX(gradientFmt, 2);
+            endRgb = parseRgbFromSectionX(gradientFmt, 16);
+            gradPrefixLen = 30;
+            styleSuffix = gradientFmt.length() > 30 ? gradientFmt.substring(30) : "";
+        } else {
+            return gradientFmt;
+        }
+
+        if (startRgb == -1 || endRgb == -1) return gradientFmt;
+
+        // Find where the gradient spec actually starts in beforeWrap
+        // (on first line it may be mid-line, on continuation lines it's at position 0)
+        int gradPos;
+        if (isAmpGradient(gradientFmt)) {
+            gradPos = beforeWrap.lastIndexOf("&g&#");
+        } else {
+            gradPos = beforeWrap.lastIndexOf("\u00a7g\u00a7");
+        }
+        if (gradPos < 0) gradPos = 0;
+
+        // Count visible chars rendered under this gradient on the current line
+        int visOnLine = countVisibleCharsInGradient(beforeWrap, gradPos + gradPrefixLen);
+        // Count visible chars remaining under this gradient after the wrap
+        int visRemaining = countVisibleCharsInGradient(afterWrap, 0);
+        int total = visOnLine + visRemaining;
+
+        if (total <= 1) return buildAmpHexColor(endRgb) + styleSuffix;
+
+        float t = (float) visOnLine / (total - 1);
+        t = Math.min(t, 1f);
+        int interpRgb = lerpRgb(startRgb, endRgb, t);
+
+        return "&g" + buildAmpHexColor(interpRgb) + buildAmpHexColor(endRgb) + styleSuffix;
+    }
+
+    /** Parse RGB from §x§R§R§G§G§B§B starting at offset. */
+    private static int parseRgbFromSectionX(String text, int offset) {
+        if (offset + 14 > text.length()) return -1;
+        int val = 0;
+        for (int i = 0; i < 6; i++) {
+            int d = Character.digit(text.charAt(offset + 3 + i * 2), 16);
+            if (d == -1) return -1;
+            val = (val << 4) | d;
+        }
+        return val;
+    }
+
     // extract the format codes from one line to be applied to the following lines
     public static String getFormatFromString(String p_78282_0_) {
         StringBuilder s1 = new StringBuilder();
-        int i = -1;
-        int j = p_78282_0_.length();
+        int len = p_78282_0_.length();
 
-        while ((i = p_78282_0_.indexOf(167, i + 1)) != -1) {
-            if (i < j - 1) {
+        for (int i = 0; i < len; i++) {
+            char ch = p_78282_0_.charAt(i);
+
+            if (ch == '\u00a7' && i + 1 < len) {
                 char c0 = p_78282_0_.charAt(i + 1);
+                char c0l = Character.toLowerCase(c0);
 
-                if (isFormatColor(c0)) {
-                    s1 = new StringBuilder("§" + c0);
-                } else if (isFormatSpecial(c0)) {
-                    s1.append("§")
-                        .append(c0);
+                // §g + two §x sequences = gradient (30 chars)
+                if (c0l == 'g' && i + 30 <= len
+                    && isValidSectionX(p_78282_0_, i + 2)
+                    && isValidSectionX(p_78282_0_, i + 16)) {
+                    s1 = new StringBuilder(p_78282_0_.substring(i, i + 30));
+                    i += 29;
                 }
+                // §x§R§R§G§G§B§B = 14-char BungeeCord RGB
+                else if (c0l == 'x' && isValidSectionX(p_78282_0_, i)) {
+                    s1 = new StringBuilder(p_78282_0_.substring(i, i + 14));
+                    i += 13;
+                }
+                // §q — rainbow, acts as a color (resets styles)
+                else if (c0l == 'q') {
+                    s1 = new StringBuilder("\u00a7" + c0);
+                    i += 1;
+                }
+                // §z, §v — wave/flip toggles (accumulate like style codes)
+                else if (c0l == 'z' || c0l == 'v') {
+                    s1.append("\u00a7")
+                        .append(c0);
+                    i += 1;
+                }
+                // Standard color codes (§0-f) — reset styles
+                else if (isFormatColor(c0)) {
+                    s1 = new StringBuilder("\u00a7" + c0);
+                    i += 1;
+                }
+                // Style/special codes (§k-o, §r)
+                else if (isFormatSpecial(c0)) {
+                    s1.append("\u00a7")
+                        .append(c0);
+                    i += 1;
+                } else {
+                    i += 1; // skip unknown §X pair
+                }
+            } else if (ch == '&' && i + 1 < len) {
+                char c0 = p_78282_0_.charAt(i + 1);
+                char c0l = Character.toLowerCase(c0);
+
+                // &g&#RRGGBB&#RRGGBB = 18-char gradient
+                if (c0l == 'g' && i + 18 <= len
+                    && p_78282_0_.charAt(i + 2) == '&'
+                    && p_78282_0_.charAt(i + 3) == '#'
+                    && isHex6(p_78282_0_, i + 4)
+                    && p_78282_0_.charAt(i + 10) == '&'
+                    && p_78282_0_.charAt(i + 11) == '#'
+                    && isHex6(p_78282_0_, i + 12)) {
+                    s1 = new StringBuilder(p_78282_0_.substring(i, i + 18));
+                    i += 17;
+                }
+                // &#RRGGBB = 8-char hex color (resets styles)
+                else if (c0 == '#' && isHex6(p_78282_0_, i + 2)) {
+                    s1 = new StringBuilder(p_78282_0_.substring(i, i + 8));
+                    i += 7;
+                }
+                // &q — rainbow (color-like, resets styles)
+                else if (c0l == 'q') {
+                    s1 = new StringBuilder("&" + c0);
+                    i += 1;
+                }
+                // &z, &v — wave/flip toggles (accumulate)
+                else if (c0l == 'z' || c0l == 'v') {
+                    s1.append("&")
+                        .append(c0);
+                    i += 1;
+                }
+                // &0-f — color codes (reset styles)
+                else if (isFormatColor(c0)) {
+                    s1 = new StringBuilder("&" + c0);
+                    i += 1;
+                }
+                // &k-o, &r — style/special codes
+                else if (isFormatSpecial(c0)) {
+                    s1.append("&")
+                        .append(c0);
+                    i += 1;
+                }
+                // Literal & — not a valid code, skip
             }
         }
+
         if (s1.length() <= 0) return "";
-        // §r means reset, so whenever it appears at the end of a formatting, it implies do nothing.
-        if (s1.charAt(s1.length() - 1) == 'r') return "";
+        // §r/&r means reset
+        char last = s1.charAt(s1.length() - 1);
+        if (last == 'r' || last == 'R') return "";
 
         return s1.toString();
     }
