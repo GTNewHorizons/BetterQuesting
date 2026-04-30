@@ -20,7 +20,7 @@ public class BoxLine implements IGuiLine {
     }
 
     @Override
-    public void drawLine(IGuiRect start, IGuiRect end, int width, IGuiColor color, float partialTick) {
+    public void drawLine(IGuiRect start, IGuiRect end, int width, IGuiColor color, float partialTick, boolean animate) {
         int minX = Math.min(start.getX(), end.getX());
         int minY = Math.min(start.getY(), end.getY());
         int maxX = Math.max(start.getX() + start.getWidth(), end.getX() + end.getWidth());
