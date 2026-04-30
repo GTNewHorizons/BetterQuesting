@@ -43,6 +43,7 @@ import betterquesting.api2.storage.IDatabaseNBT;
 import betterquesting.api2.utils.DirtyPlayerMarker;
 import betterquesting.api2.utils.ParticipantInfo;
 import betterquesting.core.BetterQuesting;
+import betterquesting.network.handlers.NetQuestSync;
 import betterquesting.questing.rewards.RewardStorage;
 import betterquesting.questing.tasks.TaskStorage;
 import betterquesting.storage.PropertyContainer;
@@ -99,27 +100,26 @@ public class QuestInstance implements IQuest {
 
     @Override
     public void update(EntityPlayer player) {
-        UUID playerID = QuestingAPI.getQuestingUUID(player);
+        ParticipantInfo pInfo = new ParticipantInfo(player);
 
-        int done = 0;
+        for (UUID playerID : pInfo.ALL_UUIDS) {
+            int done = 0;
 
-        for (DBEntry<ITask> entry : tasks.getEntries()) {
-            if (entry.getValue()
-                .isComplete(playerID)
-                || entry.getValue()
-                    .ignored(playerID)) {
-                done++;
+            for (DBEntry<ITask> entry : tasks.getEntries()) {
+                if (entry.getValue()
+                    .isComplete(playerID)
+                    || entry.getValue()
+                        .ignored(playerID)) {
+                    done++;
+                }
             }
-        }
 
-        if (tasks.size() <= 0 || qInfo.getProperty(NativeProps.LOGIC_TASK)
-            .getResult(done, tasks.size())) {
-            setComplete(playerID, System.currentTimeMillis());
-        } else if (done > 0 && qInfo.getProperty(NativeProps.SIMULTANEOUS)) // TODO: There is actually an exploit here
-                                                                            // to do with locked progression bypassing
-                                                                            // simultaneous reset conditions. Fix?
-        {
-            resetUser(playerID, false);
+            if (tasks.size() <= 0 || qInfo.getProperty(NativeProps.LOGIC_TASK)
+                .getResult(done, tasks.size())) {
+                setComplete(playerID, System.currentTimeMillis());
+            } else if (done > 0 && qInfo.getProperty(NativeProps.SIMULTANEOUS)) {
+                resetUser(playerID, false);
+            }
         }
     }
 
@@ -270,6 +270,9 @@ public class QuestInstance implements IQuest {
                     qc.markQuestDirty(QuestDatabase.INSTANCE.lookupKey(this));
                 }
             }
+        }
+        if (player instanceof EntityPlayerMP) {
+            NetQuestSync.sendSync((EntityPlayerMP) player, Collections.singletonList(questID), false, true, true);
         }
     }
 
