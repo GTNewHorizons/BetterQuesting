@@ -117,27 +117,26 @@ public class EventHandler {
             event.message = new ChatComponentTranslation("betterquesting.msg.share_quest_invalid", restOfText);
             return;
         }
-        String uuidString = restOfText.substring(0, 24);
-        UUID questId;
+
+        final String questIdString = restOfText.substring(0, 24);
+        final UUID questId;
         try {
-            questId = UuidConverter.decodeUuid(uuidString);
+            questId = UuidConverter.decodeUuid(questIdString);
         } catch (ArrayIndexOutOfBoundsException | IllegalArgumentException e) {
-            event.message = new ChatComponentTranslation("betterquesting.msg.share_quest_invalid", uuidString);
+            event.message = new ChatComponentTranslation("betterquesting.msg.share_quest_invalid", questIdString);
             return;
         }
 
         IQuest quest = QuestDatabase.INSTANCE.get(questId);
         if (quest == null) {
-            event.message = new ChatComponentTranslation(
-                "betterquesting.msg.share_quest_invalid",
-                UuidConverter.encodeUuid(questId));
+            event.message = new ChatComponentTranslation("betterquesting.msg.share_quest_invalid", questIdString);
             return;
         }
 
         String questName = quest.getProperty(NativeProps.NAME);
         IChatComponent translated = new ChatComponentTranslation(
             "betterquesting.msg.share_quest",
-            UuidConverter.encodeUuid(questId),
+            questIdString,
             questName);
 
         String textAfter = restOfText.length() > 36 ? restOfText.substring(36) : "";
@@ -148,10 +147,7 @@ public class EventHandler {
         if (QuestCache.isQuestShown(quest, QuestingAPI.getQuestingUUID(player), player)) {
             QuestCommandShow.sentViaClick = true;
             newMessageStyle = newMessage.getChatStyle()
-                .setChatClickEvent(
-                    new ClickEvent(
-                        ClickEvent.Action.RUN_COMMAND,
-                        "/bq_client show " + UuidConverter.encodeUuid(questId)))
+                .setChatClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/bq_client show " + questIdString))
                 .setChatHoverEvent(
                     new HoverEvent(
                         HoverEvent.Action.SHOW_TEXT,
