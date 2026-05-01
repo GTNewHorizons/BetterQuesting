@@ -64,8 +64,10 @@ import betterquesting.network.handlers.NetBulkSync;
 import betterquesting.network.handlers.NetNameSync;
 import betterquesting.network.handlers.NetNotices;
 import betterquesting.questing.QuestDatabase;
+import betterquesting.questing.mutation.QuestMutationService;
 import betterquesting.questing.party.PartyInvitations;
 import betterquesting.questing.party.PartyManager;
+import betterquesting.questing.sync.QuestChangeSet;
 import betterquesting.questing.sync.QuestSyncService;
 import betterquesting.storage.LifeDatabase;
 import betterquesting.storage.NameCache;
@@ -80,6 +82,7 @@ import cpw.mods.fml.common.gameevent.TickEvent.ServerTickEvent;
 import cpw.mods.fml.common.network.FMLNetworkEvent;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import drethic.questbook.config.QBConfig;
 
 /**
  * Event handling for standard quests and core BetterQuesting functionality
@@ -293,18 +296,21 @@ public class EventHandler {
         }
 
         if (!editMode) {
-            for (Map.Entry<UUID, IQuest> entry : pendingAutoClaims.entrySet()) // Auto claims
-            {
-                if (entry.getValue()
-                    .canClaim(player)) {
-                    entry.getValue()
-                        .claimReward(player);
+            QuestChangeSet autoClaimChanges = new QuestChangeSet();
+
+            for (Map.Entry<UUID, IQuest> entry : pendingAutoClaims.entrySet()) {
+                QuestChangeSet changes = QuestMutationService
+                    .claimReward(entry.getKey(), entry.getValue(), player, false, QBConfig.fullySyncQuests);
+
+                if (!changes.isEmpty()) {
                     refreshCache = true;
-                    qc.markQuestDirty(entry.getKey());
+                    autoClaimChanges.merge(changes);
                     // Not going to notify of auto-claims anymore. Kinda pointless if they're already being pinged for
                     // completion
                 }
             }
+
+            QuestSyncService.notifyQuestsChanged(autoClaimChanges);
         }
 
         if (refreshCache || player.ticksExisted % 200 == 0) // Refresh the cache if something changed or every 10
