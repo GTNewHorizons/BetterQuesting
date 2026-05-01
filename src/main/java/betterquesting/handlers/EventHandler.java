@@ -103,67 +103,67 @@ public class EventHandler {
     @SideOnly(Side.CLIENT)
     @SubscribeEvent
     public void onClientChatReceived(ClientChatReceivedEvent event) {
-        if (event.message != null) {
-            String text = event.message.getFormattedText();
-            int index = text.indexOf("betterquesting.msg.sharequest:");
-            if (index != -1) {
-                int lastIndex = index + "betterquesting.msg.sharequest:".length();
-                String restOfText = text.substring(lastIndex);
+        if (event.message == null) return;
 
-                // UUIDs in base64-encoded string form are 24 characters in length.
-                if (restOfText.length() < 24) {
-                    event.message = new ChatComponentTranslation("betterquesting.msg.share_quest_invalid", restOfText);
-                    return;
-                }
-                String uuidString = restOfText.substring(0, 24);
-                UUID questId;
-                try {
-                    questId = UuidConverter.decodeUuid(uuidString);
-                } catch (ArrayIndexOutOfBoundsException | IllegalArgumentException e) {
-                    event.message = new ChatComponentTranslation("betterquesting.msg.share_quest_invalid", uuidString);
-                    return;
-                }
+        String text = event.message.getFormattedText();
+        int index = text.indexOf("betterquesting.msg.sharequest:");
+        if (index == -1) return;
 
-                IQuest quest = QuestDatabase.INSTANCE.get(questId);
-                if (quest == null) {
-                    event.message = new ChatComponentTranslation(
-                        "betterquesting.msg.share_quest_invalid",
-                        UuidConverter.encodeUuid(questId));
-                    return;
-                }
+        int lastIndex = index + "betterquesting.msg.sharequest:".length();
+        String restOfText = text.substring(lastIndex);
 
-                String questName = quest.getProperty(NativeProps.NAME);
-                IChatComponent translated = new ChatComponentTranslation(
-                    "betterquesting.msg.share_quest",
-                    UuidConverter.encodeUuid(questId),
-                    questName);
-
-                String textAfter = restOfText.length() > 36 ? restOfText.substring(36) : "";
-                IChatComponent newMessage = new ChatComponentText(
-                    text.substring(0, index) + translated.getFormattedText() + textAfter);
-                ChatStyle newMessageStyle;
-                EntityPlayerSP player = Minecraft.getMinecraft().thePlayer;
-                if (QuestCache.isQuestShown(quest, QuestingAPI.getQuestingUUID(player), player)) {
-                    QuestCommandShow.sentViaClick = true;
-                    newMessageStyle = newMessage.getChatStyle()
-                        .setChatClickEvent(
-                            new ClickEvent(
-                                ClickEvent.Action.RUN_COMMAND,
-                                "/bq_client show " + UuidConverter.encodeUuid(questId)))
-                        .setChatHoverEvent(
-                            new HoverEvent(
-                                HoverEvent.Action.SHOW_TEXT,
-                                new ChatComponentTranslation("betterquesting.msg.share_quest_hover_text_success")));
-                } else {
-                    newMessageStyle = newMessage.getChatStyle()
-                        .setChatHoverEvent(
-                            new HoverEvent(
-                                HoverEvent.Action.SHOW_TEXT,
-                                new ChatComponentTranslation("betterquesting.msg.share_quest_hover_text_failure")));
-                }
-                event.message = newMessage.setChatStyle(newMessageStyle);
-            }
+        // UUIDs in base64-encoded string form are 24 characters in length.
+        if (restOfText.length() < 24) {
+            event.message = new ChatComponentTranslation("betterquesting.msg.share_quest_invalid", restOfText);
+            return;
         }
+        String uuidString = restOfText.substring(0, 24);
+        UUID questId;
+        try {
+            questId = UuidConverter.decodeUuid(uuidString);
+        } catch (ArrayIndexOutOfBoundsException | IllegalArgumentException e) {
+            event.message = new ChatComponentTranslation("betterquesting.msg.share_quest_invalid", uuidString);
+            return;
+        }
+
+        IQuest quest = QuestDatabase.INSTANCE.get(questId);
+        if (quest == null) {
+            event.message = new ChatComponentTranslation(
+                "betterquesting.msg.share_quest_invalid",
+                UuidConverter.encodeUuid(questId));
+            return;
+        }
+
+        String questName = quest.getProperty(NativeProps.NAME);
+        IChatComponent translated = new ChatComponentTranslation(
+            "betterquesting.msg.share_quest",
+            UuidConverter.encodeUuid(questId),
+            questName);
+
+        String textAfter = restOfText.length() > 36 ? restOfText.substring(36) : "";
+        IChatComponent newMessage = new ChatComponentText(
+            text.substring(0, index) + translated.getFormattedText() + textAfter);
+        ChatStyle newMessageStyle;
+        EntityPlayerSP player = Minecraft.getMinecraft().thePlayer;
+        if (QuestCache.isQuestShown(quest, QuestingAPI.getQuestingUUID(player), player)) {
+            QuestCommandShow.sentViaClick = true;
+            newMessageStyle = newMessage.getChatStyle()
+                .setChatClickEvent(
+                    new ClickEvent(
+                        ClickEvent.Action.RUN_COMMAND,
+                        "/bq_client show " + UuidConverter.encodeUuid(questId)))
+                .setChatHoverEvent(
+                    new HoverEvent(
+                        HoverEvent.Action.SHOW_TEXT,
+                        new ChatComponentTranslation("betterquesting.msg.share_quest_hover_text_success")));
+        } else {
+            newMessageStyle = newMessage.getChatStyle()
+                .setChatHoverEvent(
+                    new HoverEvent(
+                        HoverEvent.Action.SHOW_TEXT,
+                        new ChatComponentTranslation("betterquesting.msg.share_quest_hover_text_failure")));
+        }
+        event.message = newMessage.setChatStyle(newMessageStyle);
     }
 
     @SideOnly(Side.CLIENT)
