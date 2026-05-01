@@ -1,6 +1,7 @@
 package betterquesting.questing.mutation;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 
 import javax.annotation.Nonnull;
@@ -8,6 +9,7 @@ import javax.annotation.Nullable;
 
 import net.minecraft.entity.player.EntityPlayer;
 
+import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.questing.IQuest;
 import betterquesting.api.questing.tasks.ITask;
 import betterquesting.questing.sync.QuestChangeSet;
@@ -60,9 +62,23 @@ public final class QuestMutationService {
 
         quest.claimReward(player, forceChoice);
 
-        changes.markQuestDirty(
-            QuestParticipantResolver.resolvePlayerProgressParticipants(player, includeSharedParticipants),
-            questID);
+        List<UUID> participants = QuestParticipantResolver
+            .resolvePlayerProgressParticipants(player, includeSharedParticipants);
+
+        UUID playerID = QuestingAPI.getQuestingUUID(player);
+        long timestamp = System.currentTimeMillis();
+
+        for (UUID participant : participants) {
+            if (participant == null) {
+                continue;
+            }
+
+            if (!participant.equals(playerID)) {
+                quest.setClaimed(participant, timestamp);
+            }
+
+            changes.markQuestDirty(participant, questID);
+        }
 
         return changes;
     }

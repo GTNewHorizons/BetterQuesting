@@ -41,13 +41,11 @@ import betterquesting.api2.storage.IDatabaseNBT;
 import betterquesting.api2.utils.DirtyPlayerMarker;
 import betterquesting.api2.utils.ParticipantInfo;
 import betterquesting.core.BetterQuesting;
-import betterquesting.questing.mutation.QuestParticipantResolver;
 import betterquesting.questing.rewards.RewardStorage;
 import betterquesting.questing.tasks.TaskStorage;
 import betterquesting.storage.PropertyContainer;
 import betterquesting.storage.QuestSettings;
 import bq_standard.rewards.RewardChoice;
-import drethic.questbook.config.QBConfig;
 
 public class QuestInstance implements IQuest {
 
@@ -245,21 +243,18 @@ public class QuestInstance implements IQuest {
             unwrapped.claimReward(player, mapEntry);
         }
 
-        List<UUID> playersToMark = QuestParticipantResolver
-            .resolvePlayerProgressParticipants(player, QBConfig.fullySyncQuests);
+        UUID playerID = QuestingAPI.getQuestingUUID(player);
 
         synchronized (completeUsers) {
-            for (UUID user : playersToMark) {
-                NBTTagCompound entry = getCompletionInfo(user);
-                if (entry == null) {
-                    entry = new NBTTagCompound();
-                }
-
-                entry.setBoolean("claimed", true);
-                entry.setLong("timestamp", System.currentTimeMillis());
-                this.completeUsers.put(user, entry);
-                DirtyPlayerMarker.markDirty(user);
+            NBTTagCompound entry = getCompletionInfo(playerID);
+            if (entry == null) {
+                entry = new NBTTagCompound();
             }
+
+            entry.setBoolean("claimed", true);
+            entry.setLong("timestamp", System.currentTimeMillis());
+            this.completeUsers.put(playerID, entry);
+            DirtyPlayerMarker.markDirty(playerID);
         }
     }
 
