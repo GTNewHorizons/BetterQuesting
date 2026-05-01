@@ -228,7 +228,6 @@ public class EventHandler {
         QResetTime[] pendingResets = qc.getScheduledResets();
 
         UUID uuid = QuestingAPI.getQuestingUUID(player);
-        boolean refreshCache = false;
 
         QuestProgressResult mutationResult = new QuestProgressResult();
 
@@ -279,7 +278,10 @@ public class EventHandler {
             qc.updateCache(player);
         }
 
-        QuestSyncService.flushDirtyQuestProgress(player);
+        if (!mutationResult.getAffectedPlayers()
+            .contains(uuid)) {
+            QuestSyncService.flushDirtyQuestProgress(player);
+        }
     }
 
     // TODO: Create a new message inbox system for these things. On screen popups aren't ideal in combat

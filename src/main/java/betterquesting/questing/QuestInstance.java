@@ -35,6 +35,7 @@ import betterquesting.api.questing.tasks.ITask;
 import betterquesting.api.utils.BigItemStack;
 import betterquesting.api.utils.NBTConverter;
 import betterquesting.api.utils.UuidConverter;
+import betterquesting.api2.cache.QuestCache;
 import betterquesting.api2.storage.DBEntry;
 import betterquesting.api2.storage.IDatabaseNBT;
 import betterquesting.api2.utils.DirtyPlayerMarker;
@@ -125,6 +126,11 @@ public class QuestInstance implements IQuest {
     @Override
     public void detect(EntityPlayer player) {
         UUID playerID = QuestingAPI.getQuestingUUID(player);
+        QuestCache qc = (QuestCache) player.getExtendedProperties(QuestCache.LOC_QUEST_CACHE.toString());
+        if (qc == null) {
+            return;
+        }
+
         UUID questID = QuestDatabase.INSTANCE.lookupKey(this);
 
         if (isComplete(playerID) && (qInfo.getProperty(NativeProps.REPEAT_TIME) < 0 || rewards.size() <= 0)) {
@@ -166,10 +172,10 @@ public class QuestInstance implements IQuest {
                     }
                 }
             }
-            // Note: Tasks can mark the quest dirty themselves if progress changed but hasn't fully completed.
+
             if (numTasks <= 0 || qInfo.getProperty(NativeProps.LOGIC_TASK)
                 .getResult(done, numTasks)) {
-                // State won't be auto updated in edit mode so we force change it here and mark it for re-sync
+                // State won't be auto updated in edit mode so we force change it here.
                 if (QuestSettings.INSTANCE.getProperty(NativeProps.EDIT_MODE)) {
                     setComplete(playerID, System.currentTimeMillis());
                 }

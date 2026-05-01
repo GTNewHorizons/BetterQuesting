@@ -127,29 +127,13 @@ public final class QuestMutationService {
                 continue;
             }
 
+            boolean wasComplete = quest.isComplete(playerID);
+
             if (quest.canSubmit(player)) {
                 quest.update(player);
             }
 
-            if (quest.isComplete(playerID) && !quest.canSubmit(player)) {
-                NBTTagCompound completionInfo = quest.getCompletionInfo(playerID);
-                long completionTime = completionInfo != null ? completionInfo.getLong("timestamp")
-                    : System.currentTimeMillis();
-
-                result.markCompleted(playerID, questID);
-
-                for (UUID participant : QuestParticipantResolver.resolveQuestCompletionParticipants(player)) {
-                    if (participant == null) {
-                        continue;
-                    }
-
-                    if (!quest.isComplete(participant)) {
-                        quest.setComplete(participant, completionTime);
-                    }
-
-                    result.markChanged(participant, questID);
-                }
-            }
+            result.merge(propagateCompletionIfNeeded(questID, quest, player, wasComplete));
         }
 
         return result;
@@ -195,10 +179,7 @@ public final class QuestMutationService {
                 includeSharedParticipants);
 
             if (!claimChanges.isEmpty()) {
-                result.getChanges()
-                    .merge(claimChanges);
-                result.getChangedQuests()
-                    .add(entry.getKey()); // won't compile if getter is immutable
+                result.markChanged(entry.getKey(), claimChanges);
             }
         }
 

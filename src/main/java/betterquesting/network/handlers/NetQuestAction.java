@@ -105,6 +105,9 @@ public class NetQuestAction {
                     .merge(QuestMutationService.claimReward(questID, quest, player, false, QBConfig.fullySyncQuests)));
 
         QuestSyncService.notifyQuestsChanged(changes);
+        QuestSyncService.refreshCachesAndFlushDirtyProgress(
+            changes.getDirtyQuestsByPlayer()
+                .keySet());
     }
 
     public static void detectQuest(Collection<UUID> questIDs, EntityPlayerMP player) {
@@ -126,5 +129,8 @@ public class NetQuestAction {
                     .merge(QuestMutationService.claimReward(questID, quest, player, true, QBConfig.fullySyncQuests)));
 
         QuestSyncService.notifyQuestsChanged(changes);
+        QuestSyncService.refreshCachesAndFlushDirtyProgress(
+            changes.getDirtyQuestsByPlayer()
+                .keySet());
     }
 }
