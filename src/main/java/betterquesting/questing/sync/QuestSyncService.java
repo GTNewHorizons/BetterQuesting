@@ -63,7 +63,8 @@ public final class QuestSyncService {
             return;
         }
 
-        for (Map.Entry<UUID, Set<UUID>> entry : changes.getDirtyQuestsByPlayer().entrySet()) {
+        for (Map.Entry<UUID, Set<UUID>> entry : changes.getDirtyQuestsByPlayer()
+            .entrySet()) {
             UUID playerID = entry.getKey();
 
             for (UUID questID : entry.getValue()) {

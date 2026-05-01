@@ -21,7 +21,7 @@ public final class QuestChangeSet {
         }
 
         dirtyQuestsByPlayer.computeIfAbsent(playerID, ignored -> new HashSet<>())
-                .add(questID);
+            .add(questID);
 
         return this;
     }
@@ -39,7 +39,8 @@ public final class QuestChangeSet {
             return this;
         }
 
-        for (Map.Entry<UUID, Set<UUID>> entry : other.getDirtyQuestsByPlayer().entrySet()) {
+        for (Map.Entry<UUID, Set<UUID>> entry : other.getDirtyQuestsByPlayer()
+            .entrySet()) {
             for (UUID questID : entry.getValue()) {
                 markQuestDirty(entry.getKey(), questID);
             }
