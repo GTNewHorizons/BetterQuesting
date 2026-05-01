@@ -45,50 +45,48 @@ public class PartyManager extends SimpleDatabase<IParty> implements IPartyDataba
     }
 
     private static void SyncPartyQuests(IParty party, List<UUID> targetUUIDs, boolean prohibitClaim) {
-        new Thread(() -> {
-            BetterQuesting.logger.info("Start force party quest sync");
-            List<UUID> partyMembers = party.getMembers();
+        BetterQuesting.logger.info("Start force party quest sync");
+        List<UUID> partyMembers = party.getMembers();
 
-            List<SyncPlayerContainer> t = targetUUIDs.stream()
-                .map(SyncPlayerContainer::new)
-                .collect(Collectors.toList());
+        List<SyncPlayerContainer> t = targetUUIDs.stream()
+            .map(SyncPlayerContainer::new)
+            .collect(Collectors.toList());
 
-            for (Map.Entry<UUID, IQuest> questEntry : QuestDatabase.INSTANCE.entrySet()) {
-                IQuest quest = questEntry.getValue();
-                long completionTime = -1;
-                for (UUID member : partyMembers) {
-                    NBTTagCompound completionInfo = quest.getCompletionInfo(member);
-                    if (completionInfo != null) {
-                        completionTime = completionInfo.getLong("timestamp");
-                        break;
-                    }
-                }
-
-                if (completionTime != -1) {
-                    List<UUID> targetsToBackfill = new ArrayList<>();
-                    for (SyncPlayerContainer target : t) {
-                        if (quest.isComplete(target.uuid)) continue;
-
-                        targetsToBackfill.add(target.uuid);
-                        target.questsCompleted += 1;
-                    }
-
-                    if (!targetsToBackfill.isEmpty()) {
-                        QuestMutationResult result = quest.applyAction(
-                            QuestAction.backfillCompletion(targetsToBackfill, completionTime, prohibitClaim));
-                        QuestSyncService.applyMutationResult(result);
-                    }
+        for (Map.Entry<UUID, IQuest> questEntry : QuestDatabase.INSTANCE.entrySet()) {
+            IQuest quest = questEntry.getValue();
+            long completionTime = -1;
+            for (UUID member : partyMembers) {
+                NBTTagCompound completionInfo = quest.getCompletionInfo(member);
+                if (completionInfo != null) {
+                    completionTime = completionInfo.getLong("timestamp");
+                    break;
                 }
             }
 
-            for (SyncPlayerContainer syncPlayerContainer : t) {
-                if (syncPlayerContainer.questsCompleted == 0) continue;
-                BetterQuesting.logger.info(
-                    "Force party quest sync: completed " + syncPlayerContainer.questsCompleted
-                        + " quests for "
-                        + syncPlayerContainer.playerName);
+            if (completionTime != -1) {
+                List<UUID> targetsToBackfill = new ArrayList<>();
+                for (SyncPlayerContainer target : t) {
+                    if (quest.isComplete(target.uuid)) continue;
+
+                    targetsToBackfill.add(target.uuid);
+                    target.questsCompleted += 1;
+                }
+
+                if (!targetsToBackfill.isEmpty()) {
+                    QuestMutationResult result = quest
+                        .applyAction(QuestAction.backfillCompletion(targetsToBackfill, completionTime, prohibitClaim));
+                    QuestSyncService.applyMutationResult(result);
+                }
             }
-        }).start();
+        }
+
+        for (SyncPlayerContainer syncPlayerContainer : t) {
+            if (syncPlayerContainer.questsCompleted == 0) continue;
+            BetterQuesting.logger.info(
+                "Force party quest sync: completed " + syncPlayerContainer.questsCompleted
+                    + " quests for "
+                    + syncPlayerContainer.playerName);
+        }
     }
 
     private final HashMap<UUID, Integer> partyCache = new HashMap<>();

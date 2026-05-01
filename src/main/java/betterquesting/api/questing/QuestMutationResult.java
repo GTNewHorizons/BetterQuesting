@@ -21,6 +21,7 @@ import javax.annotation.Nonnull;
 public final class QuestMutationResult {
 
     private final HashMap<UUID, HashSet<UUID>> dirtyQuestsByPlayer = new HashMap<>();
+    private final HashSet<UUID> dirtyQuestsForAllOnlinePlayers = new HashSet<>();
     private final ArrayList<UUID> completedQuests = new ArrayList<>();
     private final ArrayList<UUID> resetQuests = new ArrayList<>();
 
@@ -35,6 +36,12 @@ public final class QuestMutationResult {
         for (UUID playerID : playerIDs) {
             markDirty(playerID, questID);
         }
+
+        return this;
+    }
+
+    public QuestMutationResult markDirtyForAllOnlinePlayers(@Nonnull UUID questID) {
+        dirtyQuestsForAllOnlinePlayers.add(questID);
 
         return this;
     }
@@ -63,16 +70,17 @@ public final class QuestMutationResult {
 
         completedQuests.addAll(other.getCompletedQuests());
         resetQuests.addAll(other.getResetQuests());
+        dirtyQuestsForAllOnlinePlayers.addAll(other.getDirtyQuestsForAllOnlinePlayers());
 
         return this;
     }
 
     public boolean hasChanges() {
-        return !dirtyQuestsByPlayer.isEmpty();
+        return !dirtyQuestsByPlayer.isEmpty() || !dirtyQuestsForAllOnlinePlayers.isEmpty();
     }
 
     public boolean affectsPlayer(@Nonnull UUID playerID) {
-        return dirtyQuestsByPlayer.containsKey(playerID);
+        return dirtyQuestsByPlayer.containsKey(playerID) || !dirtyQuestsForAllOnlinePlayers.isEmpty();
     }
 
     @Nonnull
@@ -92,12 +100,19 @@ public final class QuestMutationResult {
     }
 
     @Nonnull
+    public Set<UUID> getDirtyQuestsForAllOnlinePlayers() {
+        return Collections.unmodifiableSet(new HashSet<>(dirtyQuestsForAllOnlinePlayers));
+    }
+
+    @Nonnull
     public Set<UUID> getChangedQuests() {
         HashSet<UUID> changedQuests = new HashSet<>();
 
         for (HashSet<UUID> quests : dirtyQuestsByPlayer.values()) {
             changedQuests.addAll(quests);
         }
+
+        changedQuests.addAll(dirtyQuestsForAllOnlinePlayers);
 
         return Collections.unmodifiableSet(changedQuests);
     }

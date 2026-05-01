@@ -100,19 +100,19 @@ public class QuestInstance implements IQuest {
     @Nonnull
     @Override
     public QuestMutationResult applyAction(@Nonnull QuestAction action) {
-        switch (action.type) {
+        switch (action.getType()) {
             case UPDATE_PROGRESS:
-                return updateProgress(action.context);
+                return updateProgress(action.requireContext());
             case DETECT:
-                return detect(action.context);
+                return detect(action.requireContext());
             case CLAIM_REWARD:
-                return claimReward(action.context, false);
+                return claimReward(action.requireContext(), false);
             case FORCE_CLAIM_REWARD:
-                return claimReward(action.context, true);
+                return claimReward(action.requireContext(), true);
             case COMPLETE_TASK:
-                return completeTask(action.context);
+                return completeTask(action.requireContext());
             case RESET:
-                return resetDue(action.context);
+                return resetDue(action.requireContext());
             case BACKFILL_COMPLETION:
                 return backfillCompletion(action);
             case RESET_USERS:
@@ -254,14 +254,9 @@ public class QuestInstance implements IQuest {
         UUID questID = getQuestID();
 
         if (qInfo.getProperty(NativeProps.GLOBAL)) {
-            HashSet<UUID> affectedUsers = getUsersWithCompletionDataCopy();
-
             resetUser(null, false);
             result.markReset(context.actorID, questID);
-
-            for (UUID affectedUser : affectedUsers) {
-                result.markDirty(affectedUser, questID);
-            }
+            result.markDirtyForAllOnlinePlayers(questID);
         } else {
             resetUser(context.actorID, false);
             result.markReset(context.actorID, questID);
@@ -274,25 +269,21 @@ public class QuestInstance implements IQuest {
     private QuestMutationResult backfillCompletion(@Nonnull QuestAction action) {
         QuestMutationResult result = new QuestMutationResult();
 
-        if (action.targetPlayers == null) {
-            return result;
-        }
-
         UUID questID = getQuestID();
 
-        for (UUID target : action.targetPlayers) {
+        for (UUID target : action.getTargetPlayersOrEmpty()) {
             if (target == null) {
                 continue;
             }
 
             boolean changed = false;
             if (!isComplete(target)) {
-                setComplete(target, action.completionTime);
+                setComplete(target, action.getCompletionTime());
                 changed = true;
             }
 
-            if (action.markClaimed) {
-                setClaimed(target, action.completionTime);
+            if (action.shouldMarkClaimed()) {
+                setClaimed(target, action.getCompletionTime());
                 changed = true;
             }
 
@@ -309,23 +300,19 @@ public class QuestInstance implements IQuest {
         QuestMutationResult result = new QuestMutationResult();
         UUID questID = getQuestID();
 
-        if (action.targetPlayers == null) {
-            HashSet<UUID> affectedUsers = getUsersWithCompletionDataCopy();
-            resetUser(null, action.fullReset);
-
-            for (UUID affectedUser : affectedUsers) {
-                result.markReset(affectedUser, questID);
-            }
+        if (action.targetsAllPlayers()) {
+            resetUser(null, action.isFullReset());
+            result.markDirtyForAllOnlinePlayers(questID);
 
             return result;
         }
 
-        for (UUID target : action.targetPlayers) {
+        for (UUID target : action.getTargetPlayersOrEmpty()) {
             if (target == null) {
                 continue;
             }
 
-            resetUser(target, action.fullReset);
+            resetUser(target, action.isFullReset());
             result.markReset(target, questID);
         }
 
@@ -336,21 +323,17 @@ public class QuestInstance implements IQuest {
     private QuestMutationResult setCompleteForEdit(@Nonnull QuestAction action) {
         QuestMutationResult result = new QuestMutationResult();
 
-        if (action.targetPlayers == null) {
-            return result;
-        }
-
         UUID questID = getQuestID();
 
-        for (UUID target : action.targetPlayers) {
+        for (UUID target : action.getTargetPlayersOrEmpty()) {
             if (target == null) {
                 continue;
             }
 
             if (isComplete(target)) {
-                setClaimed(target, action.completionTime);
+                setClaimed(target, action.getCompletionTime());
             } else {
-                setComplete(target, action.completionTime);
+                setComplete(target, action.getCompletionTime());
                 completeEnoughTasksForClaim(target);
             }
 

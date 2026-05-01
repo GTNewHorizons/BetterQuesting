@@ -1,6 +1,7 @@
 package betterquesting.questing.sync;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -10,11 +11,13 @@ import javax.annotation.Nullable;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.server.MinecraftServer;
 
 import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.questing.QuestMutationResult;
 import betterquesting.api2.cache.QuestCache;
 import betterquesting.network.handlers.NetQuestSync;
+import cpw.mods.fml.common.FMLCommonHandler;
 
 public final class QuestSyncService {
 
@@ -51,6 +54,8 @@ public final class QuestSyncService {
         }
 
         Map<UUID, Set<UUID>> dirtyQuestsByPlayer = result.getDirtyQuestsByPlayer();
+        Set<UUID> globallyDirtyQuests = result.getDirtyQuestsForAllOnlinePlayers();
+        HashSet<UUID> playersToRefresh = new HashSet<>();
 
         for (Map.Entry<UUID, Set<UUID>> entry : dirtyQuestsByPlayer.entrySet()) {
             UUID playerID = entry.getKey();
@@ -58,9 +63,32 @@ public final class QuestSyncService {
             for (UUID questID : entry.getValue()) {
                 markQuestDirty(playerID, questID);
             }
+
+            playersToRefresh.add(playerID);
         }
 
-        for (UUID playerID : dirtyQuestsByPlayer.keySet()) {
+        if (!globallyDirtyQuests.isEmpty()) {
+            MinecraftServer server = FMLCommonHandler.instance()
+                .getMinecraftServerInstance();
+            if (server != null) {
+                for (Object onlinePlayer : server.getConfigurationManager().playerEntityList) {
+                    EntityPlayerMP player = (EntityPlayerMP) onlinePlayer;
+                    UUID playerID = QuestingAPI.getQuestingUUID(player);
+                    QuestCache cache = getQuestCache(player);
+                    if (cache == null) {
+                        continue;
+                    }
+
+                    for (UUID questID : globallyDirtyQuests) {
+                        cache.markQuestDirty(questID);
+                    }
+
+                    playersToRefresh.add(playerID);
+                }
+            }
+        }
+
+        for (UUID playerID : playersToRefresh) {
             EntityPlayerMP player = QuestingAPI.getPlayer(playerID);
             if (player == null) {
                 continue;

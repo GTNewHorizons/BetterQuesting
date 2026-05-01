@@ -10,14 +10,14 @@ import javax.annotation.Nullable;
 
 public final class QuestAction {
 
-    public final QuestActionType type;
+    private final QuestActionType type;
     @Nullable
-    public final QuestActionContext context;
+    private final QuestActionContext context;
     @Nullable
-    public final Collection<UUID> targetPlayers;
-    public final long completionTime;
-    public final boolean markClaimed;
-    public final boolean fullReset;
+    private final Collection<UUID> targetPlayers;
+    private final long completionTime;
+    private final boolean markClaimed;
+    private final boolean fullReset;
 
     private QuestAction(@Nonnull QuestActionType type, @Nullable QuestActionContext context,
         @Nullable Collection<UUID> targetPlayers, long completionTime, boolean markClaimed, boolean fullReset) {
@@ -32,6 +32,41 @@ public final class QuestAction {
 
     private static QuestAction forPlayer(@Nonnull QuestActionType type, @Nonnull QuestActionContext context) {
         return new QuestAction(type, context, null, 0, false, false);
+    }
+
+    @Nonnull
+    public QuestActionType getType() {
+        return type;
+    }
+
+    @Nonnull
+    public QuestActionContext requireContext() {
+        if (context == null) {
+            throw new IllegalStateException(type + " does not have a player action context");
+        }
+
+        return context;
+    }
+
+    @Nonnull
+    public Collection<UUID> getTargetPlayersOrEmpty() {
+        return targetPlayers == null ? Collections.emptyList() : targetPlayers;
+    }
+
+    public boolean targetsAllPlayers() {
+        return targetPlayers == null;
+    }
+
+    public long getCompletionTime() {
+        return completionTime;
+    }
+
+    public boolean shouldMarkClaimed() {
+        return markClaimed;
+    }
+
+    public boolean isFullReset() {
+        return fullReset;
     }
 
     @Nonnull
