@@ -21,6 +21,7 @@ import betterquesting.network.PacketSender;
 import betterquesting.network.PacketTypeRegistry;
 import betterquesting.questing.QuestDatabase;
 import betterquesting.questing.mutation.QuestMutationService;
+import betterquesting.questing.mutation.QuestProgressResult;
 import betterquesting.questing.sync.QuestChangeSet;
 import betterquesting.questing.sync.QuestSyncService;
 import cpw.mods.fml.relauncher.Side;
@@ -107,12 +108,13 @@ public class NetQuestAction {
     }
 
     public static void detectQuest(Collection<UUID> questIDs, EntityPlayerMP player) {
-        QuestChangeSet changes = new QuestChangeSet();
+        QuestProgressResult result = new QuestProgressResult();
 
         QuestDatabase.INSTANCE.filterKeys(questIDs)
-            .forEach((questID, quest) -> changes.merge(QuestMutationService.detectQuest(questID, quest, player)));
+            .forEach((questID, quest) -> result.merge(QuestMutationService.detectQuest(questID, quest, player)));
 
-        QuestSyncService.notifyQuestsChanged(changes);
+        QuestSyncService.notifyQuestsChanged(result.getChanges());
+        QuestSyncService.refreshCachesAndFlushDirtyProgress(result.getAffectedPlayers());
     }
 
     public static void forceClaimQuest(Collection<UUID> questIDs, EntityPlayerMP player) {

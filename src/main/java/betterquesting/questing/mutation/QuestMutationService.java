@@ -31,24 +31,29 @@ public final class QuestMutationService {
      * responsible for checking whether the task can be completed by this action.
      */
     @Nonnull
-    public static QuestChangeSet setTaskComplete(@Nullable UUID questID, @Nullable ITask task,
-        @Nonnull Collection<UUID> playerIDs) {
-        QuestChangeSet changes = new QuestChangeSet();
+    public static QuestProgressResult setTaskComplete(@Nullable UUID questID, @Nullable IQuest quest,
+        @Nullable ITask task, @Nonnull EntityPlayer player, @Nonnull Collection<UUID> playerIDs) {
+        QuestProgressResult result = new QuestProgressResult();
 
-        if (questID == null || task == null) {
-            return changes;
+        if (questID == null || quest == null || task == null) {
+            return result;
         }
 
-        for (UUID playerID : playerIDs) {
-            if (playerID == null) {
+        UUID playerID = QuestingAPI.getQuestingUUID(player);
+        boolean wasComplete = quest.isComplete(playerID);
+
+        for (UUID targetPlayerID : playerIDs) {
+            if (targetPlayerID == null) {
                 continue;
             }
 
-            task.setComplete(playerID);
-            changes.markQuestDirty(playerID, questID);
+            task.setComplete(targetPlayerID);
+            result.markChanged(targetPlayerID, questID);
         }
 
-        return changes;
+        result.merge(propagateCompletionIfNeeded(questID, quest, player, wasComplete));
+
+        return result;
     }
 
     @Nonnull
@@ -89,20 +94,23 @@ public final class QuestMutationService {
     }
 
     @Nonnull
-    public static QuestChangeSet detectQuest(@Nullable UUID questID, @Nullable IQuest quest,
+    public static QuestProgressResult detectQuest(@Nullable UUID questID, @Nullable IQuest quest,
         @Nonnull EntityPlayer player) {
-        QuestChangeSet changes = new QuestChangeSet();
+        QuestProgressResult result = new QuestProgressResult();
 
         if (questID == null || quest == null) {
-            return changes;
+            return result;
         }
+
+        UUID playerID = QuestingAPI.getQuestingUUID(player);
+        boolean wasComplete = quest.isComplete(playerID);
 
         quest.detect(player);
 
-        UUID playerID = QuestingAPI.getQuestingUUID(player);
-        changes.markQuestDirty(playerID, questID);
+        result.markChanged(playerID, questID);
+        result.merge(propagateCompletionIfNeeded(questID, quest, player, wasComplete));
 
-        return changes;
+        return result;
     }
 
     @Nonnull
@@ -192,6 +200,37 @@ public final class QuestMutationService {
                 result.getChangedQuests()
                     .add(entry.getKey()); // won't compile if getter is immutable
             }
+        }
+
+        return result;
+    }
+
+    @Nonnull
+    private static QuestProgressResult propagateCompletionIfNeeded(@Nonnull UUID questID, @Nonnull IQuest quest,
+        @Nonnull EntityPlayer player, boolean wasComplete) {
+        QuestProgressResult result = new QuestProgressResult();
+
+        UUID playerID = QuestingAPI.getQuestingUUID(player);
+
+        if (wasComplete || !quest.isComplete(playerID) || quest.canSubmit(player)) {
+            return result;
+        }
+
+        NBTTagCompound completionInfo = quest.getCompletionInfo(playerID);
+        long completionTime = completionInfo != null ? completionInfo.getLong("timestamp") : System.currentTimeMillis();
+
+        result.markCompleted(playerID, questID);
+
+        for (UUID participant : QuestParticipantResolver.resolveQuestCompletionParticipants(player)) {
+            if (participant == null) {
+                continue;
+            }
+
+            if (!quest.isComplete(participant)) {
+                quest.setComplete(participant, completionTime);
+            }
+
+            result.markChanged(participant, questID);
         }
 
         return result;
