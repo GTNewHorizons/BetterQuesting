@@ -67,8 +67,7 @@ public class NetTaskCheckbox {
         List<UUID> playersToMark = QuestParticipantResolver
             .resolvePlayerProgressParticipants(sender, QBConfig.fullySyncQuests);
 
-        QuestMutationResult result = QuestMutationService
-            .setTaskComplete(qId.get(), quest, task, sender, playersToMark);
+        QuestMutationResult result = QuestMutationService.setTaskComplete(qId.get(), quest, tId, sender, playersToMark);
 
         QuestSyncService.applyMutationResult(result);
     }

@@ -30,6 +30,8 @@ import betterquesting.api.enums.EnumQuestVisibility;
 import betterquesting.api.properties.IPropertyType;
 import betterquesting.api.properties.NativeProps;
 import betterquesting.api.questing.IQuest;
+import betterquesting.api.questing.QuestAction;
+import betterquesting.api.questing.QuestActionContext;
 import betterquesting.api.questing.rewards.IReward;
 import betterquesting.api.questing.tasks.ITask;
 import betterquesting.api.utils.BigItemStack;
@@ -41,6 +43,7 @@ import betterquesting.api2.storage.IDatabaseNBT;
 import betterquesting.api2.utils.DirtyPlayerMarker;
 import betterquesting.api2.utils.ParticipantInfo;
 import betterquesting.core.BetterQuesting;
+import betterquesting.questing.mutation.QuestMutationResult;
 import betterquesting.questing.rewards.RewardStorage;
 import betterquesting.questing.tasks.TaskStorage;
 import betterquesting.storage.PropertyContainer;
@@ -94,97 +97,292 @@ public class QuestInstance implements IQuest {
         qInfo.setProperty(prop, qInfo.getProperty(prop, def));
     }
 
+    @Nonnull
     @Override
-    public void update(EntityPlayer player) {
-        UUID playerID = QuestingAPI.getQuestingUUID(player);
+    public QuestMutationResult applyAction(@Nonnull QuestAction action) {
+        switch (action.type) {
+            case UPDATE_PROGRESS:
+                return updateProgress(action.context);
+            case DETECT:
+                return detect(action.context);
+            case CLAIM_REWARD:
+                return claimReward(action.context, false);
+            case FORCE_CLAIM_REWARD:
+                return claimReward(action.context, true);
+            case COMPLETE_TASK:
+                return completeTask(action.context);
+            case RESET:
+                return resetDue(action.context);
+            default:
+                return new QuestMutationResult();
+        }
+    }
 
+    @Nonnull
+    private QuestMutationResult updateProgress(@Nonnull QuestActionContext context) {
+        QuestMutationResult result = new QuestMutationResult();
+
+        if (!isUnlocked(context.actorID)) {
+            return result;
+        }
+
+        boolean wasComplete = isComplete(context.actorID);
+
+        if (canSubmit(context.player)) {
+            boolean resetProgress = updateTaskCompletion(context);
+            if (resetProgress) {
+                result.markDirty(context.actorID, getQuestID());
+            }
+        }
+
+        result.merge(propagateCompletionIfNeeded(context, wasComplete));
+
+        return result;
+    }
+
+    @Nonnull
+    private QuestMutationResult detect(@Nonnull QuestActionContext context) {
+        QuestMutationResult result = new QuestMutationResult();
+
+        QuestCache qc = (QuestCache) context.player.getExtendedProperties(QuestCache.LOC_QUEST_CACHE.toString());
+        if (qc == null) {
+            // Preserve legacy behavior: detect actions only mutate players with a quest cache.
+            // The returned mutation result owns sync dirty marking.
+            return result;
+        }
+
+        if (isComplete(context.actorID) && (qInfo.getProperty(NativeProps.REPEAT_TIME) < 0 || rewards.size() <= 0)) {
+            return result;
+        }
+
+        if (!canSubmit(context.player)) {
+            return result;
+        }
+
+        if (!isUnlocked(context.actorID) && !QuestSettings.INSTANCE.getProperty(NativeProps.EDIT_MODE)) {
+            return result;
+        }
+
+        UUID questID = getQuestID();
+        boolean wasComplete = isComplete(context.actorID);
+        boolean taskProgressChanged = detectTaskProgress(context);
+
+        if (isTaskLogicComplete(context.actorID)) {
+            setComplete(context.actorID, context.timestamp);
+        } else if (taskProgressChanged && qInfo.getProperty(NativeProps.SIMULTANEOUS)) {
+            resetUser(context.actorID, false);
+            result.markDirty(context.actorID, questID);
+        } else if (taskProgressChanged) {
+            result.markDirty(context.actorID, questID);
+        }
+
+        result.merge(propagateCompletionIfNeeded(context, wasComplete));
+
+        return result;
+    }
+
+    @Nonnull
+    private QuestMutationResult claimReward(@Nonnull QuestActionContext context, boolean forceChoice) {
+        QuestMutationResult result = new QuestMutationResult();
+
+        if (!(forceChoice ? canClaim(context.player, true) : canClaim(context.player))) {
+            return result;
+        }
+
+        UUID questID = getQuestID();
+
+        grantRewards(context.player, forceChoice, questID);
+
+        setClaimed(context.actorID, context.timestamp);
+        result.markDirty(context.actorID, questID);
+
+        for (UUID participant : context.rewardClaimParticipants) {
+            if (participant.equals(context.actorID)) {
+                continue;
+            }
+
+            setClaimed(participant, context.timestamp);
+            result.markDirty(participant, questID);
+        }
+
+        return result;
+    }
+
+    @Nonnull
+    private QuestMutationResult completeTask(@Nonnull QuestActionContext context) {
+        QuestMutationResult result = new QuestMutationResult();
+
+        if (context.taskID == null) {
+            return result;
+        }
+
+        ITask task = tasks.getValue(context.taskID);
+        if (task == null) {
+            return result;
+        }
+
+        UUID questID = getQuestID();
+        boolean wasComplete = isComplete(context.actorID);
+
+        for (UUID participant : context.taskParticipants) {
+            task.setComplete(participant);
+            result.markDirty(participant, questID);
+        }
+
+        result.merge(propagateCompletionIfNeeded(context, wasComplete));
+
+        return result;
+    }
+
+    @Nonnull
+    private QuestMutationResult resetDue(@Nonnull QuestActionContext context) {
+        QuestMutationResult result = new QuestMutationResult();
+
+        if (canSubmit(context.player)) {
+            return result;
+        }
+
+        UUID questID = getQuestID();
+
+        if (qInfo.getProperty(NativeProps.GLOBAL)) {
+            HashSet<UUID> affectedUsers = getUsersWithCompletionDataCopy();
+
+            resetUser(null, false);
+            result.markReset(context.actorID, questID);
+
+            for (UUID affectedUser : affectedUsers) {
+                result.markDirty(affectedUser, questID);
+            }
+        } else {
+            resetUser(context.actorID, false);
+            result.markReset(context.actorID, questID);
+        }
+
+        return result;
+    }
+
+    private boolean updateTaskCompletion(@Nonnull QuestActionContext context) {
         int done = 0;
 
         for (DBEntry<ITask> entry : tasks.getEntries()) {
-            if (entry.getValue()
-                .isComplete(playerID)
-                || entry.getValue()
-                    .ignored(playerID)) {
+            ITask task = entry.getValue();
+
+            if (task.isComplete(context.actorID) || task.ignored(context.actorID)) {
                 done++;
             }
         }
 
         if (tasks.size() <= 0 || qInfo.getProperty(NativeProps.LOGIC_TASK)
             .getResult(done, tasks.size())) {
-            setComplete(playerID, System.currentTimeMillis());
-        } else if (done > 0 && qInfo.getProperty(NativeProps.SIMULTANEOUS)) // TODO: There is actually an exploit here
-                                                                            // to do with locked progression bypassing
-                                                                            // simultaneous reset conditions. Fix?
-        {
-            resetUser(playerID, false);
+            setComplete(context.actorID, context.timestamp);
+            return false;
         }
+
+        if (done > 0 && qInfo.getProperty(NativeProps.SIMULTANEOUS)) {
+            resetUser(context.actorID, false);
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean detectTaskProgress(@Nonnull QuestActionContext context) {
+        boolean changed = false;
+
+        ParticipantInfo partInfo = new ParticipantInfo(context.player);
+        Map.Entry<UUID, IQuest> mapEntry = Maps.immutableEntry(getQuestID(), this);
+
+        for (DBEntry<ITask> entry : tasks.getEntries()) {
+            ITask task = entry.getValue();
+
+            if (task.isComplete(context.actorID)) {
+                continue;
+            }
+
+            task.detect(partInfo, mapEntry);
+
+            if (task.isComplete(context.actorID)) {
+                changed = true;
+            }
+        }
+
+        return changed;
+    }
+
+    private boolean isTaskLogicComplete(@Nonnull UUID playerID) {
+        int done = 0;
+        int numTasks = tasks.size();
+
+        for (DBEntry<ITask> entry : tasks.getEntries()) {
+            ITask task = entry.getValue();
+
+            if (task.isComplete(playerID)) {
+                done++;
+            }
+
+            if (task.ignored(playerID)) {
+                numTasks--;
+
+                if (task.isComplete(playerID)) {
+                    done--;
+                }
+            }
+        }
+
+        return numTasks <= 0 || qInfo.getProperty(NativeProps.LOGIC_TASK)
+            .getResult(done, numTasks);
     }
 
     /**
-     * Fired when someone clicks the detect button for this quest
+     * Applies the live party-completion rule for this quest.
+     *
+     * This is the core LAN/multiplayer fix: once a mutation newly completes this
+     * quest for the actor, completion is propagated immediately to party
+     * participants. This only updates completion state; it does not grant rewards.
      */
-    @Override
-    public void detect(EntityPlayer player) {
-        UUID playerID = QuestingAPI.getQuestingUUID(player);
-        QuestCache qc = (QuestCache) player.getExtendedProperties(QuestCache.LOC_QUEST_CACHE.toString());
-        if (qc == null) {
-            // Preserve legacy behavior: detect actions only mutate players with a quest cache.
-            // Sync dirty marking itself is handled by QuestMutationService.
-            return;
+    @Nonnull
+    private QuestMutationResult propagateCompletionIfNeeded(@Nonnull QuestActionContext context, boolean wasComplete) {
+        QuestMutationResult result = new QuestMutationResult();
+
+        if (wasComplete || !isComplete(context.actorID) || canSubmit(context.player)) {
+            return result;
         }
 
-        UUID questID = QuestDatabase.INSTANCE.lookupKey(this);
+        UUID questID = getQuestID();
+        NBTTagCompound completionInfo = getCompletionInfo(context.actorID);
+        long completionTime = completionInfo != null ? completionInfo.getLong("timestamp") : context.timestamp;
 
-        if (isComplete(playerID) && (qInfo.getProperty(NativeProps.REPEAT_TIME) < 0 || rewards.size() <= 0)) {
-            return;
-        } else if (!canSubmit(player)) {
-            return;
-        }
+        result.markCompleted(context.actorID, questID);
 
-        if (isUnlocked(playerID) || QuestSettings.INSTANCE.getProperty(NativeProps.EDIT_MODE)) {
-            int done = 0;
-            boolean update = false;
-
-            ParticipantInfo partInfo = new ParticipantInfo(player);
-            Map.Entry<UUID, IQuest> mapEntry = Maps.immutableEntry(questID, this);
-
-            int numTasks = tasks.size();
-            for (DBEntry<ITask> entry : tasks.getEntries()) {
-                if (!entry.getValue()
-                    .isComplete(playerID)) {
-                    entry.getValue()
-                        .detect(partInfo, mapEntry);
-
-                    if (entry.getValue()
-                        .isComplete(playerID)) {
-                        done++;
-                        update = true;
-                    }
-                } else {
-                    done++;
-                }
-
-                if (entry.getValue()
-                    .ignored(playerID)) {
-                    // values are only used for logic checking
-                    numTasks--;
-                    if (entry.getValue()
-                        .isComplete(playerID)) {
-                        done--;
-                    }
-                }
+        for (UUID participant : context.completionParticipants) {
+            if (!isComplete(participant)) {
+                setComplete(participant, completionTime);
             }
 
-            if (numTasks <= 0 || qInfo.getProperty(NativeProps.LOGIC_TASK)
-                .getResult(done, numTasks)) {
-                // State won't be auto updated in edit mode so we force change it here.
-                if (QuestSettings.INSTANCE.getProperty(NativeProps.EDIT_MODE)) {
-                    setComplete(playerID, System.currentTimeMillis());
-                }
-            } else if (update && qInfo.getProperty(NativeProps.SIMULTANEOUS)) {
-                resetUser(playerID, false);
-            }
+            result.markDirty(participant, questID);
         }
+
+        return result;
+    }
+
+    private void grantRewards(@Nonnull EntityPlayer player, boolean forceChoice, @Nonnull UUID questID) {
+        Map.Entry<UUID, IQuest> mapEntry = Maps.immutableEntry(questID, this);
+
+        for (DBEntry<IReward> rewardEntry : rewards.getEntries()) {
+            IReward reward = rewardEntry.getValue();
+
+            if (forceChoice && reward instanceof RewardChoice choiceReward) {
+                // Force a randomly selected choice reward
+                choiceReward.selectRandomChoice(player);
+            }
+
+            reward.claimReward(player, mapEntry);
+        }
+    }
+
+    @Nonnull
+    private UUID getQuestID() {
+        return QuestDatabase.INSTANCE.lookupKey(this);
     }
 
     @Override
@@ -218,7 +416,8 @@ public class QuestInstance implements IQuest {
     @Override
     public boolean canClaim(EntityPlayer player, boolean forceChoice) {
         if (!canClaimBasically(player)) return false;
-        Map.Entry<UUID, IQuest> mapEntry = Maps.immutableEntry(QuestDatabase.INSTANCE.lookupKey(this), this);
+
+        Map.Entry<UUID, IQuest> mapEntry = Maps.immutableEntry(getQuestID(), this);
         for (DBEntry<IReward> rew : rewards.getEntries()) {
             IReward unwrapped = rew.getValue();
             if (unwrapped instanceof RewardChoice && forceChoice) continue;
@@ -226,34 +425,6 @@ public class QuestInstance implements IQuest {
         }
 
         return true;
-    }
-
-    @Override
-    public void claimReward(EntityPlayer player, boolean forceChoice) {
-        UUID questID = QuestDatabase.INSTANCE.lookupKey(this);
-        Map.Entry<UUID, IQuest> mapEntry = Maps.immutableEntry(questID, this);
-        for (DBEntry<IReward> rew : rewards.getEntries()) {
-            IReward unwrapped = rew.getValue();
-            if (forceChoice && unwrapped instanceof RewardChoice choiceReward) {
-                // Force a randomly selected choice reward
-                choiceReward.selectRandomChoice(player);
-            }
-            unwrapped.claimReward(player, mapEntry);
-        }
-
-        UUID playerID = QuestingAPI.getQuestingUUID(player);
-
-        synchronized (completeUsers) {
-            NBTTagCompound entry = getCompletionInfo(playerID);
-            if (entry == null) {
-                entry = new NBTTagCompound();
-            }
-
-            entry.setBoolean("claimed", true);
-            entry.setLong("timestamp", System.currentTimeMillis());
-            this.completeUsers.put(playerID, entry);
-            DirtyPlayerMarker.markDirty(playerID);
-        }
     }
 
     @Override
@@ -266,8 +437,7 @@ public class QuestInstance implements IQuest {
             NBTTagCompound entry = this.getCompletionInfo(playerID);
             if (entry == null) return true;
 
-            if (!entry.getBoolean("claimed") && getProperty(NativeProps.REPEAT_TIME) >= 0) // Complete but repeatable
-            {
+            if (!entry.getBoolean("claimed") && getProperty(NativeProps.REPEAT_TIME) >= 0) {
                 if (tasks.size() <= 0) return true;
 
                 int done = 0;
@@ -303,39 +473,7 @@ public class QuestInstance implements IQuest {
     }
 
     @Override
-    public void setComplete(UUID uuid, long timestamp) {
-        if (uuid == null) return;
-        synchronized (completeUsers) {
-            NBTTagCompound entry = this.getCompletionInfo(uuid);
-
-            if (entry == null) {
-                entry = new NBTTagCompound();
-                completeUsers.put(uuid, entry);
-            }
-
-            entry.setBoolean("claimed", false);
-            entry.setLong("timestamp", timestamp);
-
-            DirtyPlayerMarker.markDirty(uuid);
-        }
-
-        // If a quest is completed, we treat optional/ignored tasks as "done" for UI consistency.
-        // These tasks are ignored by completion logic, but leaving them unchecked after completion is confusing.
-        for (DBEntry<ITask> entry : tasks.getEntries()) {
-            ITask task = entry.getValue();
-            if (task != null && task.ignored(uuid)) {
-                task.setComplete(uuid);
-            }
-        }
-    }
-
-    @Override
     public boolean isUnlockable(UUID uuid) {
-        // TODO: determine if we need to recursively lookup parents
-        // glease: currently we do not have whole chains mutually exclusive with each other here in gtnh,
-        // but this might be useful for more quest driven packs. the performance implication dissuade me from
-        // implementing
-        // this. should look into this later.
         if (preRequisites.isEmpty()) {
             return true;
         }
@@ -350,7 +488,7 @@ public class QuestInstance implements IQuest {
     }
 
     /**
-     * Returns true if the quest has been completed at least once
+     * Returns true if the quest has been completed at least once.
      */
     @Override
     public boolean isComplete(UUID uuid) {
@@ -385,8 +523,7 @@ public class QuestInstance implements IQuest {
         }
     }
 
-    @Override
-    public void setCompletionInfo(UUID uuid, NBTTagCompound nbt) {
+    private void setCompletionInfo(UUID uuid, @Nullable NBTTagCompound nbt) {
         if (uuid == null) return;
 
         synchronized (completeUsers) {
@@ -400,11 +537,58 @@ public class QuestInstance implements IQuest {
         }
     }
 
+    private void setComplete(UUID uuid, long timestamp) {
+        if (uuid == null) return;
+
+        synchronized (completeUsers) {
+            NBTTagCompound entry = this.getCompletionInfo(uuid);
+
+            if (entry == null) {
+                entry = new NBTTagCompound();
+                completeUsers.put(uuid, entry);
+            }
+
+            entry.setBoolean("claimed", false);
+            entry.setLong("timestamp", timestamp);
+
+            DirtyPlayerMarker.markDirty(uuid);
+        }
+
+        // Optional/ignored tasks are ignored by completion logic, but leaving
+        // them unchecked after quest completion is confusing in the UI.
+        for (DBEntry<ITask> entry : tasks.getEntries()) {
+            ITask task = entry.getValue();
+            if (task != null && task.ignored(uuid)) {
+                task.setComplete(uuid);
+            }
+        }
+    }
+
+    private void setClaimed(UUID uuid, long timestamp) {
+        synchronized (completeUsers) {
+            NBTTagCompound entry = this.getCompletionInfo(uuid);
+
+            if (entry != null) {
+                entry.setBoolean("claimed", true);
+                entry.setLong("timestamp", timestamp);
+            } else {
+                entry = new NBTTagCompound();
+                entry.setBoolean("claimed", true);
+                entry.setLong("timestamp", timestamp);
+                completeUsers.put(uuid, entry);
+            }
+
+            DirtyPlayerMarker.markDirty(uuid);
+        }
+    }
+
     /**
-     * Resets task progress and claim status. If performing a full reset, completion status will also be erased
+     * Resets task progress and claim status.
+     *
+     * If fullReset is true, completion status is removed entirely.
+     * Otherwise completion remains but claim state is made available again.
      */
-    @Override
-    public void resetUser(@Nullable UUID uuid, boolean fullReset) {
+    private void resetUser(@Nullable UUID uuid, boolean fullReset) {
         synchronized (completeUsers) {
             HashSet<UUID> dirtyPlayers = new HashSet<>();
             if (uuid == null) {
@@ -412,6 +596,7 @@ public class QuestInstance implements IQuest {
             } else {
                 dirtyPlayers.add(uuid);
             }
+
             if (fullReset) {
                 if (uuid == null) {
                     completeUsers.clear();
@@ -436,8 +621,21 @@ public class QuestInstance implements IQuest {
             DirtyPlayerMarker.markDirty(dirtyPlayers);
             tasks.getEntries()
                 .forEach(
-                    (value) -> value.getValue()
+                    value -> value.getValue()
                         .resetUser(uuid));
+        }
+    }
+
+    @Nonnull
+    private HashSet<UUID> getUsersWithCompletionDataCopy() {
+        synchronized (completeUsers) {
+            return new HashSet<>(completeUsers.keySet());
+        }
+    }
+
+    public void getUsersWithCompletionData(Set<UUID> targetSet) {
+        synchronized (completeUsers) {
+            targetSet.addAll(completeUsers.keySet());
         }
     }
 
@@ -534,9 +732,8 @@ public class QuestInstance implements IQuest {
                     setRequirementType(questID, RequirementType.from(tagCompound.getByte("type")));
                 }
             }
-        } else if (jObj.func_150299_b("preRequisites") == Constants.NBT.TAG_INT_ARRAY) // Legacy format
-        {
-            // This block is needed for old questbook data.
+        } else if (jObj.func_150299_b("preRequisites") == Constants.NBT.TAG_INT_ARRAY) {
+            // Legacy format
             preRequisites = new HashSet<>();
             int[] intArray = jObj.getIntArray("preRequisites");
             for (int i = 0; i < intArray.length; i++) {
@@ -603,32 +800,6 @@ public class QuestInstance implements IQuest {
             }
 
             tasks.readProgressFromNBT(json.getTagList("tasks", 10), merge);
-        }
-    }
-
-    @Override
-    public void setClaimed(UUID uuid, long timestamp) {
-        synchronized (completeUsers) {
-            NBTTagCompound entry = this.getCompletionInfo(uuid);
-
-            if (entry != null) {
-                entry.setBoolean("claimed", true);
-                entry.setLong("timestamp", timestamp);
-            } else {
-                entry = new NBTTagCompound();
-                entry.setBoolean("claimed", true);
-                entry.setLong("timestamp", timestamp);
-                completeUsers.put(uuid, entry);
-            }
-
-            DirtyPlayerMarker.markDirty(uuid);
-        }
-    }
-
-    public void getUsersWithCompletionData(Set<UUID> targetSet) {
-        synchronized (completeUsers) {
-            // Take a copy to prevent concurrent modifications to the returned Set
-            targetSet.addAll(completeUsers.keySet());
         }
     }
 

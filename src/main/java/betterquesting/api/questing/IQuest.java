@@ -20,6 +20,7 @@ import betterquesting.api2.storage.IDatabaseNBT;
 import betterquesting.api2.storage.INBTProgress;
 import betterquesting.api2.storage.INBTSaveLoad;
 import betterquesting.api2.utils.QuestTranslation;
+import betterquesting.questing.mutation.QuestMutationResult;
 
 public interface IQuest extends INBTSaveLoad<NBTTagCompound>, INBTProgress<NBTTagCompound>, IPropertyContainer {
 
@@ -27,12 +28,6 @@ public interface IQuest extends INBTSaveLoad<NBTTagCompound>, INBTProgress<NBTTa
 
     @Nullable
     NBTTagCompound getCompletionInfo(UUID uuid);
-
-    void setCompletionInfo(UUID uuid, @Nullable NBTTagCompound nbt);
-
-    void update(EntityPlayer player);
-
-    void detect(EntityPlayer player);
 
     boolean isUnlocked(UUID uuid);
 
@@ -48,8 +43,6 @@ public interface IQuest extends INBTSaveLoad<NBTTagCompound>, INBTProgress<NBTTa
     boolean isUnlockable(UUID uuid);
 
     boolean isComplete(UUID uuid);
-
-    void setComplete(UUID uuid, long timeStamp);
 
     /**
      * Can claim now. (Basically includes info from rewards (is choice reward chosen, for example))
@@ -68,15 +61,7 @@ public interface IQuest extends INBTSaveLoad<NBTTagCompound>, INBTProgress<NBTTa
 
     boolean hasClaimed(UUID uuid);
 
-    void claimReward(EntityPlayer player, boolean forceChoice);
-
-    default void claimReward(EntityPlayer player) {
-        claimReward(player, false);
-    }
-
-    void setClaimed(UUID uuid, long timestamp);
-
-    void resetUser(@Nullable UUID uuid, boolean fullReset);
+    QuestMutationResult applyAction(QuestAction action);
 
     IDatabaseNBT<ITask, NBTTagList, NBTTagList> getTasks();
 
