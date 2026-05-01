@@ -43,8 +43,6 @@ import betterquesting.api2.utils.ParticipantInfo;
 import betterquesting.core.BetterQuesting;
 import betterquesting.questing.mutation.QuestParticipantResolver;
 import betterquesting.questing.rewards.RewardStorage;
-import betterquesting.questing.sync.QuestChangeSet;
-import betterquesting.questing.sync.QuestSyncService;
 import betterquesting.questing.tasks.TaskStorage;
 import betterquesting.storage.PropertyContainer;
 import betterquesting.storage.QuestSettings;
@@ -250,8 +248,6 @@ public class QuestInstance implements IQuest {
         List<UUID> playersToMark = QuestParticipantResolver
             .resolvePlayerProgressParticipants(player, QBConfig.fullySyncQuests);
 
-        QuestChangeSet changes = new QuestChangeSet();
-
         synchronized (completeUsers) {
             for (UUID user : playersToMark) {
                 NBTTagCompound entry = getCompletionInfo(user);
@@ -263,12 +259,8 @@ public class QuestInstance implements IQuest {
                 entry.setLong("timestamp", System.currentTimeMillis());
                 this.completeUsers.put(user, entry);
                 DirtyPlayerMarker.markDirty(user);
-
-                changes.markQuestDirty(user, questID);
             }
         }
-
-        QuestSyncService.notifyQuestsChanged(changes);
     }
 
     @Override
