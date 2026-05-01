@@ -9,6 +9,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.nbt.NBTTagCompound;
 
 import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.properties.NativeProps;
@@ -123,7 +124,23 @@ public final class QuestMutationService {
             }
 
             if (quest.isComplete(playerID) && !quest.canSubmit(player)) {
+                NBTTagCompound completionInfo = quest.getCompletionInfo(playerID);
+                long completionTime = completionInfo != null ? completionInfo.getLong("timestamp")
+                    : System.currentTimeMillis();
+
                 result.markCompleted(playerID, questID);
+
+                for (UUID participant : QuestParticipantResolver.resolveQuestCompletionParticipants(player)) {
+                    if (participant == null) {
+                        continue;
+                    }
+
+                    if (!quest.isComplete(participant)) {
+                        quest.setComplete(participant, completionTime);
+                    }
+
+                    result.markChanged(participant, questID);
+                }
             }
         }
 

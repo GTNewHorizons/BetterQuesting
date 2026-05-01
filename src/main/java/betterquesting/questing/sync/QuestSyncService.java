@@ -77,4 +77,25 @@ public final class QuestSyncService {
     private static QuestCache getQuestCache(@Nonnull EntityPlayer player) {
         return (QuestCache) player.getExtendedProperties(QuestCache.LOC_QUEST_CACHE.toString());
     }
+
+    public static void refreshCachesAndFlushDirtyProgress(@Nonnull Collection<UUID> playerIDs) {
+        for (UUID playerID : playerIDs) {
+            if (playerID == null) {
+                continue;
+            }
+
+            EntityPlayerMP player = QuestingAPI.getPlayer(playerID);
+            if (player == null) {
+                continue;
+            }
+
+            QuestCache cache = getQuestCache(player);
+            if (cache == null) {
+                continue;
+            }
+
+            cache.updateCache(player);
+            flushDirtyQuestProgress(player);
+        }
+    }
 }

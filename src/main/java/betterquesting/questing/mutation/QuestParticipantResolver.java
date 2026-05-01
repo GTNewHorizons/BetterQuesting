@@ -32,4 +32,9 @@ public final class QuestParticipantResolver {
 
         return Collections.singletonList(participantInfo.UUID);
     }
+
+    @Nonnull
+    public static List<UUID> resolveQuestCompletionParticipants(@Nonnull EntityPlayer player) {
+        return new ParticipantInfo(player).ALL_UUIDS;
+    }
 }

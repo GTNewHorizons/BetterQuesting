@@ -273,12 +273,9 @@ public class EventHandler {
 
         if (!mutationResult.getChangedQuests()
             .isEmpty()) {
-            refreshCache = true;
             QuestSyncService.notifyQuestsChanged(mutationResult.getChanges());
-        }
-
-        if (refreshCache || player.ticksExisted % 200 == 0) { // Refresh the cache if something changed or every 10
-                                                              // seconds
+            QuestSyncService.refreshCachesAndFlushDirtyProgress(mutationResult.getAffectedPlayers());
+        } else if (player.ticksExisted % 200 == 0) {
             qc.updateCache(player);
         }
 

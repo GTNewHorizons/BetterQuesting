@@ -15,6 +15,7 @@ public final class QuestProgressResult {
     private final List<UUID> completedQuests = new ArrayList<>();
     private final Set<UUID> changedQuests = new HashSet<>();
     private final List<UUID> resetQuests = new ArrayList<>();
+    private final Set<UUID> affectedPlayers = new HashSet<>();
 
     public QuestChangeSet getChanges() {
         return changes;
@@ -32,10 +33,26 @@ public final class QuestProgressResult {
         return Collections.unmodifiableList(resetQuests);
     }
 
+    public Set<UUID> getAffectedPlayers() {
+        return Collections.unmodifiableSet(affectedPlayers);
+    }
+
     public void markChanged(UUID playerID, UUID questID) {
         if (playerID == null || questID == null) return;
+
+        affectedPlayers.add(playerID);
         changedQuests.add(questID);
         changes.markQuestDirty(playerID, questID);
+    }
+
+    public void markChanged(UUID questID, QuestChangeSet changeSet) {
+        if (questID == null || changeSet == null || changeSet.isEmpty()) return;
+
+        changedQuests.add(questID);
+        changes.merge(changeSet);
+        affectedPlayers.addAll(
+            changeSet.getDirtyQuestsByPlayer()
+                .keySet());
     }
 
     public void markCompleted(UUID playerID, UUID questID) {
@@ -57,13 +74,8 @@ public final class QuestProgressResult {
         this.completedQuests.addAll(other.getCompletedQuests());
         this.resetQuests.addAll(other.getResetQuests());
         this.changedQuests.addAll(other.getChangedQuests());
+        this.affectedPlayers.addAll(other.getAffectedPlayers());
 
         return this;
-    }
-
-    public void markChanged(UUID questID, QuestChangeSet changeSet) {
-        if (questID == null || changeSet == null || changeSet.isEmpty()) return;
-        changedQuests.add(questID);
-        changes.merge(changeSet);
     }
 }
