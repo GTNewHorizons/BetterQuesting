@@ -82,4 +82,21 @@ public final class QuestMutationService {
 
         return changes;
     }
+
+    @Nonnull
+    public static QuestChangeSet detectQuest(@Nullable UUID questID, @Nullable IQuest quest,
+        @Nonnull EntityPlayer player) {
+        QuestChangeSet changes = new QuestChangeSet();
+
+        if (questID == null || quest == null) {
+            return changes;
+        }
+
+        quest.detect(player);
+
+        UUID playerID = QuestingAPI.getQuestingUUID(player);
+        changes.markQuestDirty(playerID, questID);
+
+        return changes;
+    }
 }

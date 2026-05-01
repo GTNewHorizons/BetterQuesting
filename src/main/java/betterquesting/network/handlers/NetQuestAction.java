@@ -107,9 +107,12 @@ public class NetQuestAction {
     }
 
     public static void detectQuest(Collection<UUID> questIDs, EntityPlayerMP player) {
+        QuestChangeSet changes = new QuestChangeSet();
+
         QuestDatabase.INSTANCE.filterKeys(questIDs)
-            .values()
-            .forEach(q -> q.detect(player));
+            .forEach((questID, quest) -> changes.merge(QuestMutationService.detectQuest(questID, quest, player)));
+
+        QuestSyncService.notifyQuestsChanged(changes);
     }
 
     public static void forceClaimQuest(Collection<UUID> questIDs, EntityPlayerMP player) {
