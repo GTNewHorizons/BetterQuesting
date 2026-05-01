@@ -20,8 +20,12 @@ import betterquesting.core.BetterQuesting;
 import betterquesting.network.PacketSender;
 import betterquesting.network.PacketTypeRegistry;
 import betterquesting.questing.QuestDatabase;
+import betterquesting.questing.mutation.QuestMutationService;
+import betterquesting.questing.sync.QuestChangeSet;
+import betterquesting.questing.sync.QuestSyncService;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import drethic.questbook.config.QBConfig;
 
 public class NetQuestAction {
 
@@ -92,9 +96,14 @@ public class NetQuestAction {
     }
 
     public static void claimQuest(Collection<UUID> questIDs, EntityPlayerMP player) {
-        QuestDatabase.INSTANCE.getAll(questIDs)
-            .filter(q -> q.canClaim(player))
-            .forEach(q -> q.claimReward(player));
+        QuestChangeSet changes = new QuestChangeSet();
+
+        QuestDatabase.INSTANCE.filterKeys(questIDs)
+            .forEach(
+                (questID, quest) -> changes
+                    .merge(QuestMutationService.claimReward(questID, quest, player, false, QBConfig.fullySyncQuests)));
+
+        QuestSyncService.notifyQuestsChanged(changes);
     }
 
     public static void detectQuest(Collection<UUID> questIDs, EntityPlayerMP player) {
@@ -104,8 +113,13 @@ public class NetQuestAction {
     }
 
     public static void forceClaimQuest(Collection<UUID> questIDs, EntityPlayerMP player) {
-        QuestDatabase.INSTANCE.getAll(questIDs)
-            .filter(q -> q.canClaim(player, true))
-            .forEach(q -> q.claimReward(player, true));
+        QuestChangeSet changes = new QuestChangeSet();
+
+        QuestDatabase.INSTANCE.filterKeys(questIDs)
+            .forEach(
+                (questID, quest) -> changes
+                    .merge(QuestMutationService.claimReward(questID, quest, player, true, QBConfig.fullySyncQuests)));
+
+        QuestSyncService.notifyQuestsChanged(changes);
     }
 }

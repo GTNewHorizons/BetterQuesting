@@ -6,6 +6,9 @@ import java.util.UUID;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import net.minecraft.entity.player.EntityPlayer;
+
+import betterquesting.api.questing.IQuest;
 import betterquesting.api.questing.tasks.ITask;
 import betterquesting.questing.sync.QuestChangeSet;
 
@@ -37,6 +40,29 @@ public final class QuestMutationService {
             task.setComplete(playerID);
             changes.markQuestDirty(playerID, questID);
         }
+
+        return changes;
+    }
+
+    @Nonnull
+    public static QuestChangeSet claimReward(@Nullable UUID questID, @Nullable IQuest quest,
+        @Nonnull EntityPlayer player, boolean forceChoice, boolean includeSharedParticipants) {
+        QuestChangeSet changes = new QuestChangeSet();
+
+        if (questID == null || quest == null) {
+            return changes;
+        }
+
+        boolean canClaim = forceChoice ? quest.canClaim(player, true) : quest.canClaim(player);
+        if (!canClaim) {
+            return changes;
+        }
+
+        quest.claimReward(player, forceChoice);
+
+        changes.markQuestDirty(
+            QuestParticipantResolver.resolvePlayerProgressParticipants(player, includeSharedParticipants),
+            questID);
 
         return changes;
     }
