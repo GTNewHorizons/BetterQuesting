@@ -324,7 +324,7 @@
         "lineType": "betterquesting:line_directional",
         "arrowWidth": 0.5,
         "arrowSize": 0.75,
-        "arrowOpacity": 0.2
+        "arrowOpacity": 0.4
       },
       "betterquesting:quest_unlocked":
       {
@@ -345,7 +345,7 @@
         "lineType": "betterquesting:line_directional",
         "arrowWidth": 0.5,
         "arrowSize": 0.75,
-        "arrowOpacity": 0.2
+        "arrowOpacity": 0.15
       }
     }
   },
@@ -674,7 +674,7 @@
         "lineType": "betterquesting:line_directional",
         "arrowWidth": 0.5,
         "arrowSize": 0.75,
-        "arrowOpacity": 0.2
+        "arrowOpacity": 0.4
       },
       "betterquesting:quest_unlocked":
       {
@@ -695,7 +695,7 @@
         "lineType": "betterquesting:line_directional",
         "arrowWidth": 0.5,
         "arrowSize": 0.75,
-        "arrowOpacity": 0.2
+        "arrowOpacity": 0.15
       }
     }
   },
@@ -2062,7 +2062,7 @@
         "lineType": "betterquesting:line_directional",
         "arrowWidth": 0.5,
         "arrowSize": 0.75,
-        "arrowOpacity": 0.2
+        "arrowOpacity": 0.4
       },
       "betterquesting:quest_unlocked":
       {
@@ -2083,7 +2083,7 @@
         "lineType": "betterquesting:line_directional",
         "arrowWidth": 0.5,
         "arrowSize": 0.75,
-        "arrowOpacity": 0.2
+        "arrowOpacity": 0.15
       }
     }
   }
