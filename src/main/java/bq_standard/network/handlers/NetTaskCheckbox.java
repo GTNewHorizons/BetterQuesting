@@ -15,9 +15,9 @@ import betterquesting.api.network.QuestingPacket;
 import betterquesting.api.questing.IQuest;
 import betterquesting.api.questing.tasks.ITask;
 import betterquesting.api.utils.NBTConverter;
-import betterquesting.api2.cache.QuestCache;
 import betterquesting.api2.utils.ParticipantInfo;
 import betterquesting.api2.utils.Tuple2;
+import betterquesting.questing.sync.QuestSyncService;
 import bq_standard.tasks.TaskCheckbox;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -60,14 +60,7 @@ public class NetTaskCheckbox {
                     : Collections.singletonList(pInfo.UUID);
                 for (UUID user : playersToMark) {
                     task.setComplete(user);
-                    if (QuestingAPI.getPlayer(user) == null) {
-                        continue;
-                    }
-                    QuestCache qc = (QuestCache) QuestingAPI.getPlayer(user)
-                        .getExtendedProperties(QuestCache.LOC_QUEST_CACHE.toString());
-                    if (qc != null) {
-                        qc.markQuestDirty(qId.get());
-                    }
+                    QuestSyncService.markQuestDirty(user, qId.get());
                 }
             }
         }

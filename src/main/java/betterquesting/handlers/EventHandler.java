@@ -63,10 +63,10 @@ import betterquesting.core.BetterQuesting;
 import betterquesting.network.handlers.NetBulkSync;
 import betterquesting.network.handlers.NetNameSync;
 import betterquesting.network.handlers.NetNotices;
-import betterquesting.network.handlers.NetQuestSync;
 import betterquesting.questing.QuestDatabase;
 import betterquesting.questing.party.PartyInvitations;
 import betterquesting.questing.party.PartyManager;
+import betterquesting.questing.sync.QuestSyncService;
 import betterquesting.storage.LifeDatabase;
 import betterquesting.storage.NameCache;
 import betterquesting.storage.QuestSettings;
@@ -313,11 +313,7 @@ public class EventHandler {
             qc.updateCache(player);
         }
 
-        if (!qc.getDirtyQuests()
-            .isEmpty()) {
-            NetQuestSync.sendSync(player, qc.getDirtyQuests(), false, true, true);
-        }
-        qc.cleanAllQuests();
+        QuestSyncService.flushDirtyQuestProgress(player);
     }
 
     // TODO: Create a new message inbox system for these things. On screen popups aren't ideal in combat

@@ -14,7 +14,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Items;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
@@ -44,6 +43,7 @@ import betterquesting.api2.utils.DirtyPlayerMarker;
 import betterquesting.api2.utils.ParticipantInfo;
 import betterquesting.core.BetterQuesting;
 import betterquesting.questing.rewards.RewardStorage;
+import betterquesting.questing.sync.QuestSyncService;
 import betterquesting.questing.tasks.TaskStorage;
 import betterquesting.storage.PropertyContainer;
 import betterquesting.storage.QuestSettings;
@@ -260,15 +260,7 @@ public class QuestInstance implements IQuest {
                 this.completeUsers.put(user, entry);
                 DirtyPlayerMarker.markDirty(user);
 
-                EntityPlayerMP dirtyPlayerEntity = QuestingAPI.getPlayer(user);
-                if (dirtyPlayerEntity == null) {
-                    continue;
-                }
-                QuestCache qc = (QuestCache) dirtyPlayerEntity
-                    .getExtendedProperties(QuestCache.LOC_QUEST_CACHE.toString());
-                if (qc != null) {
-                    qc.markQuestDirty(QuestDatabase.INSTANCE.lookupKey(this));
-                }
+                QuestSyncService.markQuestDirty(user, questID);
             }
         }
     }
