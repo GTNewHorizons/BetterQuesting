@@ -2,6 +2,7 @@ package betterquesting.questing.mutation;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.annotation.Nonnull;
@@ -98,5 +99,31 @@ public final class QuestMutationService {
         changes.markQuestDirty(playerID, questID);
 
         return changes;
+    }
+
+    @Nonnull
+    public static QuestProgressResult processActiveQuestProgress(@Nonnull EntityPlayer player,
+        @Nonnull Map<UUID, IQuest> activeQuests) {
+        QuestProgressResult result = new QuestProgressResult();
+        UUID playerID = QuestingAPI.getQuestingUUID(player);
+
+        for (Map.Entry<UUID, IQuest> entry : activeQuests.entrySet()) {
+            UUID questID = entry.getKey();
+            IQuest quest = entry.getValue();
+
+            if (!quest.isUnlocked(playerID)) {
+                continue;
+            }
+
+            if (quest.canSubmit(player)) {
+                quest.update(player);
+            }
+
+            if (quest.isComplete(playerID) && !quest.canSubmit(player)) {
+                result.markCompleted(playerID, questID);
+            }
+        }
+
+        return result;
     }
 }

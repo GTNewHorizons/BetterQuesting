@@ -65,6 +65,7 @@ import betterquesting.network.handlers.NetNameSync;
 import betterquesting.network.handlers.NetNotices;
 import betterquesting.questing.QuestDatabase;
 import betterquesting.questing.mutation.QuestMutationService;
+import betterquesting.questing.mutation.QuestProgressResult;
 import betterquesting.questing.party.PartyInvitations;
 import betterquesting.questing.party.PartyManager;
 import betterquesting.questing.sync.QuestChangeSet;
@@ -231,38 +232,23 @@ public class EventHandler {
         UUID uuid = QuestingAPI.getQuestingUUID(player);
         boolean refreshCache = false;
 
-        if (!editMode && player.ticksExisted % 60 == 0) // Passive quest state check every 3 seconds
-        {
-            List<UUID> com = new ArrayList<>();
+        if (!editMode && player.ticksExisted % 60 == 0) {
+            QuestProgressResult result = QuestMutationService.processActiveQuestProgress(player, activeQuests);
 
-            for (Map.Entry<UUID, IQuest> entry : activeQuests.entrySet()) {
-                if (!entry.getValue()
-                    .isUnlocked(uuid)) {
-                    continue; // Although it IS active, it cannot be completed yet
-                }
+            if (!result.getChangedQuests()
+                .isEmpty()) {
+                refreshCache = true;
+            }
 
-                if (entry.getValue()
-                    .canSubmit(player)) {
-                    entry.getValue()
-                        .update(player);
-                }
-
-                if (entry.getValue()
-                    .isComplete(uuid)
-                    && !entry.getValue()
-                        .canSubmit(player)) {
-                    refreshCache = true;
-                    qc.markQuestDirty(entry.getKey());
-
-                    com.add(entry.getKey());
-                    if (!entry.getValue()
-                        .getProperty(NativeProps.SILENT)) {
-                        postPresetNotice(entry.getValue(), player, 2);
-                    }
+            for (UUID questID : result.getCompletedQuests()) {
+                IQuest quest = activeQuests.get(questID);
+                if (quest != null && !quest.getProperty(NativeProps.SILENT)) {
+                    postPresetNotice(quest, player, 2);
                 }
             }
 
-            MinecraftForge.EVENT_BUS.post(new QuestEvent(Type.COMPLETED, uuid, com));
+            MinecraftForge.EVENT_BUS.post(new QuestEvent(Type.COMPLETED, uuid, result.getCompletedQuests()));
+            QuestSyncService.notifyQuestsChanged(result.getChanges());
         }
 
         if (!editMode && MinecraftServer.getServer() != null) // Repeatable quest resets
