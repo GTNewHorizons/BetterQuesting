@@ -121,7 +121,7 @@ public class ConfigHandler {
         BQ_Settings.showDependencyArrows = config.getBoolean(
             "Show dependency arrows",
             Configuration.CATEGORY_GENERAL,
-            false,
+            true,
             "If true, quest dependency lines will render directional arrows. This property can be changed by the GUI.");
         BQ_Settings.animateDependencyArrows = config.getBoolean(
             "Animate dependency arrows",
