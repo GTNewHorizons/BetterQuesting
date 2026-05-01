@@ -8,6 +8,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import betterquesting.api.questing.IQuest;
 import betterquesting.api.questing.QuestAction;
 import betterquesting.api.questing.QuestActionContext;
+import betterquesting.api.questing.QuestMutationResult;
 import betterquesting.api2.cache.QuestCache;
 import betterquesting.questing.QuestDatabase;
 
@@ -27,19 +28,19 @@ public final class QuestMutationService {
         return result;
     }
 
-    public static QuestMutationResult detectQuest(UUID questID, IQuest quest, EntityPlayer player) {
+    public static QuestMutationResult detectQuest(IQuest quest, EntityPlayer player) {
         QuestActionContext context = QuestActionContext.forPlayer(player, false);
         return quest.applyAction(QuestAction.detect(context));
     }
 
-    public static QuestMutationResult claimReward(UUID questID, IQuest quest, EntityPlayer player, boolean forceChoice,
+    public static QuestMutationResult claimReward(IQuest quest, EntityPlayer player, boolean forceChoice,
         boolean includeSharedParticipants) {
         QuestActionContext context = QuestActionContext.forPlayer(player, includeSharedParticipants);
         return quest
             .applyAction(forceChoice ? QuestAction.forceClaimReward(context) : QuestAction.claimReward(context));
     }
 
-    public static QuestMutationResult setTaskComplete(UUID questID, IQuest quest, int taskID, EntityPlayer player,
+    public static QuestMutationResult setTaskComplete(IQuest quest, int taskID, EntityPlayer player,
         Collection<UUID> playerIDs) {
         QuestActionContext context = QuestActionContext.forPlayer(player, false)
             .withTask(taskID, playerIDs);

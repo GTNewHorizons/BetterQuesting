@@ -2,6 +2,7 @@ package betterquesting.commands;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -22,8 +23,10 @@ import com.google.common.collect.Lists;
 import com.mojang.authlib.GameProfile;
 
 import betterquesting.api.questing.IQuest;
-import betterquesting.network.handlers.NetQuestSync;
+import betterquesting.api.questing.QuestAction;
+import betterquesting.api.questing.QuestMutationResult;
 import betterquesting.questing.QuestDatabase;
+import betterquesting.questing.sync.QuestSyncService;
 
 public class BQ_CopyProgress extends CommandBase {
 
@@ -82,17 +85,20 @@ public class BQ_CopyProgress extends CommandBase {
 
         long current = System.currentTimeMillis();
         List<UUID> ids = new ArrayList<>();
+        QuestMutationResult result = new QuestMutationResult();
         for (Map.Entry<UUID, IQuest> questDBEntry : QuestDatabase.INSTANCE.entrySet()) {
             IQuest quest = questDBEntry.getValue();
             if (quest.isComplete(fromUUID) && !quest.isComplete(toUUID)) {
-                quest.setComplete(toUUID, current);
+                result.merge(
+                    quest.applyAction(
+                        QuestAction.backfillCompletion(Collections.singletonList(toUUID), current, false)));
                 ids.add(questDBEntry.getKey());
             }
         }
 
         EntityPlayerMP player = getPlayerAdvanced(sender, toUUID.toString());
         if (player != null) {
-            NetQuestSync.sendSync(player, ids, false, true);
+            QuestSyncService.applyMutationResult(result);
         }
 
         sender.addChatMessage(new ChatComponentText("Completed " + ids.size() + " for " + toUUID));

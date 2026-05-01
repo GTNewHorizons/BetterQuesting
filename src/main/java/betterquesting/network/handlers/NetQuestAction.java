@@ -14,13 +14,13 @@ import net.minecraft.util.ResourceLocation;
 import org.apache.logging.log4j.Level;
 
 import betterquesting.api.network.QuestingPacket;
+import betterquesting.api.questing.QuestMutationResult;
 import betterquesting.api.utils.NBTConverter;
 import betterquesting.api2.utils.Tuple2;
 import betterquesting.core.BetterQuesting;
 import betterquesting.network.PacketSender;
 import betterquesting.network.PacketTypeRegistry;
 import betterquesting.questing.QuestDatabase;
-import betterquesting.questing.mutation.QuestMutationResult;
 import betterquesting.questing.mutation.QuestMutationService;
 import betterquesting.questing.sync.QuestSyncService;
 import cpw.mods.fml.relauncher.Side;
@@ -101,7 +101,7 @@ public class NetQuestAction {
         QuestDatabase.INSTANCE.filterKeys(questIDs)
             .forEach(
                 (questID, quest) -> result
-                    .merge(QuestMutationService.claimReward(questID, quest, player, false, QBConfig.fullySyncQuests)));
+                    .merge(QuestMutationService.claimReward(quest, player, false, QBConfig.fullySyncQuests)));
 
         QuestSyncService.applyMutationResult(result);
     }
@@ -110,7 +110,7 @@ public class NetQuestAction {
         QuestMutationResult result = new QuestMutationResult();
 
         QuestDatabase.INSTANCE.filterKeys(questIDs)
-            .forEach((questID, quest) -> result.merge(QuestMutationService.detectQuest(questID, quest, player)));
+            .forEach((questID, quest) -> result.merge(QuestMutationService.detectQuest(quest, player)));
 
         QuestSyncService.applyMutationResult(result);
     }
@@ -121,7 +121,7 @@ public class NetQuestAction {
         QuestDatabase.INSTANCE.filterKeys(questIDs)
             .forEach(
                 (questID, quest) -> result
-                    .merge(QuestMutationService.claimReward(questID, quest, player, true, QBConfig.fullySyncQuests)));
+                    .merge(QuestMutationService.claimReward(quest, player, true, QBConfig.fullySyncQuests)));
 
         QuestSyncService.applyMutationResult(result);
     }

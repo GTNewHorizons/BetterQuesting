@@ -1,4 +1,4 @@
-package betterquesting.questing.mutation;
+package betterquesting.api.questing;
 
 import java.util.ArrayList;
 import java.util.Collections;

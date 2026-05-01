@@ -2,6 +2,7 @@ package betterquesting.network.handlers;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -22,11 +23,10 @@ import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.events.DatabaseEvent;
 import betterquesting.api.events.DatabaseEvent.DBType;
 import betterquesting.api.network.QuestingPacket;
-import betterquesting.api.properties.NativeProps;
 import betterquesting.api.questing.IQuest;
-import betterquesting.api.questing.tasks.ITask;
+import betterquesting.api.questing.QuestAction;
+import betterquesting.api.questing.QuestMutationResult;
 import betterquesting.api.utils.NBTConverter;
-import betterquesting.api2.storage.DBEntry;
 import betterquesting.api2.utils.Tuple2;
 import betterquesting.core.BetterQuesting;
 import betterquesting.handlers.SaveLoadHandler;
@@ -34,6 +34,7 @@ import betterquesting.network.PacketSender;
 import betterquesting.network.PacketTypeRegistry;
 import betterquesting.questing.QuestDatabase;
 import betterquesting.questing.QuestLineDatabase;
+import betterquesting.questing.sync.QuestSyncService;
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -169,50 +170,18 @@ public class NetQuestEdit {
             }
         }
 
+        QuestMutationResult result = new QuestMutationResult();
         for (Map.Entry<UUID, IQuest> entry : questMap.entrySet()) {
             if (!state) {
-                entry.getValue()
-                    .resetUser(targetID, true);
+                result.merge(
+                    entry.getValue()
+                        .applyAction(QuestAction.resetUsers(Collections.singletonList(targetID), true)));
                 continue;
             }
 
-            if (entry.getValue()
-                .isComplete(targetID)) {
+            result.merge(
                 entry.getValue()
-                    .setClaimed(targetID, 0);
-            } else {
-                entry.getValue()
-                    .setComplete(targetID, 0);
-
-                int done = 0;
-
-                if (!entry.getValue()
-                    .getProperty(NativeProps.LOGIC_TASK)
-                    .getResult(
-                        done,
-                        entry.getValue()
-                            .getTasks()
-                            .size())) // Preliminary check
-                {
-                    for (DBEntry<ITask> task : entry.getValue()
-                        .getTasks()
-                        .getEntries()) {
-                        task.getValue()
-                            .setComplete(targetID);
-                        done++;
-
-                        if (entry.getValue()
-                            .getProperty(NativeProps.LOGIC_TASK)
-                            .getResult(
-                                done,
-                                entry.getValue()
-                                    .getTasks()
-                                    .size())) {
-                            break; // Only complete enough quests to claim the reward
-                        }
-                    }
-                }
-            }
+                    .applyAction(QuestAction.setCompleteForEdit(Collections.singletonList(targetID), 0)));
             if (player != null) {
                 BetterQuesting.logger
                     .info("{} ({}) completed quest {}", player.getDisplayName(), targetID, entry.getKey());
@@ -222,7 +191,7 @@ public class NetQuestEdit {
         SaveLoadHandler.INSTANCE.markDirty();
 
         if (player == null) return;
-        NetQuestSync.sendSync(player, questIDs, false, true);
+        QuestSyncService.applyMutationResult(result);
     }
 
     // Serverside only

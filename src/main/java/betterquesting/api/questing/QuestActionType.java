@@ -6,5 +6,8 @@ public enum QuestActionType {
     CLAIM_REWARD,
     FORCE_CLAIM_REWARD,
     COMPLETE_TASK,
-    RESET
+    RESET,
+    BACKFILL_COMPLETION,
+    RESET_USERS,
+    SET_COMPLETE_FOR_EDIT
 }

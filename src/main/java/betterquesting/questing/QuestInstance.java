@@ -32,6 +32,7 @@ import betterquesting.api.properties.NativeProps;
 import betterquesting.api.questing.IQuest;
 import betterquesting.api.questing.QuestAction;
 import betterquesting.api.questing.QuestActionContext;
+import betterquesting.api.questing.QuestMutationResult;
 import betterquesting.api.questing.rewards.IReward;
 import betterquesting.api.questing.tasks.ITask;
 import betterquesting.api.utils.BigItemStack;
@@ -43,7 +44,6 @@ import betterquesting.api2.storage.IDatabaseNBT;
 import betterquesting.api2.utils.DirtyPlayerMarker;
 import betterquesting.api2.utils.ParticipantInfo;
 import betterquesting.core.BetterQuesting;
-import betterquesting.questing.mutation.QuestMutationResult;
 import betterquesting.questing.rewards.RewardStorage;
 import betterquesting.questing.tasks.TaskStorage;
 import betterquesting.storage.PropertyContainer;
@@ -113,6 +113,12 @@ public class QuestInstance implements IQuest {
                 return completeTask(action.context);
             case RESET:
                 return resetDue(action.context);
+            case BACKFILL_COMPLETION:
+                return backfillCompletion(action);
+            case RESET_USERS:
+                return resetUsers(action);
+            case SET_COMPLETE_FOR_EDIT:
+                return setCompleteForEdit(action);
             default:
                 return new QuestMutationResult();
         }
@@ -168,15 +174,18 @@ public class QuestInstance implements IQuest {
         boolean taskProgressChanged = detectTaskProgress(context);
 
         if (isTaskLogicComplete(context.actorID)) {
-            setComplete(context.actorID, context.timestamp);
+            if (QuestSettings.INSTANCE.getProperty(NativeProps.EDIT_MODE)) {
+                setComplete(context.actorID, context.timestamp);
+                result.merge(propagateCompletionIfNeeded(context, wasComplete));
+            } else {
+                result.markDirty(context.actorID, questID);
+            }
         } else if (taskProgressChanged && qInfo.getProperty(NativeProps.SIMULTANEOUS)) {
             resetUser(context.actorID, false);
             result.markDirty(context.actorID, questID);
         } else if (taskProgressChanged) {
             result.markDirty(context.actorID, questID);
         }
-
-        result.merge(propagateCompletionIfNeeded(context, wasComplete));
 
         return result;
     }
@@ -261,6 +270,96 @@ public class QuestInstance implements IQuest {
         return result;
     }
 
+    @Nonnull
+    private QuestMutationResult backfillCompletion(@Nonnull QuestAction action) {
+        QuestMutationResult result = new QuestMutationResult();
+
+        if (action.targetPlayers == null) {
+            return result;
+        }
+
+        UUID questID = getQuestID();
+
+        for (UUID target : action.targetPlayers) {
+            if (target == null) {
+                continue;
+            }
+
+            boolean changed = false;
+            if (!isComplete(target)) {
+                setComplete(target, action.completionTime);
+                changed = true;
+            }
+
+            if (action.markClaimed) {
+                setClaimed(target, action.completionTime);
+                changed = true;
+            }
+
+            if (changed) {
+                result.markDirty(target, questID);
+            }
+        }
+
+        return result;
+    }
+
+    @Nonnull
+    private QuestMutationResult resetUsers(@Nonnull QuestAction action) {
+        QuestMutationResult result = new QuestMutationResult();
+        UUID questID = getQuestID();
+
+        if (action.targetPlayers == null) {
+            HashSet<UUID> affectedUsers = getUsersWithCompletionDataCopy();
+            resetUser(null, action.fullReset);
+
+            for (UUID affectedUser : affectedUsers) {
+                result.markReset(affectedUser, questID);
+            }
+
+            return result;
+        }
+
+        for (UUID target : action.targetPlayers) {
+            if (target == null) {
+                continue;
+            }
+
+            resetUser(target, action.fullReset);
+            result.markReset(target, questID);
+        }
+
+        return result;
+    }
+
+    @Nonnull
+    private QuestMutationResult setCompleteForEdit(@Nonnull QuestAction action) {
+        QuestMutationResult result = new QuestMutationResult();
+
+        if (action.targetPlayers == null) {
+            return result;
+        }
+
+        UUID questID = getQuestID();
+
+        for (UUID target : action.targetPlayers) {
+            if (target == null) {
+                continue;
+            }
+
+            if (isComplete(target)) {
+                setClaimed(target, action.completionTime);
+            } else {
+                setComplete(target, action.completionTime);
+                completeEnoughTasksForClaim(target);
+            }
+
+            result.markDirty(target, questID);
+        }
+
+        return result;
+    }
+
     private boolean updateTaskCompletion(@Nonnull QuestActionContext context) {
         int done = 0;
 
@@ -284,6 +383,24 @@ public class QuestInstance implements IQuest {
         }
 
         return false;
+    }
+
+    private void completeEnoughTasksForClaim(@Nonnull UUID target) {
+        int done = 0;
+
+        if (!qInfo.getProperty(NativeProps.LOGIC_TASK)
+            .getResult(done, tasks.size())) {
+            for (DBEntry<ITask> task : tasks.getEntries()) {
+                task.getValue()
+                    .setComplete(target);
+                done++;
+
+                if (qInfo.getProperty(NativeProps.LOGIC_TASK)
+                    .getResult(done, tasks.size())) {
+                    break;
+                }
+            }
+        }
     }
 
     private boolean detectTaskProgress(@Nonnull QuestActionContext context) {

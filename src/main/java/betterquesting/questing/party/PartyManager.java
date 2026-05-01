@@ -18,13 +18,15 @@ import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.enums.EnumPartyStatus;
 import betterquesting.api.properties.NativeProps;
 import betterquesting.api.questing.IQuest;
+import betterquesting.api.questing.QuestAction;
+import betterquesting.api.questing.QuestMutationResult;
 import betterquesting.api.questing.party.IParty;
 import betterquesting.api.questing.party.IPartyDatabase;
-import betterquesting.api2.cache.QuestCache;
 import betterquesting.api2.storage.DBEntry;
 import betterquesting.api2.storage.SimpleDatabase;
 import betterquesting.core.BetterQuesting;
 import betterquesting.questing.QuestDatabase;
+import betterquesting.questing.sync.QuestSyncService;
 import betterquesting.storage.NameCache;
 import betterquesting.storage.QuestSettings;
 
@@ -63,17 +65,18 @@ public class PartyManager extends SimpleDatabase<IParty> implements IPartyDataba
                 }
 
                 if (completionTime != -1) {
+                    List<UUID> targetsToBackfill = new ArrayList<>();
                     for (SyncPlayerContainer target : t) {
                         if (quest.isComplete(target.uuid)) continue;
-                        quest.setComplete(target.uuid, completionTime);
-                        if (prohibitClaim) {
-                            quest.setClaimed(target.uuid, completionTime);
-                        }
-                        if (target.isPlayerOnline()) {
-                            target.questCache.markQuestDirty(questEntry.getKey());
-                        }
 
+                        targetsToBackfill.add(target.uuid);
                         target.questsCompleted += 1;
+                    }
+
+                    if (!targetsToBackfill.isEmpty()) {
+                        QuestMutationResult result = quest.applyAction(
+                            QuestAction.backfillCompletion(targetsToBackfill, completionTime, prohibitClaim));
+                        QuestSyncService.applyMutationResult(result);
                     }
                 }
             }
@@ -171,31 +174,22 @@ public class PartyManager extends SimpleDatabase<IParty> implements IPartyDataba
 
     private static class SyncPlayerContainer {
 
-        public SyncPlayerContainer(UUID uuid, EntityPlayerMP entityPlayerMP, QuestCache questCache, String playerName) {
+        public SyncPlayerContainer(UUID uuid, EntityPlayerMP entityPlayerMP, String playerName) {
             this.uuid = uuid;
             this.player = entityPlayerMP;
-            this.questCache = questCache;
             this.playerName = playerName;
         }
 
         public SyncPlayerContainer(UUID uuid) {
             this.uuid = uuid;
             this.player = QuestingAPI.getPlayer(uuid);
-            this.questCache = player != null
-                ? (QuestCache) player.getExtendedProperties(QuestCache.LOC_QUEST_CACHE.toString())
-                : null;
             this.playerName = player != null ? player.getDisplayName()
                 : String.format("%s (%s)", uuid.toString(), NameCache.INSTANCE.getName(uuid));
         }
 
         public UUID uuid;
         public EntityPlayerMP player;
-        public QuestCache questCache;
         public String playerName;
         public Integer questsCompleted = 0;
-
-        public boolean isPlayerOnline() {
-            return player != null;
-        }
     }
 }

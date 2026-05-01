@@ -12,9 +12,9 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 
 import betterquesting.api.api.QuestingAPI;
+import betterquesting.api.questing.QuestMutationResult;
 import betterquesting.api2.cache.QuestCache;
 import betterquesting.network.handlers.NetQuestSync;
-import betterquesting.questing.mutation.QuestMutationResult;
 
 public final class QuestSyncService {
 

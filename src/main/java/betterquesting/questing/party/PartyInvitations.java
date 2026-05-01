@@ -21,12 +21,14 @@ import net.minecraft.server.MinecraftServer;
 import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.enums.EnumPartyStatus;
 import betterquesting.api.questing.IQuest;
+import betterquesting.api.questing.QuestAction;
+import betterquesting.api.questing.QuestMutationResult;
 import betterquesting.api.questing.party.IParty;
 import betterquesting.api2.storage.INBTPartial;
 import betterquesting.core.BetterQuesting;
 import betterquesting.network.handlers.NetInviteSync;
-import betterquesting.network.handlers.NetQuestSync;
 import betterquesting.questing.QuestDatabase;
+import betterquesting.questing.sync.QuestSyncService;
 
 // NOTE: This is in a separate class because it could later be moved to a dedicated inbox system
 public class PartyInvitations implements INBTPartial<NBTTagList, UUID> {
@@ -60,12 +62,13 @@ public class PartyInvitations implements INBTPartial<NBTTagList, UUID> {
 
         if (valid && party != null) {
             // Resetting user before joining party
+            QuestMutationResult result = new QuestMutationResult();
             for (IQuest quest : QuestDatabase.INSTANCE.values()) {
-                quest.resetUser(uuid, true);
+                result.merge(quest.applyAction(QuestAction.resetUsers(Collections.singletonList(uuid), true)));
             }
             EntityPlayerMP player = QuestingAPI.getPlayer(uuid);
             if (player != null) {
-                NetQuestSync.sendSync(player, null, false, true, true);
+                QuestSyncService.applyMutationResult(result);
             }
 
             party.setStatus(uuid, EnumPartyStatus.MEMBER);

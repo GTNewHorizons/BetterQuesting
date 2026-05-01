@@ -7,17 +7,18 @@ import java.util.UUID;
 
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.ICommandSender;
-import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.ChatComponentTranslation;
 
 import betterquesting.api.properties.NativeProps;
 import betterquesting.api.questing.IQuest;
+import betterquesting.api.questing.QuestAction;
+import betterquesting.api.questing.QuestMutationResult;
 import betterquesting.api.utils.UuidConverter;
 import betterquesting.commands.QuestCommandBase;
 import betterquesting.handlers.SaveLoadHandler;
-import betterquesting.network.handlers.NetQuestSync;
 import betterquesting.questing.QuestDatabase;
+import betterquesting.questing.sync.QuestSyncService;
 import betterquesting.storage.NameCache;
 
 public class QuestCommandReset extends QuestCommandBase {
@@ -73,37 +74,23 @@ public class QuestCommandReset extends QuestCommandBase {
         }
 
         String pName = uuid == null ? "NULL" : NameCache.INSTANCE.getName(uuid);
-        EntityPlayerMP player = null;
-        if (uuid != null) {
-            for (EntityPlayerMP p : (List<EntityPlayerMP>) server.getConfigurationManager().playerEntityList) {
-                if (p.getGameProfile()
-                    .getId()
-                    .equals(uuid)) {
-                    player = p;
-                    break;
-                }
-            }
-        }
-
         if (action.equalsIgnoreCase("all")) {
+            QuestMutationResult result = new QuestMutationResult();
             for (IQuest quest : QuestDatabase.INSTANCE.values()) {
                 if (uuid != null) {
-                    quest.resetUser(uuid, true); // Clear progress and state
+                    result.merge(quest.applyAction(QuestAction.resetUsers(Collections.singletonList(uuid), true)));
                 } else {
-                    quest.resetUser(null, true);
+                    result.merge(quest.applyAction(QuestAction.resetUsers(null, true)));
                 }
             }
 
             SaveLoadHandler.INSTANCE.markDirty();
+            QuestSyncService.applyMutationResult(result);
 
             if (uuid != null) {
                 sender.addChatMessage(new ChatComponentTranslation("betterquesting.cmd.reset.player_all", pName));
-                if (player != null) {
-                    NetQuestSync.sendSync(player, null, false, true, true);
-                }
             } else {
                 sender.addChatMessage(new ChatComponentTranslation("betterquesting.cmd.reset.all_all"));
-                NetQuestSync.quickSync(null, false, true);
             }
         } else {
             try {
@@ -111,24 +98,23 @@ public class QuestCommandReset extends QuestCommandBase {
                 IQuest quest = QuestDatabase.INSTANCE.get(id);
 
                 if (uuid != null) {
-                    quest.resetUser(uuid, true); // Clear progress and state
+                    QuestMutationResult result = quest
+                        .applyAction(QuestAction.resetUsers(Collections.singletonList(uuid), true));
                     SaveLoadHandler.INSTANCE.markDirty();
                     sender.addChatMessage(
                         new ChatComponentTranslation(
                             "betterquesting.cmd.reset.player_single",
                             new ChatComponentTranslation(quest.getProperty(NativeProps.NAME)),
                             pName));
-                    if (player != null) {
-                        NetQuestSync.sendSync(player, Collections.singletonList(id), false, true, true);
-                    }
+                    QuestSyncService.applyMutationResult(result);
                 } else {
-                    quest.resetUser(null, true);
+                    QuestMutationResult result = quest.applyAction(QuestAction.resetUsers(null, true));
                     SaveLoadHandler.INSTANCE.markDirty();
                     sender.addChatMessage(
                         new ChatComponentTranslation(
                             "betterquesting.cmd.reset.all_single",
                             new ChatComponentTranslation(quest.getProperty(NativeProps.NAME))));
-                    NetQuestSync.quickSync(id, false, true);
+                    QuestSyncService.applyMutationResult(result);
                 }
             } catch (Exception e) {
                 throw getException(command);

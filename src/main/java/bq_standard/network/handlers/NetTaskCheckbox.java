@@ -1,5 +1,6 @@
 package bq_standard.network.handlers;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -12,12 +13,12 @@ import betterquesting.api.api.ApiReference;
 import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.network.QuestingPacket;
 import betterquesting.api.questing.IQuest;
+import betterquesting.api.questing.QuestMutationResult;
 import betterquesting.api.questing.tasks.ITask;
 import betterquesting.api.utils.NBTConverter;
+import betterquesting.api2.utils.ParticipantInfo;
 import betterquesting.api2.utils.Tuple2;
-import betterquesting.questing.mutation.QuestMutationResult;
 import betterquesting.questing.mutation.QuestMutationService;
-import betterquesting.questing.mutation.QuestParticipantResolver;
 import betterquesting.questing.sync.QuestSyncService;
 import bq_standard.tasks.TaskCheckbox;
 import cpw.mods.fml.relauncher.Side;
@@ -48,7 +49,7 @@ public class NetTaskCheckbox {
         Optional<UUID> qId = NBTConverter.UuidValueType.QUEST.tryReadId(data);
         int tId = !data.hasKey("taskID", 99) ? -1 : data.getInteger("taskID");
 
-        if (qId.isEmpty() || tId < 0) {
+        if (!qId.isPresent() || tId < 0) {
             return;
         }
 
@@ -64,10 +65,11 @@ public class NetTaskCheckbox {
             return;
         }
 
-        List<UUID> playersToMark = QuestParticipantResolver
-            .resolvePlayerProgressParticipants(sender, QBConfig.fullySyncQuests);
+        ParticipantInfo participantInfo = new ParticipantInfo(sender);
+        List<UUID> playersToMark = QBConfig.fullySyncQuests ? participantInfo.ALL_UUIDS
+            : Collections.singletonList(participantInfo.UUID);
 
-        QuestMutationResult result = QuestMutationService.setTaskComplete(qId.get(), quest, tId, sender, playersToMark);
+        QuestMutationResult result = QuestMutationService.setTaskComplete(quest, tId, sender, playersToMark);
 
         QuestSyncService.applyMutationResult(result);
     }
