@@ -2,7 +2,6 @@ package betterquesting.handlers;
 
 import java.util.ArrayDeque;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 
@@ -47,7 +46,6 @@ import betterquesting.api.storage.BQ_Settings;
 import betterquesting.api.utils.BigItemStack;
 import betterquesting.api.utils.UuidConverter;
 import betterquesting.api2.cache.QuestCache;
-import betterquesting.api2.cache.QuestCache.QResetTime;
 import betterquesting.api2.client.gui.GuiScreenTest;
 import betterquesting.api2.client.gui.themes.gui_args.GArgsNone;
 import betterquesting.api2.client.gui.themes.presets.PresetGUIs;
@@ -63,8 +61,8 @@ import betterquesting.network.handlers.NetBulkSync;
 import betterquesting.network.handlers.NetNameSync;
 import betterquesting.network.handlers.NetNotices;
 import betterquesting.questing.QuestDatabase;
+import betterquesting.questing.mutation.QuestMutationResult;
 import betterquesting.questing.mutation.QuestMutationService;
-import betterquesting.questing.mutation.QuestProgressResult;
 import betterquesting.questing.party.PartyInvitations;
 import betterquesting.questing.party.PartyManager;
 import betterquesting.questing.sync.QuestSyncService;
@@ -223,20 +221,16 @@ public class EventHandler {
             return;
         }
 
-        Map<UUID, IQuest> activeQuests = QuestDatabase.INSTANCE.filterKeys(qc.getActiveQuests());
-        Map<UUID, IQuest> pendingAutoClaims = QuestDatabase.INSTANCE.filterKeys(qc.getPendingAutoClaims());
-        QResetTime[] pendingResets = qc.getScheduledResets();
-
         UUID uuid = QuestingAPI.getQuestingUUID(player);
 
-        QuestProgressResult mutationResult = new QuestProgressResult();
+        QuestMutationResult mutationResult = new QuestMutationResult();
 
         if (!editMode && player.ticksExisted % 60 == 0) { // Passive quest state check every 3 seconds
-            QuestProgressResult progressResult = QuestMutationService.processActiveQuestProgress(player, activeQuests);
+            QuestMutationResult progressResult = QuestMutationService.processActiveQuestProgress(player, qc);
             mutationResult.merge(progressResult);
 
             for (UUID questID : progressResult.getCompletedQuests()) {
-                IQuest quest = activeQuests.get(questID);
+                IQuest quest = QuestDatabase.INSTANCE.get(questID);
 
                 if (quest != null && !quest.getProperty(NativeProps.SILENT)) {
                     postPresetNotice(quest, player, 2);
@@ -247,7 +241,7 @@ public class EventHandler {
         }
 
         if (!editMode && MinecraftServer.getServer() != null) { // Repeatable quest resets
-            QuestProgressResult resetResult = QuestMutationService.processScheduledResets(player, pendingResets);
+            QuestMutationResult resetResult = QuestMutationService.processScheduledResets(player, qc);
             mutationResult.merge(resetResult);
 
             for (UUID questID : resetResult.getResetQuests()) {
@@ -262,24 +256,18 @@ public class EventHandler {
         }
 
         if (!editMode) {
-            QuestProgressResult autoClaimResult = QuestMutationService
-                .processAutoClaims(player, pendingAutoClaims, QBConfig.fullySyncQuests);
-
-            mutationResult.merge(autoClaimResult);
+            mutationResult.merge(QuestMutationService.processAutoClaims(player, qc, QBConfig.fullySyncQuests));
             // Not going to notify of auto-claims anymore. Kinda pointless if they're already being pinged for
             // completion
         }
 
-        if (!mutationResult.getChangedQuests()
-            .isEmpty()) {
-            QuestSyncService.notifyQuestsChanged(mutationResult.getChanges());
-            QuestSyncService.refreshCachesAndFlushDirtyProgress(mutationResult.getAffectedPlayers());
+        if (mutationResult.hasChanges()) {
+            QuestSyncService.applyMutationResult(mutationResult);
         } else if (player.ticksExisted % 200 == 0) {
             qc.updateCache(player);
         }
 
-        if (!mutationResult.getAffectedPlayers()
-            .contains(uuid)) {
+        if (!mutationResult.affectsPlayer(uuid)) {
             QuestSyncService.flushDirtyQuestProgress(player);
         }
     }

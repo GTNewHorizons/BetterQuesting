@@ -20,9 +20,8 @@ import betterquesting.core.BetterQuesting;
 import betterquesting.network.PacketSender;
 import betterquesting.network.PacketTypeRegistry;
 import betterquesting.questing.QuestDatabase;
+import betterquesting.questing.mutation.QuestMutationResult;
 import betterquesting.questing.mutation.QuestMutationService;
-import betterquesting.questing.mutation.QuestProgressResult;
-import betterquesting.questing.sync.QuestChangeSet;
 import betterquesting.questing.sync.QuestSyncService;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -97,40 +96,33 @@ public class NetQuestAction {
     }
 
     public static void claimQuest(Collection<UUID> questIDs, EntityPlayerMP player) {
-        QuestChangeSet changes = new QuestChangeSet();
+        QuestMutationResult result = new QuestMutationResult();
 
         QuestDatabase.INSTANCE.filterKeys(questIDs)
             .forEach(
-                (questID, quest) -> changes
+                (questID, quest) -> result
                     .merge(QuestMutationService.claimReward(questID, quest, player, false, QBConfig.fullySyncQuests)));
 
-        QuestSyncService.notifyQuestsChanged(changes);
-        QuestSyncService.refreshCachesAndFlushDirtyProgress(
-            changes.getDirtyQuestsByPlayer()
-                .keySet());
+        QuestSyncService.applyMutationResult(result);
     }
 
     public static void detectQuest(Collection<UUID> questIDs, EntityPlayerMP player) {
-        QuestProgressResult result = new QuestProgressResult();
+        QuestMutationResult result = new QuestMutationResult();
 
         QuestDatabase.INSTANCE.filterKeys(questIDs)
             .forEach((questID, quest) -> result.merge(QuestMutationService.detectQuest(questID, quest, player)));
 
-        QuestSyncService.notifyQuestsChanged(result.getChanges());
-        QuestSyncService.refreshCachesAndFlushDirtyProgress(result.getAffectedPlayers());
+        QuestSyncService.applyMutationResult(result);
     }
 
     public static void forceClaimQuest(Collection<UUID> questIDs, EntityPlayerMP player) {
-        QuestChangeSet changes = new QuestChangeSet();
+        QuestMutationResult result = new QuestMutationResult();
 
         QuestDatabase.INSTANCE.filterKeys(questIDs)
             .forEach(
-                (questID, quest) -> changes
+                (questID, quest) -> result
                     .merge(QuestMutationService.claimReward(questID, quest, player, true, QBConfig.fullySyncQuests)));
 
-        QuestSyncService.notifyQuestsChanged(changes);
-        QuestSyncService.refreshCachesAndFlushDirtyProgress(
-            changes.getDirtyQuestsByPlayer()
-                .keySet());
+        QuestSyncService.applyMutationResult(result);
     }
 }

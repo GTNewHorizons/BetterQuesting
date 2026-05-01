@@ -15,9 +15,9 @@ import betterquesting.api.questing.IQuest;
 import betterquesting.api.questing.tasks.ITask;
 import betterquesting.api.utils.NBTConverter;
 import betterquesting.api2.utils.Tuple2;
+import betterquesting.questing.mutation.QuestMutationResult;
 import betterquesting.questing.mutation.QuestMutationService;
 import betterquesting.questing.mutation.QuestParticipantResolver;
-import betterquesting.questing.mutation.QuestProgressResult;
 import betterquesting.questing.sync.QuestSyncService;
 import bq_standard.tasks.TaskCheckbox;
 import cpw.mods.fml.relauncher.Side;
@@ -59,11 +59,10 @@ public class NetTaskCheckbox {
                 List<UUID> playersToMark = QuestParticipantResolver
                     .resolvePlayerProgressParticipants(sender, QBConfig.fullySyncQuests);
 
-                QuestProgressResult result = QuestMutationService
+                QuestMutationResult result = QuestMutationService
                     .setTaskComplete(qId.get(), quest, task, sender, playersToMark);
 
-                QuestSyncService.notifyQuestsChanged(result.getChanges());
-                QuestSyncService.refreshCachesAndFlushDirtyProgress(result.getAffectedPlayers());
+                QuestSyncService.applyMutationResult(result);
             }
         }
     }

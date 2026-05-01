@@ -17,23 +17,15 @@ import betterquesting.api.questing.IQuest;
 import betterquesting.api.questing.tasks.ITask;
 import betterquesting.api2.cache.QuestCache;
 import betterquesting.questing.QuestDatabase;
-import betterquesting.questing.sync.QuestChangeSet;
 
 public final class QuestMutationService {
 
     private QuestMutationService() {}
 
-    /**
-     * Marks an already-validated task complete for the given players and reports the
-     * affected quest/player pairs.
-     * <p>
-     * This method intentionally does not perform task-specific validation. Callers are
-     * responsible for checking whether the task can be completed by this action.
-     */
     @Nonnull
-    public static QuestProgressResult setTaskComplete(@Nullable UUID questID, @Nullable IQuest quest,
+    public static QuestMutationResult setTaskComplete(@Nullable UUID questID, @Nullable IQuest quest,
         @Nullable ITask task, @Nonnull EntityPlayer player, @Nonnull Collection<UUID> playerIDs) {
-        QuestProgressResult result = new QuestProgressResult();
+        QuestMutationResult result = new QuestMutationResult();
 
         if (questID == null || quest == null || task == null) {
             return result;
@@ -48,7 +40,7 @@ public final class QuestMutationService {
             }
 
             task.setComplete(targetPlayerID);
-            result.markChanged(targetPlayerID, questID);
+            result.markDirty(targetPlayerID, questID);
         }
 
         result.merge(propagateCompletionIfNeeded(questID, quest, player, wasComplete));
@@ -57,17 +49,17 @@ public final class QuestMutationService {
     }
 
     @Nonnull
-    public static QuestChangeSet claimReward(@Nullable UUID questID, @Nullable IQuest quest,
+    public static QuestMutationResult claimReward(@Nullable UUID questID, @Nullable IQuest quest,
         @Nonnull EntityPlayer player, boolean forceChoice, boolean includeSharedParticipants) {
-        QuestChangeSet changes = new QuestChangeSet();
+        QuestMutationResult result = new QuestMutationResult();
 
         if (questID == null || quest == null) {
-            return changes;
+            return result;
         }
 
         boolean canClaim = forceChoice ? quest.canClaim(player, true) : quest.canClaim(player);
         if (!canClaim) {
-            return changes;
+            return result;
         }
 
         quest.claimReward(player, forceChoice);
@@ -87,16 +79,16 @@ public final class QuestMutationService {
                 quest.setClaimed(participant, timestamp);
             }
 
-            changes.markQuestDirty(participant, questID);
+            result.markDirty(participant, questID);
         }
 
-        return changes;
+        return result;
     }
 
     @Nonnull
-    public static QuestProgressResult detectQuest(@Nullable UUID questID, @Nullable IQuest quest,
+    public static QuestMutationResult detectQuest(@Nullable UUID questID, @Nullable IQuest quest,
         @Nonnull EntityPlayer player) {
-        QuestProgressResult result = new QuestProgressResult();
+        QuestMutationResult result = new QuestMutationResult();
 
         if (questID == null || quest == null) {
             return result;
@@ -107,17 +99,19 @@ public final class QuestMutationService {
 
         quest.detect(player);
 
-        result.markChanged(playerID, questID);
+        result.markDirty(playerID, questID);
         result.merge(propagateCompletionIfNeeded(questID, quest, player, wasComplete));
 
         return result;
     }
 
     @Nonnull
-    public static QuestProgressResult processActiveQuestProgress(@Nonnull EntityPlayer player,
-        @Nonnull Map<UUID, IQuest> activeQuests) {
-        QuestProgressResult result = new QuestProgressResult();
+    public static QuestMutationResult processActiveQuestProgress(@Nonnull EntityPlayer player,
+        @Nonnull QuestCache cache) {
+        QuestMutationResult result = new QuestMutationResult();
         UUID playerID = QuestingAPI.getQuestingUUID(player);
+
+        Map<UUID, IQuest> activeQuests = QuestDatabase.INSTANCE.filterKeys(cache.getActiveQuests());
 
         for (Map.Entry<UUID, IQuest> entry : activeQuests.entrySet()) {
             UUID questID = entry.getKey();
@@ -140,16 +134,22 @@ public final class QuestMutationService {
     }
 
     @Nonnull
-    public static QuestProgressResult processScheduledResets(@Nonnull EntityPlayer player,
-        @Nonnull QuestCache.QResetTime[] pendingResets) {
-        QuestProgressResult result = new QuestProgressResult();
+    public static QuestMutationResult processScheduledResets(@Nonnull EntityPlayer player, @Nonnull QuestCache cache) {
+        QuestMutationResult result = new QuestMutationResult();
         UUID playerID = QuestingAPI.getQuestingUUID(player);
         long totalTime = System.currentTimeMillis();
 
-        for (QuestCache.QResetTime resetTime : pendingResets) {
-            IQuest quest = QuestDatabase.INSTANCE.get(resetTime.questID);
+        for (QuestCache.QResetTime resetTime : cache.getScheduledResets()) {
+            if (totalTime < resetTime.time) {
+                break;
+            }
 
-            if (totalTime >= resetTime.time && !quest.canSubmit(player)) {
+            IQuest quest = QuestDatabase.INSTANCE.get(resetTime.questID);
+            if (quest == null) {
+                continue;
+            }
+
+            if (!quest.canSubmit(player)) {
                 if (quest.getProperty(NativeProps.GLOBAL)) {
                     quest.resetUser(null, false);
                 } else {
@@ -157,8 +157,6 @@ public final class QuestMutationService {
                 }
 
                 result.markReset(playerID, resetTime.questID);
-            } else {
-                break;
             }
         }
 
@@ -166,30 +164,22 @@ public final class QuestMutationService {
     }
 
     @Nonnull
-    public static QuestProgressResult processAutoClaims(@Nonnull EntityPlayer player,
-        @Nonnull Map<UUID, IQuest> pendingAutoClaims, boolean includeSharedParticipants) {
-        QuestProgressResult result = new QuestProgressResult();
+    public static QuestMutationResult processAutoClaims(@Nonnull EntityPlayer player, @Nonnull QuestCache cache,
+        boolean includeSharedParticipants) {
+        QuestMutationResult result = new QuestMutationResult();
+        Map<UUID, IQuest> pendingAutoClaims = QuestDatabase.INSTANCE.filterKeys(cache.getPendingAutoClaims());
 
         for (Map.Entry<UUID, IQuest> entry : pendingAutoClaims.entrySet()) {
-            QuestChangeSet claimChanges = claimReward(
-                entry.getKey(),
-                entry.getValue(),
-                player,
-                false,
-                includeSharedParticipants);
-
-            if (!claimChanges.isEmpty()) {
-                result.markChanged(entry.getKey(), claimChanges);
-            }
+            result.merge(claimReward(entry.getKey(), entry.getValue(), player, false, includeSharedParticipants));
         }
 
         return result;
     }
 
     @Nonnull
-    private static QuestProgressResult propagateCompletionIfNeeded(@Nonnull UUID questID, @Nonnull IQuest quest,
+    private static QuestMutationResult propagateCompletionIfNeeded(@Nonnull UUID questID, @Nonnull IQuest quest,
         @Nonnull EntityPlayer player, boolean wasComplete) {
-        QuestProgressResult result = new QuestProgressResult();
+        QuestMutationResult result = new QuestMutationResult();
 
         UUID playerID = QuestingAPI.getQuestingUUID(player);
 
@@ -211,7 +201,7 @@ public final class QuestMutationService {
                 quest.setComplete(participant, completionTime);
             }
 
-            result.markChanged(participant, questID);
+            result.markDirty(participant, questID);
         }
 
         return result;
