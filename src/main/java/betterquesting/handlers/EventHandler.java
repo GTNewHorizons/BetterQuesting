@@ -1,7 +1,6 @@
 package betterquesting.handlers;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -68,7 +67,6 @@ import betterquesting.questing.mutation.QuestMutationService;
 import betterquesting.questing.mutation.QuestProgressResult;
 import betterquesting.questing.party.PartyInvitations;
 import betterquesting.questing.party.PartyManager;
-import betterquesting.questing.sync.QuestChangeSet;
 import betterquesting.questing.sync.QuestSyncService;
 import betterquesting.storage.LifeDatabase;
 import betterquesting.storage.NameCache;
@@ -232,76 +230,55 @@ public class EventHandler {
         UUID uuid = QuestingAPI.getQuestingUUID(player);
         boolean refreshCache = false;
 
-        if (!editMode && player.ticksExisted % 60 == 0) {
-            QuestProgressResult result = QuestMutationService.processActiveQuestProgress(player, activeQuests);
+        QuestProgressResult mutationResult = new QuestProgressResult();
 
-            if (!result.getChangedQuests()
-                .isEmpty()) {
-                refreshCache = true;
-            }
+        if (!editMode && player.ticksExisted % 60 == 0) { // Passive quest state check every 3 seconds
+            QuestProgressResult progressResult = QuestMutationService.processActiveQuestProgress(player, activeQuests);
+            mutationResult.merge(progressResult);
 
-            for (UUID questID : result.getCompletedQuests()) {
+            for (UUID questID : progressResult.getCompletedQuests()) {
                 IQuest quest = activeQuests.get(questID);
+
                 if (quest != null && !quest.getProperty(NativeProps.SILENT)) {
                     postPresetNotice(quest, player, 2);
                 }
             }
 
-            MinecraftForge.EVENT_BUS.post(new QuestEvent(Type.COMPLETED, uuid, result.getCompletedQuests()));
-            QuestSyncService.notifyQuestsChanged(result.getChanges());
+            MinecraftForge.EVENT_BUS.post(new QuestEvent(Type.COMPLETED, uuid, progressResult.getCompletedQuests()));
         }
 
-        if (!editMode && MinecraftServer.getServer() != null) // Repeatable quest resets
-        {
-            List<UUID> res = new ArrayList<>();
-            long totalTime = System.currentTimeMillis();
+        if (!editMode && MinecraftServer.getServer() != null) { // Repeatable quest resets
+            QuestProgressResult resetResult = QuestMutationService.processScheduledResets(player, pendingResets);
+            mutationResult.merge(resetResult);
 
-            for (QResetTime rTime : pendingResets) {
-                IQuest entry = QuestDatabase.INSTANCE.get(rTime.questID);
+            for (UUID questID : resetResult.getResetQuests()) {
+                IQuest quest = QuestDatabase.INSTANCE.get(questID);
 
-                if (totalTime >= rTime.time && !entry.canSubmit(player)) // REEEEEEEEEset
-                {
-                    if (entry.getProperty(NativeProps.GLOBAL)) {
-                        entry.resetUser(null, false);
-                    } else {
-                        entry.resetUser(uuid, false);
-                    }
-
-                    refreshCache = true;
-                    qc.markQuestDirty(rTime.questID);
-                    res.add(rTime.questID);
-                    if (!entry.getProperty(NativeProps.SILENT)) {
-                        postPresetNotice(entry, player, 1);
-                    }
-                } else {
-                    break; // Entries are sorted by time so we fail fast and skip checking the others
+                if (quest != null && !quest.getProperty(NativeProps.SILENT)) {
+                    postPresetNotice(quest, player, 1);
                 }
             }
 
-            MinecraftForge.EVENT_BUS.post(new QuestEvent(Type.RESET, uuid, res));
+            MinecraftForge.EVENT_BUS.post(new QuestEvent(Type.RESET, uuid, resetResult.getResetQuests()));
         }
 
         if (!editMode) {
-            QuestChangeSet autoClaimChanges = new QuestChangeSet();
+            QuestProgressResult autoClaimResult = QuestMutationService
+                .processAutoClaims(player, pendingAutoClaims, QBConfig.fullySyncQuests);
 
-            for (Map.Entry<UUID, IQuest> entry : pendingAutoClaims.entrySet()) {
-                QuestChangeSet changes = QuestMutationService
-                    .claimReward(entry.getKey(), entry.getValue(), player, false, QBConfig.fullySyncQuests);
-
-                if (!changes.isEmpty()) {
-                    refreshCache = true;
-                    autoClaimChanges.merge(changes);
-                    // Not going to notify of auto-claims anymore. Kinda pointless if they're already being pinged for
-                    // completion
-                }
-            }
-
-            QuestSyncService.notifyQuestsChanged(autoClaimChanges);
+            mutationResult.merge(autoClaimResult);
+            // Not going to notify of auto-claims anymore. Kinda pointless if they're already being pinged for
+            // completion
         }
 
-        if (refreshCache || player.ticksExisted % 200 == 0) // Refresh the cache if something changed or every 10
-                                                            // seconds
-        {
+        if (!mutationResult.getChangedQuests()
+            .isEmpty()) {
+            refreshCache = true;
+            QuestSyncService.notifyQuestsChanged(mutationResult.getChanges());
+        }
+
+        if (refreshCache || player.ticksExisted % 200 == 0) { // Refresh the cache if something changed or every 10
+                                                              // seconds
             qc.updateCache(player);
         }
 

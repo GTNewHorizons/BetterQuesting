@@ -11,8 +11,11 @@ import javax.annotation.Nullable;
 import net.minecraft.entity.player.EntityPlayer;
 
 import betterquesting.api.api.QuestingAPI;
+import betterquesting.api.properties.NativeProps;
 import betterquesting.api.questing.IQuest;
 import betterquesting.api.questing.tasks.ITask;
+import betterquesting.api2.cache.QuestCache;
+import betterquesting.questing.QuestDatabase;
 import betterquesting.questing.sync.QuestChangeSet;
 
 public final class QuestMutationService {
@@ -121,6 +124,56 @@ public final class QuestMutationService {
 
             if (quest.isComplete(playerID) && !quest.canSubmit(player)) {
                 result.markCompleted(playerID, questID);
+            }
+        }
+
+        return result;
+    }
+
+    @Nonnull
+    public static QuestProgressResult processScheduledResets(@Nonnull EntityPlayer player,
+        @Nonnull QuestCache.QResetTime[] pendingResets) {
+        QuestProgressResult result = new QuestProgressResult();
+        UUID playerID = QuestingAPI.getQuestingUUID(player);
+        long totalTime = System.currentTimeMillis();
+
+        for (QuestCache.QResetTime resetTime : pendingResets) {
+            IQuest quest = QuestDatabase.INSTANCE.get(resetTime.questID);
+
+            if (totalTime >= resetTime.time && !quest.canSubmit(player)) {
+                if (quest.getProperty(NativeProps.GLOBAL)) {
+                    quest.resetUser(null, false);
+                } else {
+                    quest.resetUser(playerID, false);
+                }
+
+                result.markReset(playerID, resetTime.questID);
+            } else {
+                break;
+            }
+        }
+
+        return result;
+    }
+
+    @Nonnull
+    public static QuestProgressResult processAutoClaims(@Nonnull EntityPlayer player,
+        @Nonnull Map<UUID, IQuest> pendingAutoClaims, boolean includeSharedParticipants) {
+        QuestProgressResult result = new QuestProgressResult();
+
+        for (Map.Entry<UUID, IQuest> entry : pendingAutoClaims.entrySet()) {
+            QuestChangeSet claimChanges = claimReward(
+                entry.getKey(),
+                entry.getValue(),
+                player,
+                false,
+                includeSharedParticipants);
+
+            if (!claimChanges.isEmpty()) {
+                result.getChanges()
+                    .merge(claimChanges);
+                result.getChangedQuests()
+                    .add(entry.getKey()); // won't compile if getter is immutable
             }
         }
 
