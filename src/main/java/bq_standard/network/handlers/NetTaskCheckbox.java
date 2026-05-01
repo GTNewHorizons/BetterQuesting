@@ -1,6 +1,5 @@
 package bq_standard.network.handlers;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -15,9 +14,9 @@ import betterquesting.api.network.QuestingPacket;
 import betterquesting.api.questing.IQuest;
 import betterquesting.api.questing.tasks.ITask;
 import betterquesting.api.utils.NBTConverter;
-import betterquesting.api2.utils.ParticipantInfo;
 import betterquesting.api2.utils.Tuple2;
 import betterquesting.questing.mutation.QuestMutationService;
+import betterquesting.questing.mutation.QuestParticipantResolver;
 import betterquesting.questing.sync.QuestChangeSet;
 import betterquesting.questing.sync.QuestSyncService;
 import bq_standard.tasks.TaskCheckbox;
@@ -57,9 +56,8 @@ public class NetTaskCheckbox {
                     .getValue(tId);
 
             if (task instanceof TaskCheckbox) {
-                ParticipantInfo pInfo = new ParticipantInfo(sender);
-                List<UUID> playersToMark = QBConfig.fullySyncQuests ? pInfo.ALL_UUIDS
-                    : Collections.singletonList(pInfo.UUID);
+                List<UUID> playersToMark = QuestParticipantResolver
+                    .resolvePlayerProgressParticipants(sender, QBConfig.fullySyncQuests);
 
                 QuestChangeSet changes = QuestMutationService.setTaskComplete(qId.get(), task, playersToMark);
                 QuestSyncService.notifyQuestsChanged(changes);

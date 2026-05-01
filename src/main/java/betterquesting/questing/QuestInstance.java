@@ -1,6 +1,5 @@
 package betterquesting.questing;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -42,6 +41,7 @@ import betterquesting.api2.storage.IDatabaseNBT;
 import betterquesting.api2.utils.DirtyPlayerMarker;
 import betterquesting.api2.utils.ParticipantInfo;
 import betterquesting.core.BetterQuesting;
+import betterquesting.questing.mutation.QuestParticipantResolver;
 import betterquesting.questing.rewards.RewardStorage;
 import betterquesting.questing.sync.QuestChangeSet;
 import betterquesting.questing.sync.QuestSyncService;
@@ -247,8 +247,8 @@ public class QuestInstance implements IQuest {
             unwrapped.claimReward(player, mapEntry);
         }
 
-        ParticipantInfo pInfo = new ParticipantInfo(player);
-        List<UUID> playersToMark = QBConfig.fullySyncQuests ? pInfo.ALL_UUIDS : Collections.singletonList(pInfo.UUID);
+        List<UUID> playersToMark = QuestParticipantResolver
+            .resolvePlayerProgressParticipants(player, QBConfig.fullySyncQuests);
 
         QuestChangeSet changes = new QuestChangeSet();
 
