@@ -35,7 +35,6 @@ import betterquesting.api.questing.tasks.ITask;
 import betterquesting.api.utils.BigItemStack;
 import betterquesting.api.utils.NBTConverter;
 import betterquesting.api.utils.UuidConverter;
-import betterquesting.api2.cache.QuestCache;
 import betterquesting.api2.storage.DBEntry;
 import betterquesting.api2.storage.IDatabaseNBT;
 import betterquesting.api2.utils.DirtyPlayerMarker;
@@ -126,11 +125,6 @@ public class QuestInstance implements IQuest {
     @Override
     public void detect(EntityPlayer player) {
         UUID playerID = QuestingAPI.getQuestingUUID(player);
-        QuestCache qc = (QuestCache) player.getExtendedProperties(QuestCache.LOC_QUEST_CACHE.toString());
-        if (qc == null) {
-            return;
-        }
-
         UUID questID = QuestDatabase.INSTANCE.lookupKey(this);
 
         if (isComplete(playerID) && (qInfo.getProperty(NativeProps.REPEAT_TIME) < 0 || rewards.size() <= 0)) {
@@ -179,12 +173,8 @@ public class QuestInstance implements IQuest {
                 if (QuestSettings.INSTANCE.getProperty(NativeProps.EDIT_MODE)) {
                     setComplete(playerID, System.currentTimeMillis());
                 }
-                qc.markQuestDirty(questID);
             } else if (update && qInfo.getProperty(NativeProps.SIMULTANEOUS)) {
                 resetUser(playerID, false);
-                qc.markQuestDirty(questID);
-            } else if (update) {
-                qc.markQuestDirty(questID);
             }
         }
     }
