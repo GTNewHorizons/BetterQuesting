@@ -17,6 +17,7 @@ import betterquesting.api.questing.tasks.ITask;
 import betterquesting.api.utils.NBTConverter;
 import betterquesting.api2.utils.ParticipantInfo;
 import betterquesting.api2.utils.Tuple2;
+import betterquesting.questing.sync.QuestChangeSet;
 import betterquesting.questing.sync.QuestSyncService;
 import bq_standard.tasks.TaskCheckbox;
 import cpw.mods.fml.relauncher.Side;
@@ -58,10 +59,14 @@ public class NetTaskCheckbox {
                 ParticipantInfo pInfo = new ParticipantInfo(sender);
                 List<UUID> playersToMark = QBConfig.fullySyncQuests ? pInfo.ALL_UUIDS
                     : Collections.singletonList(pInfo.UUID);
+                QuestChangeSet changes = new QuestChangeSet();
+
                 for (UUID user : playersToMark) {
                     task.setComplete(user);
-                    QuestSyncService.markQuestDirty(user, qId.get());
+                    changes.markQuestDirty(user, qId.get());
                 }
+
+                QuestSyncService.notifyQuestsChanged(changes);
             }
         }
     }

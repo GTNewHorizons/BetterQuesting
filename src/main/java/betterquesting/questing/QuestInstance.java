@@ -43,6 +43,7 @@ import betterquesting.api2.utils.DirtyPlayerMarker;
 import betterquesting.api2.utils.ParticipantInfo;
 import betterquesting.core.BetterQuesting;
 import betterquesting.questing.rewards.RewardStorage;
+import betterquesting.questing.sync.QuestChangeSet;
 import betterquesting.questing.sync.QuestSyncService;
 import betterquesting.questing.tasks.TaskStorage;
 import betterquesting.storage.PropertyContainer;
@@ -249,20 +250,25 @@ public class QuestInstance implements IQuest {
         ParticipantInfo pInfo = new ParticipantInfo(player);
         List<UUID> playersToMark = QBConfig.fullySyncQuests ? pInfo.ALL_UUIDS : Collections.singletonList(pInfo.UUID);
 
+        QuestChangeSet changes = new QuestChangeSet();
+
         synchronized (completeUsers) {
             for (UUID user : playersToMark) {
                 NBTTagCompound entry = getCompletionInfo(user);
                 if (entry == null) {
                     entry = new NBTTagCompound();
                 }
+
                 entry.setBoolean("claimed", true);
                 entry.setLong("timestamp", System.currentTimeMillis());
                 this.completeUsers.put(user, entry);
                 DirtyPlayerMarker.markDirty(user);
 
-                QuestSyncService.markQuestDirty(user, questID);
+                changes.markQuestDirty(user, questID);
             }
         }
+
+        QuestSyncService.notifyQuestsChanged(changes);
     }
 
     @Override

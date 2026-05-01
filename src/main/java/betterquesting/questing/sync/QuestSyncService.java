@@ -1,6 +1,8 @@
 package betterquesting.questing.sync;
 
 import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import javax.annotation.Nonnull;
@@ -53,6 +55,20 @@ public final class QuestSyncService {
             }
         } finally {
             cache.cleanAllQuests();
+        }
+    }
+
+    public static void notifyQuestsChanged(@Nullable QuestChangeSet changes) {
+        if (changes == null || changes.isEmpty()) {
+            return;
+        }
+
+        for (Map.Entry<UUID, Set<UUID>> entry : changes.getDirtyQuestsByPlayer().entrySet()) {
+            UUID playerID = entry.getKey();
+
+            for (UUID questID : entry.getValue()) {
+                markQuestDirty(playerID, questID);
+            }
         }
     }
 
