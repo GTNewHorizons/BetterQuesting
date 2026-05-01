@@ -128,6 +128,8 @@ public class QuestInstance implements IQuest {
         UUID playerID = QuestingAPI.getQuestingUUID(player);
         QuestCache qc = (QuestCache) player.getExtendedProperties(QuestCache.LOC_QUEST_CACHE.toString());
         if (qc == null) {
+            // Preserve legacy behavior: detect actions only mutate players with a quest cache.
+            // Sync dirty marking itself is handled by QuestMutationService.
             return;
         }
 

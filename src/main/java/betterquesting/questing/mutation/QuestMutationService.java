@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
@@ -22,23 +21,21 @@ public final class QuestMutationService {
 
     private QuestMutationService() {}
 
+    /**
+     * Marks an already-validated task complete for the selected players.
+     * <p>
+     * Task-specific validation stays with the caller. This method owns the common
+     * mutation result bookkeeping and completion propagation.
+     */
     @Nonnull
-    public static QuestMutationResult setTaskComplete(@Nullable UUID questID, @Nullable IQuest quest,
-        @Nullable ITask task, @Nonnull EntityPlayer player, @Nonnull Collection<UUID> playerIDs) {
+    public static QuestMutationResult setTaskComplete(@Nonnull UUID questID, @Nonnull IQuest quest, @Nonnull ITask task,
+        @Nonnull EntityPlayer player, @Nonnull Collection<UUID> playerIDs) {
         QuestMutationResult result = new QuestMutationResult();
-
-        if (questID == null || quest == null || task == null) {
-            return result;
-        }
 
         UUID playerID = QuestingAPI.getQuestingUUID(player);
         boolean wasComplete = quest.isComplete(playerID);
 
         for (UUID targetPlayerID : playerIDs) {
-            if (targetPlayerID == null) {
-                continue;
-            }
-
             task.setComplete(targetPlayerID);
             result.markDirty(targetPlayerID, questID);
         }
@@ -49,13 +46,9 @@ public final class QuestMutationService {
     }
 
     @Nonnull
-    public static QuestMutationResult claimReward(@Nullable UUID questID, @Nullable IQuest quest,
+    public static QuestMutationResult claimReward(@Nonnull UUID questID, @Nonnull IQuest quest,
         @Nonnull EntityPlayer player, boolean forceChoice, boolean includeSharedParticipants) {
         QuestMutationResult result = new QuestMutationResult();
-
-        if (questID == null || quest == null) {
-            return result;
-        }
 
         boolean canClaim = forceChoice ? quest.canClaim(player, true) : quest.canClaim(player);
         if (!canClaim) {
@@ -71,10 +64,6 @@ public final class QuestMutationService {
         long timestamp = System.currentTimeMillis();
 
         for (UUID participant : participants) {
-            if (participant == null) {
-                continue;
-            }
-
             if (!participant.equals(playerID)) {
                 quest.setClaimed(participant, timestamp);
             }
@@ -86,13 +75,9 @@ public final class QuestMutationService {
     }
 
     @Nonnull
-    public static QuestMutationResult detectQuest(@Nullable UUID questID, @Nullable IQuest quest,
+    public static QuestMutationResult detectQuest(@Nonnull UUID questID, @Nonnull IQuest quest,
         @Nonnull EntityPlayer player) {
         QuestMutationResult result = new QuestMutationResult();
-
-        if (questID == null || quest == null) {
-            return result;
-        }
 
         UUID playerID = QuestingAPI.getQuestingUUID(player);
         boolean wasComplete = quest.isComplete(playerID);
@@ -176,6 +161,15 @@ public final class QuestMutationService {
         return result;
     }
 
+    /**
+     * Applies the live party-completion rule.
+     * <p>
+     * This is the core LAN/multiplayer fix: when a mutation newly completes a
+     * quest for the actor, completion is propagated immediately to party
+     * participants instead of relying on login-time repair.
+     * <p>
+     * This only propagates completion state. It does not grant rewards.
+     */
     @Nonnull
     private static QuestMutationResult propagateCompletionIfNeeded(@Nonnull UUID questID, @Nonnull IQuest quest,
         @Nonnull EntityPlayer player, boolean wasComplete) {
@@ -193,10 +187,6 @@ public final class QuestMutationService {
         result.markCompleted(playerID, questID);
 
         for (UUID participant : QuestParticipantResolver.resolveQuestCompletionParticipants(player)) {
-            if (participant == null) {
-                continue;
-            }
-
             if (!quest.isComplete(participant)) {
                 quest.setComplete(participant, completionTime);
             }

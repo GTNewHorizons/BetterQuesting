@@ -48,22 +48,28 @@ public class NetTaskCheckbox {
         Optional<UUID> qId = NBTConverter.UuidValueType.QUEST.tryReadId(data);
         int tId = !data.hasKey("taskID", 99) ? -1 : data.getInteger("taskID");
 
-        if (qId.isPresent() && tId >= 0) {
-            IQuest quest = QuestingAPI.getAPI(ApiReference.QUEST_DB)
-                .get(qId.get());
-            ITask task = quest == null ? null
-                : quest.getTasks()
-                    .getValue(tId);
-
-            if (task instanceof TaskCheckbox) {
-                List<UUID> playersToMark = QuestParticipantResolver
-                    .resolvePlayerProgressParticipants(sender, QBConfig.fullySyncQuests);
-
-                QuestMutationResult result = QuestMutationService
-                    .setTaskComplete(qId.get(), quest, task, sender, playersToMark);
-
-                QuestSyncService.applyMutationResult(result);
-            }
+        if (qId.isEmpty() || tId < 0) {
+            return;
         }
+
+        IQuest quest = QuestingAPI.getAPI(ApiReference.QUEST_DB)
+            .get(qId.get());
+        if (quest == null) {
+            return;
+        }
+
+        ITask task = quest.getTasks()
+            .getValue(tId);
+        if (!(task instanceof TaskCheckbox)) {
+            return;
+        }
+
+        List<UUID> playersToMark = QuestParticipantResolver
+            .resolvePlayerProgressParticipants(sender, QBConfig.fullySyncQuests);
+
+        QuestMutationResult result = QuestMutationService
+            .setTaskComplete(qId.get(), quest, task, sender, playersToMark);
+
+        QuestSyncService.applyMutationResult(result);
     }
 }

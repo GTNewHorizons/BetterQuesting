@@ -20,11 +20,7 @@ public final class QuestSyncService {
 
     private QuestSyncService() {}
 
-    public static void markQuestDirty(@Nullable UUID playerID, @Nonnull UUID questID) {
-        if (playerID == null) {
-            return;
-        }
-
+    public static void markQuestDirty(@Nonnull UUID playerID, @Nonnull UUID questID) {
         EntityPlayerMP player = QuestingAPI.getPlayer(playerID);
         if (player == null) {
             return;
@@ -36,14 +32,21 @@ public final class QuestSyncService {
         }
     }
 
-    public static void markQuestDirty(@Nonnull Collection<UUID> playerIDs, @Nonnull UUID questID) {
+    public static void markQuestDirty(@Nonnull Iterable<UUID> playerIDs, @Nonnull UUID questID) {
         for (UUID playerID : playerIDs) {
             markQuestDirty(playerID, questID);
         }
     }
 
-    public static void applyMutationResult(@Nullable QuestMutationResult result) {
-        if (result == null || !result.hasChanges()) {
+    /**
+     * Applies a mutation result to online clients.
+     * <p>
+     * Cache refresh happens before progress flushing because quest visibility,
+     * active quest lists, pending auto-claims, and reward state are derived from
+     * the newly mutated quest progress.
+     */
+    public static void applyMutationResult(@Nonnull QuestMutationResult result) {
+        if (!result.hasChanges()) {
             return;
         }
 
@@ -58,10 +61,6 @@ public final class QuestSyncService {
         }
 
         for (UUID playerID : dirtyQuestsByPlayer.keySet()) {
-            if (playerID == null) {
-                continue;
-            }
-
             EntityPlayerMP player = QuestingAPI.getPlayer(playerID);
             if (player == null) {
                 continue;
