@@ -49,7 +49,6 @@ import betterquesting.api.utils.BigItemStack;
 import betterquesting.api.utils.UuidConverter;
 import betterquesting.api2.cache.QuestCache;
 import betterquesting.api2.cache.QuestCache.QResetTime;
-import betterquesting.api2.client.gui.GuiScreenTest;
 import betterquesting.api2.client.gui.themes.gui_args.GArgsNone;
 import betterquesting.api2.client.gui.themes.presets.PresetGUIs;
 import betterquesting.api2.storage.DBEntry;
@@ -91,17 +90,12 @@ public class EventHandler {
     public void onKey(InputEvent.KeyInputEvent event) {
         if (BQ_Keybindings.openQuests.isPressed()) {
             Minecraft mc = Minecraft.getMinecraft();
-            if (mc.thePlayer.isSneaking() && mc.thePlayer.getCommandSenderName()
-                .equalsIgnoreCase("Funwayguy")) {
-                mc.displayGuiScreen(new GuiScreenTest(mc.currentScreen));
+            if (BQ_Settings.useBookmark && GuiHome.bookmark != null) {
+                mc.displayGuiScreen(GuiHome.bookmark);
             } else {
-                if (BQ_Settings.useBookmark && GuiHome.bookmark != null) {
-                    mc.displayGuiScreen(GuiHome.bookmark);
-                } else {
-                    GuiScreen guiToDisplay = ThemeRegistry.INSTANCE.getGui(PresetGUIs.HOME, GArgsNone.NONE);
-                    if (BQ_Settings.useBookmark && BQ_Settings.skipHome) guiToDisplay = new GuiQuestLines(guiToDisplay);
-                    mc.displayGuiScreen(guiToDisplay);
-                }
+                GuiScreen guiToDisplay = ThemeRegistry.INSTANCE.getGui(PresetGUIs.HOME, GArgsNone.NONE);
+                if (BQ_Settings.useBookmark && BQ_Settings.skipHome) guiToDisplay = new GuiQuestLines(guiToDisplay);
+                mc.displayGuiScreen(guiToDisplay);
             }
         }
     }
