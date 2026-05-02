@@ -5,5 +5,10 @@ import betterquesting.api2.client.gui.resources.colors.IGuiColor;
 
 public interface IGuiLine {
 
-    public void drawLine(IGuiRect start, IGuiRect end, int width, IGuiColor color, float partialTick);
+    default void drawLine(IGuiRect start, IGuiRect end, int width, IGuiColor color, float partialTick,
+        boolean animate) {
+        drawLine(start, end, width, color, partialTick);
+    }
+
+    void drawLine(IGuiRect start, IGuiRect end, int width, IGuiColor color, float partialTick);
 }
