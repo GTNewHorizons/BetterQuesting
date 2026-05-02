@@ -88,4 +88,9 @@ public class DirectionalLine implements IGuiLine {
 
         GL11.glPopMatrix();
     }
+
+    @Override
+    public void drawLine(IGuiRect start, IGuiRect end, int width, IGuiColor color, float partialTick) {
+        drawLine(start, end, width, color, partialTick, false);
+    }
 }
