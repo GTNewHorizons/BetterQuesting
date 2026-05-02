@@ -23,7 +23,9 @@ public class FactoryDirectionalLine implements IFactoryData<IGuiLine, JsonObject
             .floatValue();
         float arrowOpacity = JsonHelper.GetNumber(data, "arrowOpacity", DirectionalLine.DefArrowOpacity)
             .floatValue();
-        return new DirectionalLine(arrowWidth, arrowSize, arrowOpacity);
+        float widthScale = JsonHelper.GetNumber(data, "widthScale", DirectionalLine.DefWidthScale)
+            .floatValue();
+        return new DirectionalLine(arrowWidth, arrowSize, arrowOpacity, widthScale);
     }
 
     @Override
