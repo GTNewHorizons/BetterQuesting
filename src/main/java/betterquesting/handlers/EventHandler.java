@@ -21,7 +21,6 @@ import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraft.server.management.UserListBansEntry;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.ChatComponentTranslation;
-import net.minecraft.util.ChatStyle;
 import net.minecraft.util.IChatComponent;
 import net.minecraft.util.IIcon;
 import net.minecraftforge.client.event.ClientChatReceivedEvent;
@@ -100,25 +99,30 @@ public class EventHandler {
         }
     }
 
+    /**
+     * Handle quest share messages and prettify them
+     */
     @SideOnly(Side.CLIENT)
     @SubscribeEvent
     public void onClientChatReceived(ClientChatReceivedEvent event) {
         if (event.message == null) return;
 
+        // Text is something like "<prefix>betterquesting.msg.sharequest:<questId><postfix>"
         String text = event.message.getFormattedText();
         int index = text.indexOf("betterquesting.msg.sharequest:");
         if (index == -1) return;
 
-        int lastIndex = index + "betterquesting.msg.sharequest:".length();
-        String restOfText = text.substring(lastIndex);
+        int questIdIndex = index + "betterquesting.msg.sharequest:".length();
 
         // UUIDs in base64-encoded string form are 24 characters in length.
-        if (restOfText.length() < 24) {
-            event.message = new ChatComponentTranslation("betterquesting.msg.share_quest_invalid", restOfText);
+        if (text.length() - questIdIndex < 24) {
+            event.message = new ChatComponentTranslation(
+                "betterquesting.msg.share_quest_invalid",
+                text.substring(questIdIndex));
             return;
         }
 
-        final String questIdString = restOfText.substring(0, 24);
+        final String questIdString = text.substring(questIdIndex, questIdIndex + 24);
         final UUID questId;
         try {
             questId = UuidConverter.decodeUuid(questIdString);
@@ -139,27 +143,25 @@ public class EventHandler {
             questIdString,
             questName);
 
-        String textAfter = restOfText.length() > 36 ? restOfText.substring(36) : "";
         IChatComponent newMessage = new ChatComponentText(
-            text.substring(0, index) + translated.getFormattedText() + textAfter);
-        ChatStyle newMessageStyle;
+            text.substring(0, index) + translated.getFormattedText() + text.substring(questIdIndex + 24));
         EntityPlayerSP player = Minecraft.getMinecraft().thePlayer;
         if (QuestCache.isQuestShown(quest, QuestingAPI.getQuestingUUID(player), player)) {
             QuestCommandShow.sentViaClick = true;
-            newMessageStyle = newMessage.getChatStyle()
+            newMessage.getChatStyle()
                 .setChatClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/bq_client show " + questIdString))
                 .setChatHoverEvent(
                     new HoverEvent(
                         HoverEvent.Action.SHOW_TEXT,
                         new ChatComponentTranslation("betterquesting.msg.share_quest_hover_text_success")));
         } else {
-            newMessageStyle = newMessage.getChatStyle()
+            newMessage.getChatStyle()
                 .setChatHoverEvent(
                     new HoverEvent(
                         HoverEvent.Action.SHOW_TEXT,
                         new ChatComponentTranslation("betterquesting.msg.share_quest_hover_text_failure")));
         }
-        event.message = newMessage.setChatStyle(newMessageStyle);
+        event.message = newMessage;
     }
 
     @SideOnly(Side.CLIENT)
