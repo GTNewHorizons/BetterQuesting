@@ -198,14 +198,11 @@ public class EventHandler {
         if (event.entityLiving.worldObj.isRemote) {
             return;
         }
-        if (!(event.entityLiving instanceof EntityPlayerMP)) {
-            return;
-        }
         if (event.entityLiving.ticksExisted % 20 != 0) {
             return; // Only triggers once per second
         }
 
-        EntityPlayerMP player = (EntityPlayerMP) event.entityLiving;
+        EntityPlayerMP player = event.entityLiving;
         QuestCache qc = (QuestCache) player.getExtendedProperties(QuestCache.LOC_QUEST_CACHE.toString());
         boolean editMode = QuestSettings.INSTANCE.getProperty(NativeProps.EDIT_MODE);
 
@@ -520,8 +517,7 @@ public class EventHandler {
         if (server.getTickCounter() % 60 == 0) PartyInvitations.INSTANCE.cleanExpired();
 
         // === FIX FOR OnLivingUpdate FIRING MULTIPLE TIMES PER TICK ===
-        // noinspection unchecked
-        for (EntityPlayerMP player : (List<EntityPlayerMP>) server.getConfigurationManager().playerEntityList) {
+        for (EntityPlayerMP player : server.getConfigurationManager().playerEntityList) {
             MinecraftForge.EVENT_BUS.post(new BQLivingUpdateEvent(player));
         }
     }
