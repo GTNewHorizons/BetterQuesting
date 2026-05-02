@@ -214,91 +214,85 @@ public class EventHandler {
         Map<UUID, IQuest> pendingAutoClaims = QuestDatabase.INSTANCE.filterKeys(qc.getPendingAutoClaims());
         QResetTime[] pendingResets = qc.getScheduledResets();
 
-        UUID uuid = QuestingAPI.getQuestingUUID(player);
+        UUID playerId = QuestingAPI.getQuestingUUID(player);
         boolean refreshCache = false;
 
-        if (!editMode && player.ticksExisted % 60 == 0) // Passive quest state check every 3 seconds
-        {
-            List<UUID> com = new ArrayList<>();
+        // Passive quest state check every 3 seconds
+        if (!editMode && player.ticksExisted % 60 == 0) {
+            List<UUID> completed = new ArrayList<>();
 
             for (Map.Entry<UUID, IQuest> entry : activeQuests.entrySet()) {
-                if (!entry.getValue()
-                    .isUnlocked(uuid)) {
+                final UUID questId = entry.getKey();
+                final IQuest quest = entry.getValue();
+
+                if (!quest.isUnlocked(playerId)) {
                     continue; // Although it IS active, it cannot be completed yet
                 }
 
-                if (entry.getValue()
-                    .canSubmit(player)) {
-                    entry.getValue()
-                        .update(player);
+                if (quest.canSubmit(player)) {
+                    quest.update(player);
                 }
 
-                if (entry.getValue()
-                    .isComplete(uuid)
-                    && !entry.getValue()
-                        .canSubmit(player)) {
+                if (quest.isComplete(playerId) && !quest.canSubmit(player)) {
                     refreshCache = true;
-                    qc.markQuestDirty(entry.getKey());
+                    qc.markQuestDirty(questId);
 
-                    com.add(entry.getKey());
-                    if (!entry.getValue()
-                        .getProperty(NativeProps.SILENT)) {
-                        postPresetNotice(entry.getValue(), player, 2);
+                    completed.add(questId);
+                    if (!quest.getProperty(NativeProps.SILENT)) {
+                        postPresetNotice(quest, player, 2);
                     }
                 }
             }
 
-            MinecraftForge.EVENT_BUS.post(new QuestEvent(Type.COMPLETED, uuid, com));
+            MinecraftForge.EVENT_BUS.post(new QuestEvent(Type.COMPLETED, playerId, completed));
         }
 
-        if (!editMode && MinecraftServer.getServer() != null) // Repeatable quest resets
-        {
-            List<UUID> res = new ArrayList<>();
-            long totalTime = System.currentTimeMillis();
+        // Repeatable quest resets
+        if (!editMode && MinecraftServer.getServer() != null) {
+            List<UUID> reset = new ArrayList<>();
+            long currentTime = System.currentTimeMillis();
 
-            for (QResetTime rTime : pendingResets) {
-                IQuest entry = QuestDatabase.INSTANCE.get(rTime.questID);
+            for (QResetTime pendingReset : pendingResets) {
+                IQuest quest = QuestDatabase.INSTANCE.get(pendingReset.questID);
 
-                if (totalTime >= rTime.time && !entry.canSubmit(player)) // REEEEEEEEEset
-                {
-                    if (entry.getProperty(NativeProps.GLOBAL)) {
-                        entry.resetUser(null, false);
+                if (currentTime >= pendingReset.time && !quest.canSubmit(player)) {
+                    if (quest.getProperty(NativeProps.GLOBAL)) {
+                        quest.resetUser(null, false);
                     } else {
-                        entry.resetUser(uuid, false);
+                        quest.resetUser(playerId, false);
                     }
 
                     refreshCache = true;
-                    qc.markQuestDirty(rTime.questID);
-                    res.add(rTime.questID);
-                    if (!entry.getProperty(NativeProps.SILENT)) {
-                        postPresetNotice(entry, player, 1);
+                    qc.markQuestDirty(pendingReset.questID);
+                    reset.add(pendingReset.questID);
+                    if (!quest.getProperty(NativeProps.SILENT)) {
+                        postPresetNotice(quest, player, 1);
                     }
                 } else {
                     break; // Entries are sorted by time so we fail fast and skip checking the others
                 }
             }
 
-            MinecraftForge.EVENT_BUS.post(new QuestEvent(Type.RESET, uuid, res));
+            MinecraftForge.EVENT_BUS.post(new QuestEvent(Type.RESET, playerId, reset));
         }
 
+        // Auto claims
         if (!editMode) {
-            for (Map.Entry<UUID, IQuest> entry : pendingAutoClaims.entrySet()) // Auto claims
-            {
+            for (Map.Entry<UUID, IQuest> entry : pendingAutoClaims.entrySet()) {
                 if (entry.getValue()
                     .canClaim(player)) {
                     entry.getValue()
                         .claimReward(player);
                     refreshCache = true;
                     qc.markQuestDirty(entry.getKey());
-                    // Not going to notify of auto-claims anymore. Kinda pointless if they're already being pinged for
-                    // completion
+                    // Not going to notify of auto-claims anymore.
+                    // Kinda pointless if they're already being pinged for completion
                 }
             }
         }
 
-        if (refreshCache || player.ticksExisted % 200 == 0) // Refresh the cache if something changed or every 10
-                                                            // seconds
-        {
+        // Refresh the cache if something changed or every 10 seconds
+        if (refreshCache || player.ticksExisted % 200 == 0) {
             qc.updateCache(player);
         }
 
