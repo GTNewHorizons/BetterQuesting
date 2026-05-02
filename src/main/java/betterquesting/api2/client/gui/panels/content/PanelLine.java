@@ -17,6 +17,7 @@ public class PanelLine implements IGuiPanel {
      */
     private final IGuiRect bounds;
     private final ShouldDrawPredicate shouldDraw;
+    private final ShouldDrawPredicate animatePredicate;
     private final IGuiLine line;
     private final IGuiRect start;
     private final IGuiRect end;
@@ -26,11 +27,11 @@ public class PanelLine implements IGuiPanel {
     private boolean enabled = true;
 
     public PanelLine(IGuiRect start, IGuiRect end, IGuiLine line, int width, IGuiColor color, int drawOrder) {
-        this(start, end, line, width, color, drawOrder, null);
+        this(start, end, line, width, color, drawOrder, null, null);
     }
 
     public PanelLine(IGuiRect start, IGuiRect end, IGuiLine line, int width, IGuiColor color, int drawOrder,
-        ShouldDrawPredicate shouldDraw) {
+        ShouldDrawPredicate shouldDraw, ShouldDrawPredicate animatePredicate) {
         this.start = start;
         this.end = end;
         this.line = line;
@@ -38,6 +39,7 @@ public class PanelLine implements IGuiPanel {
         this.color = color;
         this.bounds = new GuiRectangle(0, 0, 0, 0, drawOrder);
         this.shouldDraw = shouldDraw;
+        this.animatePredicate = animatePredicate;
         this.bounds.setParent(start);
     }
 
@@ -63,7 +65,8 @@ public class PanelLine implements IGuiPanel {
     public void drawPanel(int mx, int my, float partialTick) {
         if (shouldDraw == null || shouldDraw.shouldDraw(mx, my, partialTick)) {
             GL11.glPushMatrix();
-            line.drawLine(start, end, width, color, partialTick);
+            boolean shouldAnimate = animatePredicate != null && animatePredicate.shouldDraw(mx, my, partialTick);
+            line.drawLine(start, end, width, color, partialTick, shouldAnimate);
             GL11.glPopMatrix();
         }
     }

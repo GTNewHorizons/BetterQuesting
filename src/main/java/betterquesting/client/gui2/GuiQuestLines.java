@@ -487,6 +487,38 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
         cvBackground.addPanel(btnViewMode);
         yOff += 16;
 
+        // Dependency Arrow Button
+        final PanelButton btnDependencyArrows = new PanelButton(
+            new GuiTransform(GuiAlign.TOP_LEFT, 8, yOff, 32, 16, -2),
+            -1,
+            "");
+        final Runnable updateDependencyArrowButton = () -> {
+            btnDependencyArrows.setIcon(
+                PresetIcon.ICON_TWO_WAY.getTexture(),
+                BQ_Settings.showDependencyArrows ? new GuiColorStatic(0xFFFFFFFF) : new GuiColorStatic(0xFF444444),
+                0);
+            btnDependencyArrows.setTooltip(
+                Arrays.asList(
+                    QuestTranslation.translate("betterquesting.btn.show_dependency_arrows"),
+                    QuestTranslation.translate("betterquesting.tooltip.cycle." + BQ_Settings.showDependencyArrows)));
+        };
+        updateDependencyArrowButton.run();
+        btnDependencyArrows.setClickAction((b) -> {
+            BQ_Settings.showDependencyArrows = !BQ_Settings.showDependencyArrows;
+            ConfigHandler.config.get(
+                Configuration.CATEGORY_GENERAL,
+                "Show dependency arrows",
+                false,
+                "If true, quest dependency lines will render directional arrows. This property can be changed by the GUI.")
+                .set(BQ_Settings.showDependencyArrows);
+            ConfigHandler.config.save();
+
+            updateDependencyArrowButton.run();
+            refreshGui();
+        });
+        cvBackground.addPanel(btnDependencyArrows);
+        yOff += 16;
+
         // Quest Color Button
         final PanelButton btnMonoText = new PanelButton(
             new GuiTransform(GuiAlign.TOP_LEFT, 8, yOff, 32, 16, -2),

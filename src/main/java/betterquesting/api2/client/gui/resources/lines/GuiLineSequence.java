@@ -14,6 +14,11 @@ public class GuiLineSequence implements IGuiLine {
     }
 
     @Override
+    public void drawLine(IGuiRect start, IGuiRect end, int width, IGuiColor color, float partialTick, boolean animate) {
+        getCurrentLine().drawLine(start, end, width, color, partialTick, animate);
+    }
+
+    @Override
     public void drawLine(IGuiRect start, IGuiRect end, int width, IGuiColor color, float partialTick) {
         getCurrentLine().drawLine(start, end, width, color, partialTick);
     }
