@@ -8,6 +8,7 @@ import java.util.Set;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
+import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTBase.NBTPrimitive;
 import net.minecraft.nbt.NBTTagByte;
@@ -579,6 +580,12 @@ public class PanelScrollingNBT extends CanvasScrolling implements IPEventListene
             if (nbt.getId() == 10) {
                 mc.displayGuiScreen(new GuiNbtAdd(mc.currentScreen, (NBTTagCompound) nbt));
             } else if (nbt.getId() == 9) {
+                if (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) || Keyboard.isKeyDown(Keyboard.KEY_RSHIFT)) {
+                    insertDefaultItem((NBTTagList) nbt, ((PanelButtonStorage<Integer>) btn).getStoredValue());
+                    refreshList();
+                    return;
+                }
+
                 mc.displayGuiScreen(
                     new GuiNbtAdd(
                         mc.currentScreen,
@@ -593,6 +600,16 @@ public class PanelScrollingNBT extends CanvasScrolling implements IPEventListene
                 ((NBTTagList) nbt).removeTag(((PanelButtonStorage<Integer>) btn).getStoredValue());
                 refreshList();
             }
+        }
+    }
+
+    private static void insertDefaultItem(NBTTagList list, int index) {
+        NBTTagCompound item = JsonHelper.ItemStackToJson(new BigItemStack(Blocks.stone), new NBTTagCompound());
+        if (index == list.tagCount()) {
+            list.appendTag(item);
+        } else {
+            NBTConverter.getTagList(list)
+                .add(index, item);
         }
     }
 
