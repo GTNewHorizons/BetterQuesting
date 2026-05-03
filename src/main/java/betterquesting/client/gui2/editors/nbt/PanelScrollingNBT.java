@@ -604,7 +604,7 @@ public class PanelScrollingNBT extends CanvasScrolling implements IPEventListene
 
     private static void insertDefaultItem(NBTTagList list, int index) {
         NBTTagCompound item = JsonHelper.ItemStackToJson(new BigItemStack(Blocks.stone), new NBTTagCompound());
-        if (index == list.tagCount()) {
+        if (index >= list.tagCount()) {
             list.appendTag(item);
         } else {
             NBTConverter.getTagList(list)
