@@ -585,7 +585,6 @@ public class PanelScrollingNBT extends CanvasScrolling implements IPEventListene
                     refreshList();
                     return;
                 }
-
                 mc.displayGuiScreen(
                     new GuiNbtAdd(
                         mc.currentScreen,
