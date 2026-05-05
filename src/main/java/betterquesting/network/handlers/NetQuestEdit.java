@@ -42,6 +42,16 @@ public class NetQuestEdit {
 
     private static final ResourceLocation ID_NAME = new ResourceLocation("betterquesting:quest_edit");
 
+    private static final int ACTION_EDIT = 0;
+    private static final int ACTION_DELETE = 1;
+    private static final int ACTION_SET_STATE = 2; // or it can be called SET_COMPLETED (based on state)
+    private static final int ACTION_CREATE = 3;
+
+    private static final String TAG_ACTION = "action";
+    private static final String TAG_DATA = "data";
+    private static final String TAG_QUEST_IDS = "questIDs";
+    private static final String TAG_STATE = "state";
+
     public static void registerHandler() {
         PacketTypeRegistry.INSTANCE.registerServerHandler(ID_NAME, NetQuestEdit::onServer);
 
@@ -50,70 +60,39 @@ public class NetQuestEdit {
         }
     }
 
+    // TODO: Make these use proper methods for each action rather than directly assembling the payload
     @SideOnly(Side.CLIENT)
-    public static void sendEdit(NBTTagCompound payload) // TODO: Make these use proper methods for each action rather
-                                                        // than directly assembling the payload
-    {
+    public static void sendEdit(NBTTagCompound payload) {
         PacketSender.INSTANCE.sendToServer(new QuestingPacket(ID_NAME, payload));
     }
 
     private static void onServer(Tuple2<NBTTagCompound, EntityPlayerMP> message) {
+        NBTTagCompound payload = message.getFirst();
         EntityPlayerMP sender = message.getSecond();
-        MinecraftServer server = sender.mcServer;
-        if (server == null) return; // Here mostly just to keep intellisense happy
 
-        boolean isOP = server.getConfigurationManager()
+        boolean isOP = sender.mcServer.getConfigurationManager()
             .func_152596_g(sender.getGameProfile());
 
-        if (!isOP) // OP pre-check
-        {
-            BetterQuesting.logger.log(
-                Level.WARN,
-                "Player " + sender.getCommandSenderName()
-                    + " (UUID:"
-                    + QuestingAPI.getQuestingUUID(sender)
-                    + ") tried to edit quests without OP permissions!");
+        if (!isOP) {
             sender.addChatComponentMessage(
                 new ChatComponentText(EnumChatFormatting.RED + "You need to be OP to edit quests!"));
-            return; // Player is not operator. Do nothing
+            return;
         }
 
-        NBTTagCompound tag = message.getFirst();
         UUID senderID = QuestingAPI.getQuestingUUID(sender);
-        int action = !message.getFirst()
-            .hasKey("action", 99) ? -1
-                : message.getFirst()
-                    .getInteger("action");
+        int action = payload.hasKey(TAG_ACTION, Constants.NBT.TAG_ANY_NUMERIC) ? payload.getInteger(TAG_ACTION) : -1;
 
         switch (action) {
-            case 0: {
-                editQuests(tag.getTagList("data", 10));
-                break;
-            }
-            case 1: {
-                deleteQuests(NBTConverter.UuidValueType.QUEST.readIds(tag, "questIDs"));
-                break;
-            }
-            case 2: {
-                // TODO: Allow the editor to send a target player name/UUID
-                setQuestStates(
-                    NBTConverter.UuidValueType.QUEST.readIds(tag, "questIDs"),
-                    tag.getBoolean("state"),
-                    senderID);
-                break;
-            }
-            case 3: {
-                createQuests(tag.getTagList("data", 10));
-                break;
-            }
-            default: {
-                BetterQuesting.logger.log(
-                    Level.ERROR,
-                    "Invalid quest edit action '" + action
-                        + "'. Full payload:\n"
-                        + message.getFirst()
-                            .toString());
-            }
+            case ACTION_EDIT -> editQuests(payload.getTagList(TAG_DATA, Constants.NBT.TAG_COMPOUND));
+            case ACTION_DELETE -> deleteQuests(NBTConverter.UuidValueType.QUEST.readIds(payload, TAG_QUEST_IDS));
+            // TODO: Allow the editor to send a target player name/UUID
+            case ACTION_SET_STATE -> setQuestStates(
+                NBTConverter.UuidValueType.QUEST.readIds(payload, TAG_QUEST_IDS),
+                payload.getBoolean(TAG_STATE),
+                senderID);
+            case ACTION_CREATE -> createQuests(payload.getTagList(TAG_DATA, Constants.NBT.TAG_COMPOUND));
+            default -> BetterQuesting.logger
+                .log(Level.ERROR, "Invalid quest edit action '{}'. Full payload:\n{}", action, payload);
         }
     }
 
@@ -145,8 +124,8 @@ public class NetQuestEdit {
         SaveLoadHandler.INSTANCE.markDirty();
 
         NBTTagCompound payload = new NBTTagCompound();
-        payload.setTag("questIDs", NBTConverter.UuidValueType.QUEST.writeIds(questIDs));
-        payload.setInteger("action", 1);
+        payload.setTag(TAG_QUEST_IDS, NBTConverter.UuidValueType.QUEST.writeIds(questIDs));
+        payload.setInteger(TAG_ACTION, ACTION_DELETE);
         PacketSender.INSTANCE.sendToAll(new QuestingPacket(ID_NAME, payload));
     }
 
@@ -161,58 +140,51 @@ public class NetQuestEdit {
         }
 
         EntityPlayerMP player = null;
-        for (Object o : server.getConfigurationManager().playerEntityList) {
-            if (((EntityPlayerMP) o).getGameProfile()
+        for (EntityPlayerMP playerMP : server.getConfigurationManager().playerEntityList) {
+            if (playerMP.getGameProfile()
                 .getId()
                 .equals(targetID)) {
-                player = (EntityPlayerMP) o;
+                player = playerMP;
             }
         }
 
         for (Map.Entry<UUID, IQuest> entry : questMap.entrySet()) {
+            IQuest quest = entry.getValue();
+
             if (!state) {
-                entry.getValue()
-                    .resetUser(targetID, true);
+                quest.resetUser(targetID, true);
                 continue;
             }
 
-            if (entry.getValue()
-                .isComplete(targetID)) {
-                entry.getValue()
-                    .setClaimed(targetID, 0);
+            if (quest.isComplete(targetID)) {
+                quest.setClaimed(targetID, 0);
             } else {
-                entry.getValue()
-                    .setComplete(targetID, 0);
+                quest.setComplete(targetID, 0);
 
                 int done = 0;
 
-                if (!entry.getValue()
-                    .getProperty(NativeProps.LOGIC_TASK)
+                if (!quest.getProperty(NativeProps.LOGIC_TASK)
                     .getResult(
                         done,
-                        entry.getValue()
-                            .getTasks()
-                            .size())) // Preliminary check
-                {
-                    for (DBEntry<ITask> task : entry.getValue()
-                        .getTasks()
+                        quest.getTasks()
+                            .size())) {
+                    for (DBEntry<ITask> task : quest.getTasks()
                         .getEntries()) {
                         task.getValue()
                             .setComplete(targetID);
                         done++;
 
-                        if (entry.getValue()
-                            .getProperty(NativeProps.LOGIC_TASK)
+                        if (quest.getProperty(NativeProps.LOGIC_TASK)
                             .getResult(
                                 done,
-                                entry.getValue()
-                                    .getTasks()
+                                quest.getTasks()
                                     .size())) {
                             break; // Only complete enough quests to claim the reward
                         }
                     }
                 }
             }
+
             if (player != null) {
                 BetterQuesting.logger
                     .info("{} ({}) completed quest {}", player.getDisplayName(), targetID, entry.getKey());
@@ -249,14 +221,13 @@ public class NetQuestEdit {
         NetQuestSync.sendSync(null, questIDs, true, false);
     }
 
+    // Imparts edit specific changes
     @SideOnly(Side.CLIENT)
-    private static void onClient(NBTTagCompound message) // Imparts edit specific changes
-    {
-        int action = !message.hasKey("action", 99) ? -1 : message.getInteger("action");
+    private static void onClient(NBTTagCompound payload) {
+        int action = payload.hasKey(TAG_ACTION, Constants.NBT.TAG_ANY_NUMERIC) ? payload.getInteger(TAG_ACTION) : -1;
 
-        if (action == 1) // Change to a switch statement when more actions are required
-        {
-            for (UUID uuid : NBTConverter.UuidValueType.QUEST.readIds(message, "questIDs")) {
+        if (action == ACTION_DELETE) {
+            for (UUID uuid : NBTConverter.UuidValueType.QUEST.readIds(payload, TAG_QUEST_IDS)) {
                 QuestDatabase.INSTANCE.remove(uuid);
                 QuestLineDatabase.INSTANCE.removeQuest(uuid);
             }
@@ -264,10 +235,4 @@ public class NetQuestEdit {
             MinecraftForge.EVENT_BUS.post(new DatabaseEvent.Update(DBType.CHAPTER));
         }
     }
-
-    public static void log(String msg) {
-        // I don't like this but it's all I can think of
-        BetterQuesting.logger.log(Level.INFO, msg);
-    }
-
 }
