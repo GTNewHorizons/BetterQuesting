@@ -1,5 +1,6 @@
 package bq_standard.client.gui.panels.content;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import net.minecraft.client.Minecraft;
@@ -88,7 +89,11 @@ public class PanelInteractiveItemSlot extends PanelItemSlot {
     public List<String> getTooltip(int mx, int my) {
         List<String> list = super.getTooltip(mx, my);
         if (list != null && popupVariants) {
-            list.add(ChatFormatting.GRAY + ChatFormatting.ITALIC.toString() + "Shift+click to see valid items");
+            // Need to copy as some mods might return an immutable list
+            List<String> newList = new ArrayList<>(list.size() + 1);
+            newList.addAll(list);
+            newList.add(ChatFormatting.GRAY + ChatFormatting.ITALIC.toString() + "Shift+click to see valid items");
+            return newList;
         }
         return list;
     }
