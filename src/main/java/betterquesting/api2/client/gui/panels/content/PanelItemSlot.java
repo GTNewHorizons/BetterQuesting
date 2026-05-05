@@ -24,9 +24,9 @@ import betterquesting.api2.client.gui.themes.presets.PresetTexture;
 public class PanelItemSlot extends PanelButtonStorage<BigItemStack> {
 
     private final boolean showCount;
-    private final boolean oreDict;
+    public final boolean oreDict;
     private final float interval;
-    private final List<BigItemStack> oreVariants = new ArrayList<>();
+    protected final List<BigItemStack> oreVariants = new ArrayList<>();
 
     public PanelItemSlot(IGuiRect rect, int id, BigItemStack value) {
         this(rect, id, value, false, false);
@@ -37,7 +37,7 @@ public class PanelItemSlot extends PanelButtonStorage<BigItemStack> {
     }
 
     public PanelItemSlot(IGuiRect rect, int id, BigItemStack value, boolean showCount, boolean oreDict) {
-        this(rect, id, value, showCount, showCount, 1F);
+        this(rect, id, value, showCount, oreDict, 1F);
     }
 
     public PanelItemSlot(IGuiRect rect, int id, BigItemStack value, boolean showCount, boolean oreDict,

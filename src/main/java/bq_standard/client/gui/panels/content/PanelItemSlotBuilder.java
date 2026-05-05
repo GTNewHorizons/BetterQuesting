@@ -12,7 +12,7 @@ public final class PanelItemSlotBuilder {
     private IGuiRect rectangle;
     private BigItemStack value;
     private int id = -1;
-    private boolean showCount, oreDict;
+    private boolean showCount, oreDict, popupVariants;
 
     @SuppressWarnings("unused")
     PanelItemSlotBuilder() {}
@@ -43,10 +43,15 @@ public final class PanelItemSlotBuilder {
         return this;
     }
 
+    public PanelItemSlotBuilder popupVariants(boolean enabled) {
+        this.popupVariants = enabled;
+        return this;
+    }
+
     public PanelItemSlot build() {
         PanelItemSlot slot;
         if (BQ_Standard.hasNEI && value != null)
-            slot = new PanelInteractiveItemSlot(rectangle, id, value, showCount, oreDict);
+            slot = new PanelInteractiveItemSlot(rectangle, id, value, showCount, oreDict, popupVariants);
         else slot = new PanelItemSlot(rectangle, id, value, showCount, oreDict);
 
         return slot;
