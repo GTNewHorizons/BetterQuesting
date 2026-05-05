@@ -111,11 +111,10 @@ public class CanvasItemDatabase extends CanvasSearch<ItemStack, Item> {
 
         int currentScrollY = this.getScrollY();
 
-        this.addPanel(new PanelItemSlot(new GuiRectangle(x, y, 18, 18, 0), btnId, new BigItemStack(stack)));
+        this.addBatchPanel(new PanelItemSlot(new GuiRectangle(x, y, 18, 18, 0), btnId, new BigItemStack(stack)));
 
         if (this.getScrollY() > currentScrollY) {
             this.setScrollY(currentScrollY);
-            this.updatePanelScroll();
         }
 
         return true;
