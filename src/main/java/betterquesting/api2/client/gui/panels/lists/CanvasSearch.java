@@ -98,7 +98,14 @@ public abstract class CanvasSearch<T, E> extends CanvasScrolling {
             if (addResult(pendingResults.poll(), searchIdx, resultWidth)) searchIdx++;
         }
         searchTime.stop();
+
+        int currentScrollY = this.getScrollY();
         addCulledPanels(batch, true);
+        if (this.getScrollY() > currentScrollY) {
+            this.setScrollY(currentScrollY);
+            updatePanelScroll();
+        }
+
         batch.clear();
     }
 

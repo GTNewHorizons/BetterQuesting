@@ -3,7 +3,9 @@ package betterquesting.api2.client.gui.panels.lists;
 import java.util.Collection;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
 
@@ -446,6 +448,10 @@ public class CanvasScrolling implements IGuiCanvas {
     }
 
     public void addCulledPanels(Collection<IGuiPanel> panels, boolean useCulling) {
+        if (panels == null) return;
+        panels = panels.stream()
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
         guiPanels.addAll(panels);
 
         for (IGuiPanel panel : panels) {
