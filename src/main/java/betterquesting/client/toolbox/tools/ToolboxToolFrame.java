@@ -1,9 +1,8 @@
 package betterquesting.client.toolbox.tools;
 
 import java.util.Collections;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import org.lwjgl.input.Keyboard;
@@ -70,7 +69,7 @@ public class ToolboxToolFrame implements IToolboxTool {
             .getValue()
             .getProperty(NativeProps.MAIN);
 
-        Map<UUID, IQuest> questsToEdit = new LinkedHashMap<>();
+        HashMap<UUID, IQuest> questsToEdit = new HashMap<>();
         for (PanelButtonQuest btn : btnList) {
             btn.getStoredValue()
                 .getValue()
