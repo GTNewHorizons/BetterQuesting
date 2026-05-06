@@ -231,6 +231,7 @@ public class NetQuestEdit {
                 .getId()
                 .equals(playerID)) {
                 player = playerMP;
+                break;
             }
         }
 
