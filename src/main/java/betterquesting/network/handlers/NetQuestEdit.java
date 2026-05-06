@@ -2,6 +2,7 @@ package betterquesting.network.handlers;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -17,6 +18,7 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.util.Constants;
 
 import org.apache.logging.log4j.Level;
+import org.jetbrains.annotations.NotNull;
 
 import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.events.DatabaseEvent;
@@ -48,6 +50,7 @@ public class NetQuestEdit {
     private static final int ACTION_CREATE = 3;
 
     private static final String TAG_ACTION = "action";
+    private static final String TAG_CONFIG = "config";
     private static final String TAG_DATA = "data";
     private static final String TAG_QUEST_IDS = "questIDs";
     private static final String TAG_STATE = "state";
@@ -60,10 +63,82 @@ public class NetQuestEdit {
         }
     }
 
-    // TODO: Make these use proper methods for each action rather than directly assembling the payload
     @SideOnly(Side.CLIENT)
-    public static void sendEdit(NBTTagCompound payload) {
+    public static void requestEdit(@NotNull Map<UUID, IQuest> questsToEdit) {
+        NBTTagList data = writeQuestData(questsToEdit);
+        if (data.tagCount() == 0) {
+            return;
+        }
+
+        NBTTagCompound payload = new NBTTagCompound();
+        payload.setInteger(TAG_ACTION, ACTION_EDIT);
+        payload.setTag(TAG_DATA, data);
         PacketSender.INSTANCE.sendToServer(new QuestingPacket(ID_NAME, payload));
+    }
+
+    @SideOnly(Side.CLIENT)
+    public static void requestDelete(@NotNull Collection<UUID> questIDs) {
+        if (questIDs.isEmpty()) {
+            return;
+        }
+
+        NBTTagCompound payload = new NBTTagCompound();
+        payload.setInteger(TAG_ACTION, ACTION_DELETE);
+        payload.setTag(TAG_QUEST_IDS, NBTConverter.UuidValueType.QUEST.writeIds(questIDs));
+        PacketSender.INSTANCE.sendToServer(new QuestingPacket(ID_NAME, payload));
+    }
+
+    @SideOnly(Side.CLIENT)
+    public static void requestSetState(@NotNull Collection<UUID> questIDs, boolean state) {
+        if (questIDs.isEmpty()) {
+            return;
+        }
+
+        NBTTagCompound payload = new NBTTagCompound();
+        payload.setInteger(TAG_ACTION, ACTION_SET_STATE);
+        payload.setTag(TAG_QUEST_IDS, NBTConverter.UuidValueType.QUEST.writeIds(questIDs));
+        payload.setBoolean(TAG_STATE, state);
+        PacketSender.INSTANCE.sendToServer(new QuestingPacket(ID_NAME, payload));
+    }
+
+    @SideOnly(Side.CLIENT)
+    public static void requestCreate(@NotNull Map<UUID, IQuest> questsToCreate) {
+        NBTTagList data = writeQuestData(questsToCreate);
+        if (data.tagCount() == 0) {
+            return;
+        }
+
+        NBTTagCompound payload = new NBTTagCompound();
+        payload.setInteger(TAG_ACTION, ACTION_CREATE);
+        payload.setTag(TAG_DATA, data);
+        PacketSender.INSTANCE.sendToServer(new QuestingPacket(ID_NAME, payload));
+    }
+
+    @SideOnly(Side.CLIENT)
+    public static void requestCreate(@NotNull UUID questID) {
+        requestCreate(Collections.singletonMap(questID, null));
+    }
+
+    @SideOnly(Side.CLIENT)
+    public static void requestCreate() {
+        requestCreate(QuestDatabase.INSTANCE.generateKey());
+    }
+
+    @SideOnly(Side.CLIENT)
+    private static NBTTagList writeQuestData(@NotNull Map<UUID, IQuest> quests) {
+        NBTTagList data = new NBTTagList();
+        quests.forEach((questID, quest) -> {
+            if (questID == null) {
+                return;
+            }
+
+            NBTTagCompound entry = NBTConverter.UuidValueType.QUEST.writeId(questID);
+            if (quest != null) {
+                entry.setTag(TAG_CONFIG, quest.writeToNBT(new NBTTagCompound()));
+            }
+            data.appendTag(entry);
+        });
+        return data;
     }
 
     private static void onServer(Tuple2<NBTTagCompound, EntityPlayerMP> message) {
@@ -106,7 +181,7 @@ public class NetQuestEdit {
 
             IQuest quest = QuestDatabase.INSTANCE.get(questID);
             if (quest != null) {
-                quest.readFromNBT(entry.getCompoundTag("config"));
+                quest.readFromNBT(entry.getCompoundTag(TAG_CONFIG));
             }
         }
 
@@ -212,8 +287,8 @@ public class NetQuestEdit {
                 quest = QuestDatabase.INSTANCE.createNew(questID);
             }
 
-            if (entry.hasKey("config", Constants.NBT.TAG_COMPOUND)) {
-                quest.readFromNBT(entry.getCompoundTag("config"));
+            if (entry.hasKey(TAG_CONFIG, Constants.NBT.TAG_COMPOUND)) {
+                quest.readFromNBT(entry.getCompoundTag(TAG_CONFIG));
             }
         }
 

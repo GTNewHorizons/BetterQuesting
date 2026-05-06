@@ -6,12 +6,10 @@ import java.util.List;
 import java.util.UUID;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.nbt.NBTTagCompound;
 
 import org.lwjgl.input.Keyboard;
 
 import betterquesting.api.client.toolbox.IToolboxTool;
-import betterquesting.api.utils.NBTConverter;
 import betterquesting.api2.client.gui.controls.PanelButtonQuest;
 import betterquesting.api2.client.gui.panels.lists.CanvasQuestLine;
 import betterquesting.api2.utils.DirtyPlayerMarker;
@@ -54,11 +52,7 @@ public class ToolboxToolReset implements IToolboxTool {
                     .getKey());
         }
 
-        NBTTagCompound payload = new NBTTagCompound();
-        payload.setTag("questIDs", NBTConverter.UuidValueType.QUEST.writeIds(questIDs));
-        payload.setBoolean("state", false);
-        payload.setInteger("action", 2);
-        NetQuestEdit.sendEdit(payload);
+        NetQuestEdit.requestSetState(questIDs, false);
         DirtyPlayerMarker.markDirty(Minecraft.getMinecraft().thePlayer.getUniqueID());
 
         return true;
@@ -101,11 +95,7 @@ public class ToolboxToolReset implements IToolboxTool {
                     .getKey());
         }
 
-        NBTTagCompound payload = new NBTTagCompound();
-        payload.setTag("questIDs", NBTConverter.UuidValueType.QUEST.writeIds(questIDs));
-        payload.setBoolean("state", false);
-        payload.setInteger("action", 2);
-        NetQuestEdit.sendEdit(payload);
+        NetQuestEdit.requestSetState(questIDs, false);
         DirtyPlayerMarker.markDirty(Minecraft.getMinecraft().thePlayer.getUniqueID());
 
         return true;

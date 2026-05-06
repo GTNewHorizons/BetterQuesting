@@ -90,13 +90,7 @@ public class ToolboxToolNew implements IToolboxTool {
         }
 
         // Sync Quest
-        NBTTagCompound quPayload = new NBTTagCompound();
-        NBTTagList qdList = new NBTTagList();
-        NBTTagCompound qTag = NBTConverter.UuidValueType.QUEST.writeId(qID);
-        qdList.appendTag(qTag);
-        quPayload.setTag("data", qdList);
-        quPayload.setInteger("action", 3);
-        NetQuestEdit.sendEdit(quPayload);
+        NetQuestEdit.requestCreate(qID);
 
         // Sync Line
         NBTTagCompound chPayload = new NBTTagCompound();

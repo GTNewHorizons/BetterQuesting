@@ -262,30 +262,13 @@ public class GuiQuestLineAddRemove extends GuiScreenCanvas implements IPEventLis
         } else if (btn.getButtonID() == 4) // Delete
         {
             Map.Entry<UUID, IQuest> entry = ((PanelButtonStorage<Map.Entry<UUID, IQuest>>) btn).getStoredValue();
-            NBTTagCompound payload = new NBTTagCompound();
-            payload.setTag(
-                "questIDs",
-                NBTConverter.UuidValueType.QUEST.writeIds(Collections.singletonList(entry.getKey())));
-            payload.setInteger("action", 1);
-            NetQuestEdit.sendEdit(payload);
+            NetQuestEdit.requestDelete(Collections.singletonList(entry.getKey()));
         } else if (btn.getButtonID() == 5) // New
         {
-            NBTTagCompound payload = new NBTTagCompound();
-            NBTTagList dataList = new NBTTagList();
-            NBTTagCompound entry = new NBTTagCompound();
-            dataList.appendTag(entry);
-            payload.setTag("data", dataList);
-            payload.setInteger("action", 3);
-            NetQuestEdit.sendEdit(payload);
+            NetQuestEdit.requestCreate();
         } else if (btn.getButtonID() == 6) // Error resolve
         {
-            NBTTagCompound payload = new NBTTagCompound();
-            payload.setTag(
-                "questIDs",
-                NBTConverter.UuidValueType.QUEST
-                    .writeIds(Collections.singletonList(((PanelButtonStorage<UUID>) btn).getStoredValue())));
-            payload.setInteger("action", 1);
-            NetQuestEdit.sendEdit(payload);
+            NetQuestEdit.requestDelete(Collections.singletonList(((PanelButtonStorage<UUID>) btn).getStoredValue()));
         }
     }
 
