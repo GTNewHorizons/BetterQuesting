@@ -287,7 +287,7 @@ public class NetQuestEdit {
             NBTTagCompound entry = data.getCompoundTagAt(i);
             // Previous sendEdit API allowed to not pass a quest id
             UUID questID = NBTConverter.UuidValueType.QUEST.tryReadId(entry)
-                    .orElseGet(QuestDatabase.INSTANCE::generateKey);
+                .orElseGet(QuestDatabase.INSTANCE::generateKey);
             IQuest quest = QuestDatabase.INSTANCE.createNew(questID);
 
             questIDs.add(questID);
