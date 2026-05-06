@@ -21,6 +21,7 @@ import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 
 import betterquesting.api.api.QuestingAPI;
+import betterquesting.api.enums.EnumLogic;
 import betterquesting.api.events.DatabaseEvent;
 import betterquesting.api.events.DatabaseEvent.DBType;
 import betterquesting.api.network.QuestingPacket;
@@ -238,24 +239,19 @@ public class NetQuestEdit {
 
             quest.setComplete(playerID, 0);
 
-            int done = 0;
+            EnumLogic logic = quest.getProperty(NativeProps.LOGIC_TASK);
+            int tasksCount = quest.getTasks()
+                .size();
+            int completedTasksCount = 0;
 
-            if (!quest.getProperty(NativeProps.LOGIC_TASK)
-                .getResult(
-                    done,
-                    quest.getTasks()
-                        .size())) {
+            if (!logic.getResult(completedTasksCount, tasksCount)) {
                 for (DBEntry<ITask> task : quest.getTasks()
                     .getEntries()) {
                     task.getValue()
                         .setComplete(playerID);
-                    done++;
+                    completedTasksCount++;
 
-                    if (quest.getProperty(NativeProps.LOGIC_TASK)
-                        .getResult(
-                            done,
-                            quest.getTasks()
-                                .size())) {
+                    if (logic.getResult(completedTasksCount, tasksCount)) {
                         break; // Only complete enough quests to claim the reward
                     }
                 }
