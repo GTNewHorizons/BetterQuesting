@@ -66,7 +66,7 @@ public class ToolboxToolComplete implements IToolboxTool {
                     .getKey());
         }
 
-        NetQuestEdit.requestSetState(questIDs, true);
+        NetQuestEdit.requestComplete(questIDs, true);
 
         return true;
     }
@@ -97,7 +97,7 @@ public class ToolboxToolComplete implements IToolboxTool {
                     .getKey());
         }
 
-        NetQuestEdit.requestSetState(questIDs, true);
+        NetQuestEdit.requestComplete(questIDs, true);
 
         return true;
     }
