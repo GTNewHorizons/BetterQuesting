@@ -50,11 +50,12 @@ public class NetQuestEdit {
     private static final int ACTION_COMPLETE = 2;
     private static final int ACTION_CREATE = 3;
 
+    // Old key strings are kept for API compat
     private static final String TAG_ACTION = "action";
-    private static final String TAG_QUEST_LIST = "questList";
-    private static final String TAG_QUEST = "quest";
+    private static final String TAG_QUEST_LIST = "data";
+    private static final String TAG_QUEST = "config";
     private static final String TAG_QUEST_IDS = "questIDs";
-    private static final String TAG_COMPLETE = "complete";
+    private static final String TAG_COMPLETE = "state";
 
     public static void registerHandler() {
         PacketTypeRegistry.INSTANCE.registerServerHandler(ID_NAME, NetQuestEdit::onServer);
@@ -62,6 +63,15 @@ public class NetQuestEdit {
         if (BetterQuesting.proxy.isClient()) {
             PacketTypeRegistry.INSTANCE.registerClientHandler(ID_NAME, NetQuestEdit::onClient);
         }
+    }
+
+    /**
+     * @deprecated use request methods instead. This method is kept for API compat
+     */
+    @Deprecated
+    @SideOnly(Side.CLIENT)
+    public static void sendEdit(NBTTagCompound payload) {
+        PacketSender.INSTANCE.sendToServer(new QuestingPacket(ID_NAME, payload));
     }
 
     @SideOnly(Side.CLIENT)
