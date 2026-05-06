@@ -76,7 +76,7 @@ public class QuestCommandComplete extends QuestCommandBase {
         if (args[1].trim()
             .equalsIgnoreCase("all")) {
             ArrayList<UUID> allIds = new ArrayList<>(QuestDatabase.INSTANCE.keySet());
-            NetQuestEdit.setQuestStates(allIds, true, uuid);
+            NetQuestEdit.completeQuests(allIds, true, uuid);
             sender
                 .addChatMessage(new ChatComponentTranslation("betterquesting.cmd.complete_all", allIds.size(), pName));
             return;
@@ -89,7 +89,7 @@ public class QuestCommandComplete extends QuestCommandBase {
             throw getException(command);
         }
 
-        NetQuestEdit.setQuestStates(Collections.singletonList(id), true, uuid);
+        NetQuestEdit.completeQuests(Collections.singletonList(id), true, uuid);
         sender.addChatMessage(
             new ChatComponentTranslation(
                 "betterquesting.cmd.complete",

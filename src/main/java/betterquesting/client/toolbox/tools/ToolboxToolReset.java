@@ -52,7 +52,7 @@ public class ToolboxToolReset implements IToolboxTool {
                     .getKey());
         }
 
-        NetQuestEdit.requestSetState(questIDs, false);
+        NetQuestEdit.requestComplete(questIDs, false);
         DirtyPlayerMarker.markDirty(Minecraft.getMinecraft().thePlayer.getUniqueID());
 
         return true;
@@ -95,7 +95,7 @@ public class ToolboxToolReset implements IToolboxTool {
                     .getKey());
         }
 
-        NetQuestEdit.requestSetState(questIDs, false);
+        NetQuestEdit.requestComplete(questIDs, false);
         DirtyPlayerMarker.markDirty(Minecraft.getMinecraft().thePlayer.getUniqueID());
 
         return true;
