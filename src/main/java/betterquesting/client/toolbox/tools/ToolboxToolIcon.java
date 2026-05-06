@@ -1,9 +1,8 @@
 package betterquesting.client.toolbox.tools;
 
 import java.util.Collections;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import net.minecraft.client.Minecraft;
@@ -58,7 +57,7 @@ public class ToolboxToolIcon implements IToolboxTool {
     private void changeIcon(List<PanelButtonQuest> list, BigItemStack refItem) {
         Minecraft mc = Minecraft.getMinecraft();
         mc.displayGuiScreen(new GuiItemSelection(mc.currentScreen, refItem, value -> {
-            Map<UUID, IQuest> questsToEdit = new LinkedHashMap<>();
+            HashMap<UUID, IQuest> questsToEdit = new HashMap<>();
             for (PanelButtonQuest b : list) {
                 b.getStoredValue()
                     .getValue()

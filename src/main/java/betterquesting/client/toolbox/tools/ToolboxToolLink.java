@@ -1,9 +1,8 @@
 package betterquesting.client.toolbox.tools;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import betterquesting.api.client.toolbox.IToolboxTool;
@@ -111,7 +110,7 @@ public class ToolboxToolLink implements IToolboxTool {
                     .getValue();
                 boolean mod2 = false;
 
-                Map<UUID, IQuest> questsToEdit = new LinkedHashMap<>();
+                HashMap<UUID, IQuest> questsToEdit = new HashMap<>();
 
                 for (PanelButtonQuest b1 : linking) {
                     IQuest q1 = b1.getStoredValue()

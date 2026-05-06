@@ -185,8 +185,10 @@ public class ToolboxToolCopy implements IToolboxTool {
             questCopy.setRequirements(reqsCopy);
             for (UUID oldId : quest.getRequirements()) {
                 UUID newId = remappedIDs.get(oldId);
-                IQuest.RequirementType requirementType = quest.getRequirementType(oldId);
-                questCopy.setRequirementType(newId, requirementType);
+                if (newId != null) {
+                    IQuest.RequirementType requirementType = quest.getRequirementType(oldId);
+                    questCopy.setRequirementType(newId, requirementType);
+                }
             }
 
             questsToCreate.put(newQuestId, questCopy);
