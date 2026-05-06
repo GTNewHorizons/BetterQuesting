@@ -50,7 +50,7 @@ public class NetTaskCheckbox {
         Optional<UUID> questId = NBTConverter.UuidValueType.QUEST.tryReadId(payload);
         int taskId = payload.hasKey(TAG_TASK_ID, Constants.NBT.TAG_ANY_NUMERIC) ? payload.getInteger(TAG_TASK_ID) : -1;
 
-        if (questId.isEmpty() || taskId < 0) {
+        if (!questId.isPresent() || taskId < 0) {
             return;
         }
 
