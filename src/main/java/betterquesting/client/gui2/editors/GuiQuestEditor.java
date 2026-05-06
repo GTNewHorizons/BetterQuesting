@@ -1,10 +1,10 @@
 package betterquesting.client.gui2.editors;
 
+import java.util.Collections;
 import java.util.UUID;
 
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
 
 import org.lwjgl.input.Keyboard;
 
@@ -14,7 +14,6 @@ import betterquesting.api.enums.EnumLogic;
 import betterquesting.api.enums.EnumQuestVisibility;
 import betterquesting.api.properties.NativeProps;
 import betterquesting.api.questing.IQuest;
-import betterquesting.api.utils.NBTConverter;
 import betterquesting.api2.client.gui.GuiScreenCanvas;
 import betterquesting.api2.client.gui.controls.IPanelButton;
 import betterquesting.api2.client.gui.controls.PanelButton;
@@ -288,13 +287,6 @@ public class GuiQuestEditor extends GuiScreenCanvas implements IPEventListener, 
     }
 
     private void SendChanges() {
-        NBTTagCompound payload = new NBTTagCompound();
-        NBTTagList dataList = new NBTTagList();
-        NBTTagCompound entry = NBTConverter.UuidValueType.QUEST.writeId(questID);
-        entry.setTag("config", quest.writeToNBT(new NBTTagCompound()));
-        dataList.appendTag(entry);
-        payload.setTag("data", dataList);
-        payload.setInteger("action", 0);
-        NetQuestEdit.sendEdit(payload);
+        NetQuestEdit.requestEdit(Collections.singletonMap(questID, quest));
     }
 }
