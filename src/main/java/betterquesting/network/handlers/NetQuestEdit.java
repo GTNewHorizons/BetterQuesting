@@ -177,10 +177,10 @@ public class NetQuestEdit {
         for (int i = 0; i < data.tagCount(); i++) {
             NBTTagCompound entry = data.getCompoundTagAt(i);
             UUID questID = NBTConverter.UuidValueType.QUEST.readId(entry);
-            questIDs.add(questID);
-
             IQuest quest = QuestDatabase.INSTANCE.get(questID);
+
             if (quest != null) {
+                questIDs.add(questID);
                 quest.readFromNBT(entry.getCompoundTag(TAG_QUEST));
             }
         }
@@ -233,29 +233,30 @@ public class NetQuestEdit {
 
             if (quest.isComplete(playerID)) {
                 quest.setClaimed(playerID, 0);
-            } else {
-                quest.setComplete(playerID, 0);
+                continue;
+            }
 
-                int done = 0;
+            quest.setComplete(playerID, 0);
 
-                if (!quest.getProperty(NativeProps.LOGIC_TASK)
-                    .getResult(
-                        done,
-                        quest.getTasks()
-                            .size())) {
-                    for (DBEntry<ITask> task : quest.getTasks()
-                        .getEntries()) {
-                        task.getValue()
-                            .setComplete(playerID);
-                        done++;
+            int done = 0;
 
-                        if (quest.getProperty(NativeProps.LOGIC_TASK)
-                            .getResult(
-                                done,
-                                quest.getTasks()
-                                    .size())) {
-                            break; // Only complete enough quests to claim the reward
-                        }
+            if (!quest.getProperty(NativeProps.LOGIC_TASK)
+                .getResult(
+                    done,
+                    quest.getTasks()
+                        .size())) {
+                for (DBEntry<ITask> task : quest.getTasks()
+                    .getEntries()) {
+                    task.getValue()
+                        .setComplete(playerID);
+                    done++;
+
+                    if (quest.getProperty(NativeProps.LOGIC_TASK)
+                        .getResult(
+                            done,
+                            quest.getTasks()
+                                .size())) {
+                        break; // Only complete enough quests to claim the reward
                     }
                 }
             }
@@ -277,16 +278,10 @@ public class NetQuestEdit {
         List<UUID> questIDs = new ArrayList<>();
         for (int i = 0; i < data.tagCount(); i++) {
             NBTTagCompound entry = data.getCompoundTagAt(i);
+            UUID questID = NBTConverter.UuidValueType.QUEST.readId(entry);
+            IQuest quest = QuestDatabase.INSTANCE.createNew(questID);
 
-            UUID questID = NBTConverter.UuidValueType.QUEST.tryReadId(entry)
-                .orElseGet(QuestDatabase.INSTANCE::generateKey);
             questIDs.add(questID);
-
-            IQuest quest = QuestDatabase.INSTANCE.get(questID);
-            if (quest == null) {
-                quest = QuestDatabase.INSTANCE.createNew(questID);
-            }
-
             if (entry.hasKey(TAG_QUEST, Constants.NBT.TAG_COMPOUND)) {
                 quest.readFromNBT(entry.getCompoundTag(TAG_QUEST));
             }
