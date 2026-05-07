@@ -52,12 +52,62 @@ public class NetChapterEdit {
         }
     }
 
-    // TODO: Make these use proper methods for each action rather than directly assembling the payload
+    // region request from client
+    /** @deprecated use request methods instead. Kept for API compat */
+    @Deprecated
     @SideOnly(Side.CLIENT)
     public static void sendEdit(NBTTagCompound payload) {
         PacketSender.INSTANCE.sendToServer(new QuestingPacket(ID_NAME, payload));
     }
 
+    @SideOnly(Side.CLIENT)
+    public static void requestEdit(UUID chapterId, IQuestLine chapter) {
+        requestEdit(chapterId, chapter.writeToNBT(new NBTTagCompound(), null));
+    }
+
+    @SideOnly(Side.CLIENT)
+    public static void requestEdit(UUID chapterId, NBTTagCompound chapterNBT) {
+        NBTTagList chapters = new NBTTagList();
+        NBTTagCompound chapterEntry = new NBTTagCompound();
+        NBTConverter.UuidValueType.QUEST_LINE.writeId(chapterId, chapterNBT);
+        chapterEntry.setTag(TAG_QUEST_LINE, chapterNBT);
+        chapters.appendTag(chapterEntry);
+
+        NBTTagCompound payload = new NBTTagCompound();
+        payload.setInteger(TAG_ACTION, ACTION_EDIT);
+        payload.setTag(TAG_QUEST_LINES, chapters);
+        PacketSender.INSTANCE.sendToServer(new QuestingPacket(ID_NAME, payload));
+    }
+
+    @SideOnly(Side.CLIENT)
+    public static void requestDelete(Collection<UUID> chapterIds) {
+        NBTTagCompound payload = new NBTTagCompound();
+        payload.setInteger(TAG_ACTION, ACTION_DELETE);
+        payload.setTag(TAG_QUEST_LINE_IDS, NBTConverter.UuidValueType.QUEST_LINE.writeIds(chapterIds));
+        PacketSender.INSTANCE.sendToServer(new QuestingPacket(ID_NAME, payload));
+    }
+
+    @SideOnly(Side.CLIENT)
+    public static void requestReorder(Collection<UUID> chapterIds) {
+        NBTTagCompound payload = new NBTTagCompound();
+        payload.setInteger(TAG_ACTION, ACTION_REORDER);
+        payload.setTag(TAG_QUEST_LINE_IDS, NBTConverter.UuidValueType.QUEST_LINE.writeIds(chapterIds));
+        PacketSender.INSTANCE.sendToServer(new QuestingPacket(ID_NAME, payload));
+    }
+
+    @SideOnly(Side.CLIENT)
+    public static void requestCreate() {
+        NBTTagList chapters = new NBTTagList();
+        chapters.appendTag(new NBTTagCompound());
+
+        NBTTagCompound payload = new NBTTagCompound();
+        payload.setInteger(TAG_ACTION, ACTION_CREATE);
+        payload.setTag(TAG_QUEST_LINES, chapters);
+        PacketSender.INSTANCE.sendToServer(new QuestingPacket(ID_NAME, payload));
+    }
+    // endregion request
+
+    // region handle from server
     private static void onServer(Tuple2<NBTTagCompound, EntityPlayerMP> message) {
         NBTTagCompound payload = message.getFirst();
         EntityPlayerMP sender = message.getSecond();
@@ -170,4 +220,5 @@ public class NetChapterEdit {
             }
         }
     }
+    // endregion handle
 }

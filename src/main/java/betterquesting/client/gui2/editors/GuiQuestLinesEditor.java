@@ -1,26 +1,21 @@
 package betterquesting.client.gui2.editors;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
 
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.util.vector.Vector4f;
-
-import com.google.common.collect.Maps;
 
 import betterquesting.api.client.gui.misc.INeedsRefresh;
 import betterquesting.api.client.gui.misc.IVolatileScreen;
 import betterquesting.api.enums.EnumQuestVisibility;
 import betterquesting.api.properties.NativeProps;
 import betterquesting.api.questing.IQuestLine;
-import betterquesting.api.utils.NBTConverter;
 import betterquesting.api2.client.gui.GuiScreenCanvas;
 import betterquesting.api2.client.gui.controls.IPanelButton;
 import betterquesting.api2.client.gui.controls.PanelButton;
@@ -186,7 +181,7 @@ public class GuiQuestLinesEditor extends GuiScreenCanvas implements IPEventListe
                 mc.displayGuiScreen(
                     new GuiItemSelection(GuiQuestLinesEditor.this, selected.getProperty(NativeProps.ICON), value -> {
                         selected.setProperty(NativeProps.ICON, value);
-                        SendChanges(Maps.immutableEntry(selID, selected));
+                        NetChapterEdit.requestEdit(selID, selected);
                     }));
             }
         };
@@ -286,7 +281,7 @@ public class GuiQuestLinesEditor extends GuiScreenCanvas implements IPEventListe
             }
 
             if (changed) {
-                SendChanges(Maps.immutableEntry(selID, selected));
+                NetChapterEdit.requestEdit(selID, selected);
             }
         }
 
@@ -309,13 +304,7 @@ public class GuiQuestLinesEditor extends GuiScreenCanvas implements IPEventListe
             mc.displayGuiScreen(this.parent);
         } else if (btn.getButtonID() == 1) // New Quest Line
         {
-            NBTTagCompound payload = new NBTTagCompound();
-            NBTTagList dataList = new NBTTagList();
-            NBTTagCompound entry = new NBTTagCompound();
-            dataList.appendTag(entry);
-            payload.setTag("data", dataList);
-            payload.setInteger("action", 3);
-            NetChapterEdit.sendEdit(payload);
+            NetChapterEdit.requestCreate();
         } else if (btn.getButtonID() == 2) // Import
         {
             mc.displayGuiScreen(new GuiImporters(this));
@@ -344,14 +333,9 @@ public class GuiQuestLinesEditor extends GuiScreenCanvas implements IPEventListe
             reloadList();
         } else if (btn.getButtonID() == 6 && btn instanceof PanelButtonStorage) // Delete Quest
         {
-            Map.Entry<UUID, IQuestLine> entry = ((PanelButtonStorage<Map.Entry<UUID, IQuestLine>>) btn)
-                .getStoredValue();
-            NBTTagCompound payload = new NBTTagCompound();
-            payload.setTag(
-                "questLineIDs",
-                NBTConverter.UuidValueType.QUEST_LINE.writeIds(Collections.singletonList(entry.getKey())));
-            payload.setInteger("action", 1);
-            NetChapterEdit.sendEdit(payload);
+            UUID questLineId = ((PanelButtonStorage<Map.Entry<UUID, IQuestLine>>) btn).getStoredValue()
+                .getKey();
+            NetChapterEdit.requestDelete(Collections.singletonList(questLineId));
         } else if (btn.getButtonID() == 7 && btn instanceof PanelButtonStorage) // Move Up
         {
             Map.Entry<UUID, IQuestLine> entry = ((PanelButtonStorage<Map.Entry<UUID, IQuestLine>>) btn)
@@ -366,7 +350,7 @@ public class GuiQuestLinesEditor extends GuiScreenCanvas implements IPEventListe
                 if (selected != null) {
                     tfDesc.setText(value);
                     selected.setProperty(NativeProps.DESC, value);
-                    SendChanges(Maps.immutableEntry(selID, selected));
+                    NetChapterEdit.requestEdit(selID, selected);
                 }
             }));
         }
@@ -399,21 +383,6 @@ public class GuiQuestLinesEditor extends GuiScreenCanvas implements IPEventListe
         }
     }
 
-    private void SendChanges(Map.Entry<UUID, IQuestLine> chapter) {
-        NBTTagCompound payload = new NBTTagCompound();
-        NBTTagList dataList = new NBTTagList();
-        NBTTagCompound entry = new NBTTagCompound();
-        NBTConverter.UuidValueType.QUEST_LINE.writeId(chapter.getKey(), entry);
-        entry.setTag(
-            "config",
-            chapter.getValue()
-                .writeToNBT(new NBTTagCompound(), null));
-        dataList.appendTag(entry);
-        payload.setTag("data", dataList);
-        payload.setInteger("action", 0);
-        NetChapterEdit.sendEdit(payload);
-    }
-
     private void SendReorder(int indexToShift) {
         if (indexToShift <= 0) {
             return;
@@ -422,19 +391,16 @@ public class GuiQuestLinesEditor extends GuiScreenCanvas implements IPEventListe
         if (indexToShift >= entries.size()) {
             return;
         }
-        UUID[] chapterIDs = new UUID[entries.size()];
-        for (int i = 0; i < entries.size(); i++) {
-            chapterIDs[i] = entries.get(i)
-                .getKey();
+
+        ArrayList<UUID> chapterIDs = new ArrayList<>(entries.size());
+        for (Map.Entry<UUID, IQuestLine> entry : entries) {
+            chapterIDs.add(entry.getKey());
         }
 
-        UUID tmp = chapterIDs[indexToShift];
-        chapterIDs[indexToShift] = chapterIDs[indexToShift - 1];
-        chapterIDs[indexToShift - 1] = tmp;
+        UUID tmp = chapterIDs.get(indexToShift);
+        chapterIDs.set(indexToShift, chapterIDs.get(indexToShift - 1));
+        chapterIDs.set(indexToShift - 1, tmp);
 
-        NBTTagCompound payload = new NBTTagCompound();
-        payload.setTag("questLineIDs", NBTConverter.UuidValueType.QUEST_LINE.writeIds(Arrays.asList(chapterIDs)));
-        payload.setInteger("action", 2);
-        NetChapterEdit.sendEdit(payload);
+        NetChapterEdit.requestReorder(chapterIDs);
     }
 }
