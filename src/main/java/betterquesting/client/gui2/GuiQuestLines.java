@@ -113,9 +113,9 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
     private CanvasQuestLine cvQuest;
 
     // Keep these separate for now
-    private static CanvasHoverTray cvChapterTray;
-    private static CanvasHoverTray cvDescTray;
-    private static CanvasHoverTray cvFrame;
+    private CanvasHoverTray cvChapterTray;
+    private CanvasHoverTray cvDescTray;
+    private CanvasHoverTray cvFrame;
 
     private CanvasScrolling cvDesc;
     private PanelVScrollBar scDesc;
@@ -179,11 +179,7 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
 
         boolean canEdit = QuestingAPI.getAPI(ApiReference.SETTINGS)
             .canUserEdit(mc.thePlayer);
-        boolean preOpen = false;
-        // First time load, if tray locked - let the tray open
-        if (trayLock && cvChapterTray == null && cvDescTray == null) preOpen = true;
-        if (trayLock && cvChapterTray != null && cvChapterTray.isTrayOpen()) preOpen = true;
-        if (trayLock && cvDescTray != null && cvDescTray.isTrayOpen()) preOpen = true;
+        boolean preOpen = trayLock;
 
         PEventBroadcaster.INSTANCE.register(this, PEventButton.class);
 
@@ -260,9 +256,9 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
 
         // === TRAY STATE ===
 
-        boolean chapterTrayOpened = trayLock && cvChapterTray != null && cvChapterTray.isTrayOpen();
+        boolean chapterTrayOpened = false;
         boolean descTrayOpened = trayLock && cvDescTray != null && cvDescTray.isTrayOpen();
-        if (preOpen && !chapterTrayOpened && !descTrayOpened) chapterTrayOpened = true;
+        if (preOpen && !descTrayOpened) chapterTrayOpened = true;
 
         // === CHAPTER TRAY ===
 
@@ -489,6 +485,38 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
                 QuestTranslation.translate("betterquesting.btn.always_draw_implicit"),
                 QuestTranslation.translate("betterquesting.tooltip.cycle." + alwaysDrawImplicit)));
         cvBackground.addPanel(btnViewMode);
+        yOff += 16;
+
+        // Dependency Arrow Button
+        final PanelButton btnDependencyArrows = new PanelButton(
+            new GuiTransform(GuiAlign.TOP_LEFT, 8, yOff, 32, 16, -2),
+            -1,
+            "");
+        final Runnable updateDependencyArrowButton = () -> {
+            btnDependencyArrows.setIcon(
+                PresetIcon.ICON_TWO_WAY.getTexture(),
+                BQ_Settings.showDependencyArrows ? new GuiColorStatic(0xFFFFFFFF) : new GuiColorStatic(0xFF444444),
+                0);
+            btnDependencyArrows.setTooltip(
+                Arrays.asList(
+                    QuestTranslation.translate("betterquesting.btn.show_dependency_arrows"),
+                    QuestTranslation.translate("betterquesting.tooltip.cycle." + BQ_Settings.showDependencyArrows)));
+        };
+        updateDependencyArrowButton.run();
+        btnDependencyArrows.setClickAction((b) -> {
+            BQ_Settings.showDependencyArrows = !BQ_Settings.showDependencyArrows;
+            ConfigHandler.config.get(
+                Configuration.CATEGORY_GENERAL,
+                "Show dependency arrows",
+                false,
+                "If true, quest dependency lines will render directional arrows. This property can be changed by the GUI.")
+                .set(BQ_Settings.showDependencyArrows);
+            ConfigHandler.config.save();
+
+            updateDependencyArrowButton.run();
+            refreshGui();
+        });
+        cvBackground.addPanel(btnDependencyArrows);
         yOff += 16;
 
         // Quest Color Button
