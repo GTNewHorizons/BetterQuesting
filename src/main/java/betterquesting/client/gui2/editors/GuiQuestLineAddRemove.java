@@ -157,14 +157,14 @@ public class GuiQuestLineAddRemove extends GuiScreenCanvas implements IPEventLis
                     entry);
                 btnAdd.setIcon(PresetIcon.ICON_POSITIVE.getTexture());
                 btnAdd.setActive(questLine != null && questLine.get(entry.getKey()) == null);
-                this.addPanel(btnAdd);
+                this.addBatchPanel(btnAdd);
 
                 PanelButtonStorage<Map.Entry<UUID, IQuest>> btnEdit = new PanelButtonStorage<>(
                     new GuiRectangle(16, index * 16, width - 32, 16, 0),
                     1,
                     QuestTranslation.translateQuestName(entry),
                     entry);
-                this.addPanel(btnEdit);
+                this.addBatchPanel(btnEdit);
 
                 PanelButtonStorage<Map.Entry<UUID, IQuest>> btnDel = new PanelButtonStorage<>(
                     new GuiRectangle(width - 16, index * 16, 16, 16, 0),
@@ -172,7 +172,7 @@ public class GuiQuestLineAddRemove extends GuiScreenCanvas implements IPEventLis
                     "",
                     entry);
                 btnDel.setIcon(PresetIcon.ICON_TRASH.getTexture());
-                this.addPanel(btnDel);
+                this.addBatchPanel(btnDel);
 
                 return true;
             }

@@ -132,7 +132,7 @@ public class GuiTaskEditor extends GuiScreenCanvas implements IPEventListener, I
 
             @Override
             protected boolean addResult(IFactoryData<ITask, NBTTagCompound> entry, int index, int cachedWidth) {
-                this.addPanel(
+                this.addBatchPanel(
                     new PanelButtonStorage<>(
                         new GuiRectangle(0, index * 16, cachedWidth, 16, 0),
                         1,
