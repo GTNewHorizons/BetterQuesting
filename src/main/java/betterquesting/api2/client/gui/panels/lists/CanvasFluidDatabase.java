@@ -69,7 +69,7 @@ public class CanvasFluidDatabase extends CanvasSearch<FluidStack, Fluid> {
         int x = (index % (cachedWidth / 18)) * 18;
         int y = (index / (cachedWidth / 18)) * 18;
 
-        this.addPanel(new PanelFluidSlot(new GuiRectangle(x, y, 18, 18, 0), btnId, stack));
+        this.addBatchPanel(new PanelFluidSlot(new GuiRectangle(x, y, 18, 18, 0), btnId, stack));
 
         return true;
     }

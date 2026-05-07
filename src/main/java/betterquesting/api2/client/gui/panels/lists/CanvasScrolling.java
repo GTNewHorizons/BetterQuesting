@@ -1,8 +1,11 @@
 package betterquesting.api2.client.gui.panels.lists;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
 
@@ -54,6 +57,8 @@ public class CanvasScrolling implements IGuiCanvas {
     // Enables the auto-disabling panels outside the cropped region. Useful for very large lists
     private boolean useBlocking = true;
     private final CanvasCullingManager cullingManager = new CanvasCullingManager();
+
+    private boolean requiresSorting;
 
     public CanvasScrolling(IGuiRect rect) {
         this.transform = rect;
@@ -442,11 +447,43 @@ public class CanvasScrolling implements IGuiCanvas {
         addCulledPanel(panel, true);
     }
 
+    public void addCulledPanels(Collection<IGuiPanel> panels, boolean useCulling) {
+        if (panels == null) return;
+        panels = panels.stream()
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
+        guiPanels.addAll(panels);
+
+        for (IGuiPanel panel : panels) {
+            if (requiresSorting || panel.getTransform()
+                .getDepth()
+                != guiPanels.get(0)
+                    .getTransform()
+                    .getDepth()) {
+                requiresSorting = true;
+            }
+            cullingManager.addPanel(panel, useCulling);
+            panel.initPanel();
+        }
+
+        if (requiresSorting) {
+            guiPanels.sort(ComparatorGuiDepth.INSTANCE);
+        }
+        this.refreshScrollBounds();
+    }
+
     public void addCulledPanel(IGuiPanel panel, boolean useCulling) {
         if (panel == null || guiPanels.contains(panel)) return;
 
         guiPanels.add(panel);
-        guiPanels.sort(ComparatorGuiDepth.INSTANCE);
+        if (requiresSorting || panel.getTransform()
+            .getDepth()
+            != guiPanels.get(0)
+                .getTransform()
+                .getDepth()) {
+            requiresSorting = true;
+            guiPanels.sort(ComparatorGuiDepth.INSTANCE);
+        }
 
         cullingManager.addPanel(panel, useCulling);
 
@@ -560,6 +597,7 @@ public class CanvasScrolling implements IGuiCanvas {
     public void resetCanvas() {
         guiPanels.clear();
         cullingManager.reset();
+        requiresSorting = false;
         refreshScrollBounds();
     }
 

@@ -2,6 +2,7 @@ package betterquesting.api2.client.gui.themes.presets;
 
 import net.minecraft.util.ResourceLocation;
 
+import betterquesting.api2.client.gui.resources.lines.DirectionalLine;
 import betterquesting.api2.client.gui.resources.lines.IGuiLine;
 import betterquesting.api2.client.gui.resources.lines.SimpleLine;
 import betterquesting.api2.client.gui.themes.IThemeRegistry;
@@ -41,10 +42,10 @@ public enum PresetLine {
         reg.setDefaultLine(GRID_MAJOR.key, new SimpleLine());
         reg.setDefaultLine(GRID_MINOR.key, new SimpleLine(2, (short) 43690));
 
-        reg.setDefaultLine(QUEST_LOCKED.key, new SimpleLine());
-        reg.setDefaultLine(QUEST_UNLOCKED.key, new SimpleLine());
-        reg.setDefaultLine(QUEST_PENDING.key, new SimpleLine());
-        reg.setDefaultLine(QUEST_COMPLETE.key, new SimpleLine());
-        reg.setDefaultLine(QUEST_REPEATABLE.key, new SimpleLine());
+        reg.setDefaultLine(QUEST_LOCKED.key, new DirectionalLine());
+        reg.setDefaultLine(QUEST_UNLOCKED.key, new DirectionalLine());
+        reg.setDefaultLine(QUEST_PENDING.key, new DirectionalLine());
+        reg.setDefaultLine(QUEST_COMPLETE.key, new DirectionalLine());
+        reg.setDefaultLine(QUEST_REPEATABLE.key, new DirectionalLine());
     }
 }

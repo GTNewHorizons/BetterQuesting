@@ -45,7 +45,8 @@ public class CanvasEntityDatabase extends CanvasSearch<String, String> {
             return false;
         }
 
-        this.addPanel(new PanelButtonStorage<>(new GuiRectangle(0, index * 16, cachedWidth, 16, 0), btnId, ee, ee));
+        this.addBatchPanel(
+            new PanelButtonStorage<>(new GuiRectangle(0, index * 16, cachedWidth, 16, 0), btnId, ee, ee));
 
         return true;
     }
