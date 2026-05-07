@@ -39,8 +39,7 @@ public class NetCacheSync {
     @SideOnly(Side.CLIENT)
     private static void onClient(NBTTagCompound message) {
         EntityPlayer player = Minecraft.getMinecraft().thePlayer;
-        QuestCache qc = player == null ? null
-            : (QuestCache) player.getExtendedProperties(QuestCache.LOC_QUEST_CACHE.toString());
+        QuestCache qc = (QuestCache) player.getExtendedProperties(QuestCache.LOC_QUEST_CACHE.toString());
         if (qc != null) qc.loadNBTData(message.getCompoundTag("data"));
     }
 }
