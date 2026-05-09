@@ -57,8 +57,62 @@ public class NetPartyAction {
         }
     }
 
+    /** @deprecated use request methods instead. Kept for API compat */
+    @Deprecated
     @SideOnly(Side.CLIENT)
     public static void sendAction(NBTTagCompound payload) {
+        PacketSender.INSTANCE.sendToServer(new QuestingPacket(ID_NAME, payload));
+    }
+
+    @SideOnly(Side.CLIENT)
+    public static void requestCreate(String partyName) {
+        NBTTagCompound payload = new NBTTagCompound();
+        payload.setInteger(TAG_ACTION, ACTION_CREATE);
+        payload.setString(TAG_PARTY_NAME, partyName);
+        PacketSender.INSTANCE.sendToServer(new QuestingPacket(ID_NAME, payload));
+    }
+
+    @SideOnly(Side.CLIENT)
+    public static void requestDelete(int partyID) {
+        NBTTagCompound payload = new NBTTagCompound();
+        payload.setInteger(TAG_ACTION, ACTION_DELETE);
+        payload.setInteger(TAG_PARTY_ID, partyID);
+        PacketSender.INSTANCE.sendToServer(new QuestingPacket(ID_NAME, payload));
+    }
+
+    @SideOnly(Side.CLIENT)
+    public static void requestEdit(int partyID, IParty party) {
+        NBTTagCompound payload = new NBTTagCompound();
+        payload.setInteger(TAG_ACTION, ACTION_EDIT);
+        payload.setInteger(TAG_PARTY_ID, partyID);
+        payload.setTag(TAG_PARTY, party.writeProperties(new NBTTagCompound()));
+        PacketSender.INSTANCE.sendToServer(new QuestingPacket(ID_NAME, payload));
+    }
+
+    @SideOnly(Side.CLIENT)
+    public static void requestInvite(int partyID, String username, long expiry) {
+        NBTTagCompound payload = new NBTTagCompound();
+        payload.setInteger(TAG_ACTION, ACTION_INVITE);
+        payload.setInteger(TAG_PARTY_ID, partyID);
+        payload.setString(TAG_INVITE_USERNAME, username);
+        payload.setLong(TAG_INVITE_EXPIRY_TIME, expiry);
+        PacketSender.INSTANCE.sendToServer(new QuestingPacket(ID_NAME, payload));
+    }
+
+    @SideOnly(Side.CLIENT)
+    public static void requestAcceptInvite(int partyID) {
+        NBTTagCompound payload = new NBTTagCompound();
+        payload.setInteger(TAG_ACTION, ACTION_ACCEPT_INVITE);
+        payload.setInteger(TAG_PARTY_ID, partyID);
+        PacketSender.INSTANCE.sendToServer(new QuestingPacket(ID_NAME, payload));
+    }
+
+    @SideOnly(Side.CLIENT)
+    public static void requestKick(int partyID, String username) {
+        NBTTagCompound payload = new NBTTagCompound();
+        payload.setInteger(TAG_ACTION, ACTION_KICK);
+        payload.setInteger(TAG_PARTY_ID, partyID);
+        payload.setString(TAG_INVITE_USERNAME, username);
         PacketSender.INSTANCE.sendToServer(new QuestingPacket(ID_NAME, payload));
     }
 
