@@ -227,8 +227,7 @@ public class NetQuestEdit {
 
         EntityPlayerMP player = null;
         for (EntityPlayerMP playerMP : server.getConfigurationManager().playerEntityList) {
-            if (playerMP.getGameProfile()
-                .getId()
+            if (QuestingAPI.getQuestingUUID(playerMP)
                 .equals(playerID)) {
                 player = playerMP;
                 break;

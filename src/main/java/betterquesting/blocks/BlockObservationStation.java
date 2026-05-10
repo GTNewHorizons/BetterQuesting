@@ -11,6 +11,7 @@ import net.minecraft.util.IIcon;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
+import betterquesting.api.api.QuestingAPI;
 import betterquesting.core.BetterQuesting;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -41,8 +42,7 @@ public class BlockObservationStation extends BlockContainer {
         TileEntity tile = w.getTileEntity(x, y, z);
         if (!(tile instanceof TileObservationStation)) return;
         TileObservationStation os = (TileObservationStation) tile;
-        os.owner = player.getGameProfile()
-            .getId();
+        os.owner = QuestingAPI.getQuestingUUID(player);
     }
 
     @SideOnly(Side.CLIENT)

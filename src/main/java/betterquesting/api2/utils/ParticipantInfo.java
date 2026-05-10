@@ -57,8 +57,7 @@ public class ParticipantInfo {
             allPlayerIds.add(memberId);
 
             for (EntityPlayerMP playerMP : server.getConfigurationManager().playerEntityList) {
-                if (playerMP.getGameProfile()
-                    .getId()
+                if (QuestingAPI.getQuestingUUID(playerMP)
                     .equals(memberId)) {
                     activePlayers.add(playerMP);
                     activePlayerIds.add(memberId);
