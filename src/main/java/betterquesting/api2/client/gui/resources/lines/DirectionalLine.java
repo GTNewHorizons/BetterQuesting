@@ -2,8 +2,8 @@ package betterquesting.api2.client.gui.resources.lines;
 
 import net.minecraft.util.MathHelper;
 
-import org.joml.Vector2f;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.util.vector.Vector2f;
 
 import betterquesting.api.storage.BQ_Settings;
 import betterquesting.api2.client.gui.misc.IGuiRect;
@@ -44,7 +44,10 @@ public class DirectionalLine implements IGuiLine {
         Vector2f end = new Vector2f(
             endRect.getX() + endRect.getWidth() / 2f,
             endRect.getY() + endRect.getHeight() / 2f);
-        Vector2f diff = new Vector2f(end).sub(start);
+
+        Vector2f diff = new Vector2f();
+        Vector2f.sub(end, start, diff);
+
         float length = diff.length();
         float angle = (float) Math.atan2(diff.y, diff.x);
         color.applyGlColor();
