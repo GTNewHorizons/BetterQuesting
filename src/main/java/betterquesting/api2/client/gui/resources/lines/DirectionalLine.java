@@ -45,8 +45,7 @@ public class DirectionalLine implements IGuiLine {
             endRect.getX() + endRect.getWidth() / 2f,
             endRect.getY() + endRect.getHeight() / 2f);
 
-        Vector2f diff = new Vector2f();
-        Vector2f.sub(end, start, diff);
+        Vector2f diff = Vector2f.sub(end, start, null);
 
         float length = diff.length();
         float angle = (float) Math.atan2(diff.y, diff.x);
