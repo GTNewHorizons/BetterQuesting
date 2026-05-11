@@ -92,15 +92,21 @@ public class NetQuestAction {
     }
 
     public static void claimQuest(Collection<UUID> questIDs, EntityPlayerMP player) {
-        QuestDatabase.INSTANCE.getAll(questIDs)
-            .filter(q -> q.canClaim(player))
-            .forEach(q -> q.claimReward(player));
+        UUID playerID = betterquesting.api.api.QuestingAPI.getQuestingUUID(player);
+
+        QuestDatabase.INSTANCE.filterKeys(questIDs)
+            .forEach((id, q) -> {
+                if (q.canClaim(player)) {
+                    q.claimReward(player);
+                }
+            });
     }
 
     public static void detectQuest(Collection<UUID> questIDs, EntityPlayerMP player) {
+        UUID playerID = betterquesting.api.api.QuestingAPI.getQuestingUUID(player);
+
         QuestDatabase.INSTANCE.filterKeys(questIDs)
-            .values()
-            .forEach(q -> q.detect(player));
+            .forEach((id, q) -> { q.detect(player); });
     }
 
     public static void forceClaimQuest(Collection<UUID> questIDs, EntityPlayerMP player) {

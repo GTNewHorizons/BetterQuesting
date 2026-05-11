@@ -69,7 +69,7 @@ public class PartyInvitations implements INBTPartial<NBTTagList, UUID> {
             }
 
             party.setStatus(uuid, EnumPartyStatus.MEMBER);
-            PartyManager.SyncPartyQuests(party, true);
+            PartyManager.SyncPartyQuests(party, uuid, true);
         }
 
         userInvites.remove(id); // We still remove it regardless of validity
@@ -124,10 +124,10 @@ public class PartyInvitations implements INBTPartial<NBTTagList, UUID> {
 
             EntityPlayerMP player = null;
             for (Object o : server.getConfigurationManager().playerEntityList) {
-                if (((EntityPlayerMP) o).getGameProfile()
-                    .getId()
-                    .equals(userInvites.getKey())) {
-                    player = (EntityPlayerMP) o;
+                EntityPlayerMP onlinePlayer = (EntityPlayerMP) o;
+                if (userInvites.getKey()
+                    .equals(QuestingAPI.getQuestingUUID(onlinePlayer))) {
+                    player = onlinePlayer;
                     break;
                 }
             }

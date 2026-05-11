@@ -16,6 +16,7 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.StringUtils;
 import net.minecraftforge.common.MinecraftForge;
 
+import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.events.DatabaseEvent;
 import betterquesting.api.events.DatabaseEvent.DBType;
 import betterquesting.api.network.QuestingPacket;
@@ -82,10 +83,9 @@ public class NetNameSync {
             for (UUID playerID : party.getMembers()) {
                 EntityPlayerMP p = null;
                 for (Object o : server.getConfigurationManager().playerEntityList) {
-                    if (((EntityPlayerMP) o).getGameProfile()
-                        .getId()
-                        .equals(playerID)) {
-                        p = (EntityPlayerMP) o;
+                    EntityPlayerMP onlinePlayer = (EntityPlayerMP) o;
+                    if (playerID.equals(QuestingAPI.getQuestingUUID(onlinePlayer))) {
+                        p = onlinePlayer;
                         break;
                     }
                 }

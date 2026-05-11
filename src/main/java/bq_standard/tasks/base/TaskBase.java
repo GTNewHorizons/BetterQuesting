@@ -15,8 +15,11 @@ import net.minecraftforge.common.util.Constants;
 
 import org.apache.logging.log4j.Level;
 
+import betterquesting.api.questing.party.IParty;
 import betterquesting.api.questing.tasks.ITask;
+import betterquesting.api2.storage.DBEntry;
 import betterquesting.api2.utils.DirtyPlayerMarker;
+import betterquesting.questing.party.PartyManager;
 import bq_standard.core.BQ_Standard;
 
 public abstract class TaskBase implements ITask {
@@ -25,7 +28,17 @@ public abstract class TaskBase implements ITask {
 
     @Override
     public boolean isComplete(UUID uuid) {
-        return completeUsers.contains(uuid);
+        if (completeUsers.contains(uuid)) return true;
+
+        DBEntry<IParty> party = PartyManager.INSTANCE.getParty(uuid);
+        if (party == null) return false;
+
+        for (UUID member : party.getValue()
+            .getMembers()) {
+            if (completeUsers.contains(member)) return true;
+        }
+
+        return false;
     }
 
     @Override

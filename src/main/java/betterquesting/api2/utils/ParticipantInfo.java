@@ -56,10 +56,11 @@ public class ParticipantInfo {
 
             EntityPlayer pMem = null;
             for (Object o : server.getConfigurationManager().playerEntityList) {
-                if (((EntityPlayer) o).getGameProfile()
-                    .getId()
-                    .equals(mem)) {
-                    pMem = (EntityPlayer) o;
+                if (!(o instanceof EntityPlayer)) continue;
+                EntityPlayer onlinePlayer = (EntityPlayer) o;
+                if (mem.equals(QuestingAPI.getQuestingUUID(onlinePlayer))) {
+                    pMem = onlinePlayer;
+                    break;
                 }
             }
 
