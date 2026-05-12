@@ -1,6 +1,7 @@
 package betterquesting.network.handlers;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 
@@ -12,6 +13,7 @@ import net.minecraft.nbt.NBTTagList;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.common.util.Constants;
 
 import betterquesting.api.events.DatabaseEvent;
 import betterquesting.api.events.DatabaseEvent.DBType;
@@ -32,6 +34,12 @@ public class NetPartySync {
 
     private static final ResourceLocation ID_NAME = new ResourceLocation("betterquesting:party_sync");
 
+    private static final String TAG_PARTY_ID = "partyID";
+    private static final String TAG_PARTY = "config";
+    private static final String TAG_PARTY_LIST = "data";
+    private static final String TAG_MERGE = "merge";
+    private static final String TAG_PARTY_IDS = "partyIDs";
+
     public static void registerHandler() {
         PacketTypeRegistry.INSTANCE.registerServerHandler(ID_NAME, NetPartySync::onServer);
 
@@ -40,50 +48,52 @@ public class NetPartySync {
         }
     }
 
+    /** Syncs party for online members only */
     public static void quickSync(int partyID) {
         MinecraftServer server = FMLCommonHandler.instance()
             .getMinecraftServerInstance();
+
         IParty party = PartyManager.INSTANCE.getValue(partyID);
+        if (party == null) return;
 
-        if (server == null || party == null) return;
+        HashSet<UUID> partyMemberIds = new HashSet<>(party.getMembers());
+        ArrayList<EntityPlayerMP> onlineMembers = new ArrayList<>();
 
-        List<EntityPlayerMP> players = new ArrayList<>();
-        for (UUID uuid : party.getMembers()) {
-            EntityPlayerMP p = null;
-            for (Object o : server.getConfigurationManager().playerEntityList) {
-                if (((EntityPlayerMP) o).getGameProfile()
-                    .getId()
-                    .equals(uuid)) {
-                    p = (EntityPlayerMP) o;
+        for (EntityPlayerMP player : server.getConfigurationManager().playerEntityList) {
+            UUID playerId = player.getGameProfile()
+                .getId();
+            if (partyMemberIds.contains(playerId)) {
+                onlineMembers.add(player);
+                if (onlineMembers.size() == partyMemberIds.size()) {
+                    break;
                 }
             }
-
-            if (p != null) players.add(p);
         }
 
-        sendSync(players.toArray(new EntityPlayerMP[0]), new int[] { partyID });
+        sendSync(onlineMembers.toArray(new EntityPlayerMP[0]), new int[] { partyID });
     }
 
     public static void sendSync(@Nullable EntityPlayerMP[] players, @Nullable int[] partyIDs) {
-        if (partyIDs != null && partyIDs.length <= 0) return;
-        if (players != null && players.length <= 0) return;
+        if (partyIDs != null && partyIDs.length == 0) return;
+        if (players != null && players.length == 0) return;
 
-        NBTTagList dataList = new NBTTagList();
+        NBTTagList partyList = new NBTTagList();
         final List<DBEntry<IParty>> partySubset = partyIDs == null ? PartyManager.INSTANCE.getEntries()
             : PartyManager.INSTANCE.bulkLookup(partyIDs);
+
         for (DBEntry<IParty> party : partySubset) {
             NBTTagCompound entry = new NBTTagCompound();
-            entry.setInteger("partyID", party.getID());
+            entry.setInteger(TAG_PARTY_ID, party.getID());
             entry.setTag(
-                "config",
+                TAG_PARTY,
                 party.getValue()
                     .writeToNBT(new NBTTagCompound()));
-            dataList.appendTag(entry);
+            partyList.appendTag(entry);
         }
 
         NBTTagCompound payload = new NBTTagCompound();
-        payload.setTag("data", dataList);
-        payload.setBoolean("merge", partyIDs != null);
+        payload.setTag(TAG_PARTY_LIST, partyList);
+        payload.setBoolean(TAG_MERGE, partyIDs != null);
 
         if (players == null) {
             PacketSender.INSTANCE.sendToAll(new QuestingPacket(ID_NAME, payload));
@@ -95,30 +105,30 @@ public class NetPartySync {
     @SideOnly(Side.CLIENT)
     public static void requestSync(@Nullable int[] partyIDs) {
         NBTTagCompound payload = new NBTTagCompound();
-        if (partyIDs != null) payload.setIntArray("partyIDs", partyIDs);
+        if (partyIDs != null) payload.setIntArray(TAG_PARTY_IDS, partyIDs);
         PacketSender.INSTANCE.sendToServer(new QuestingPacket(ID_NAME, payload));
     }
 
     private static void onServer(Tuple2<NBTTagCompound, EntityPlayerMP> message) {
         NBTTagCompound payload = message.getFirst();
-        int[] reqIDs = !payload.hasKey("partyIDs") ? null : payload.getIntArray("partyIDs");
+        int[] reqIDs = !payload.hasKey(TAG_PARTY_IDS) ? null : payload.getIntArray(TAG_PARTY_IDS);
         sendSync(new EntityPlayerMP[] { message.getSecond() }, reqIDs);
     }
 
     @SideOnly(Side.CLIENT)
-    private static void onClient(NBTTagCompound message) {
-        NBTTagList data = message.getTagList("data", 10);
-        if (!message.getBoolean("merge")) PartyManager.INSTANCE.reset();
+    private static void onClient(NBTTagCompound payload) {
+        NBTTagList partyList = payload.getTagList(TAG_PARTY_LIST, Constants.NBT.TAG_COMPOUND);
+        if (!payload.getBoolean(TAG_MERGE)) PartyManager.INSTANCE.reset();
 
-        for (int i = 0; i < data.tagCount(); i++) {
-            NBTTagCompound tag = data.getCompoundTagAt(i);
-            if (!tag.hasKey("partyID", 99)) continue;
-            int partyID = tag.getInteger("partyID");
+        for (int i = 0; i < partyList.tagCount(); i++) {
+            NBTTagCompound partyNBT = partyList.getCompoundTagAt(i);
+            if (!partyNBT.hasKey(TAG_PARTY_ID, Constants.NBT.TAG_ANY_NUMERIC)) continue;
 
+            int partyID = partyNBT.getInteger(TAG_PARTY_ID);
             IParty party = PartyManager.INSTANCE.getValue(partyID); // TODO: Send to client side database
             if (party == null) party = PartyManager.INSTANCE.createNew(partyID);
 
-            party.readFromNBT(tag.getCompoundTag("config"));
+            party.readFromNBT(partyNBT.getCompoundTag(TAG_PARTY));
         }
 
         MinecraftForge.EVENT_BUS.post(new DatabaseEvent.Update(DBType.PARTY));

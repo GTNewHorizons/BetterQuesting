@@ -249,13 +249,12 @@ public class EventHandler {
 
     @SubscribeEvent
     public void onEntityLiving(BQLivingUpdateEvent event) {
-        if (!(event.entityLiving instanceof EntityPlayer) || event.entityLiving.worldObj.isRemote
-            || event.entityLiving.ticksExisted % 20 != 0
+        if (event.entityLiving.worldObj.isRemote || event.entityLiving.ticksExisted % 20 != 0
             || QuestingAPI.getAPI(ApiReference.SETTINGS)
                 .getProperty(NativeProps.EDIT_MODE))
             return;
 
-        EntityPlayer player = (EntityPlayer) event.entityLiving;
+        EntityPlayerMP player = event.entityLiving;
         ParticipantInfo pInfo = new ParticipantInfo(player);
 
         for (Map.Entry<UUID, IQuest> entry : QuestingAPI.getAPI(ApiReference.QUEST_DB)

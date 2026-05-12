@@ -8,8 +8,8 @@ import java.util.UUID;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.common.util.Constants;
 
-import betterquesting.api.api.ApiReference;
 import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.network.QuestingPacket;
 import betterquesting.api.questing.IQuest;
@@ -18,6 +18,9 @@ import betterquesting.api.utils.NBTConverter;
 import betterquesting.api2.cache.QuestCache;
 import betterquesting.api2.utils.ParticipantInfo;
 import betterquesting.api2.utils.Tuple2;
+import betterquesting.network.PacketSender;
+import betterquesting.network.PacketTypeRegistry;
+import betterquesting.questing.QuestDatabase;
 import bq_standard.tasks.TaskCheckbox;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -27,49 +30,48 @@ public class NetTaskCheckbox {
 
     private static final ResourceLocation ID_NAME = new ResourceLocation("bq_standard:task_checkbox");
 
+    private static final String TAG_TASK_ID = "taskID";
+
     public static void registerHandler() {
-        QuestingAPI.getAPI(ApiReference.PACKET_REG)
-            .registerServerHandler(ID_NAME, NetTaskCheckbox::onServer);
+        PacketTypeRegistry.INSTANCE.registerServerHandler(ID_NAME, NetTaskCheckbox::onServer);
     }
 
     @SideOnly(Side.CLIENT)
     public static void requestClick(UUID questID, int taskID) {
         NBTTagCompound payload = NBTConverter.UuidValueType.QUEST.writeId(questID);
-        payload.setInteger("taskID", taskID);
-        QuestingAPI.getAPI(ApiReference.PACKET_SENDER)
-            .sendToServer(new QuestingPacket(ID_NAME, payload));
+        payload.setInteger(TAG_TASK_ID, taskID);
+        PacketSender.INSTANCE.sendToServer(new QuestingPacket(ID_NAME, payload));
     }
 
     private static void onServer(Tuple2<NBTTagCompound, EntityPlayerMP> message) {
-        NBTTagCompound data = message.getFirst();
+        NBTTagCompound payload = message.getFirst();
         EntityPlayerMP sender = message.getSecond();
 
-        Optional<UUID> qId = NBTConverter.UuidValueType.QUEST.tryReadId(data);
-        int tId = !data.hasKey("taskID", 99) ? -1 : data.getInteger("taskID");
+        Optional<UUID> questId = NBTConverter.UuidValueType.QUEST.tryReadId(payload);
+        int taskId = payload.hasKey(TAG_TASK_ID, Constants.NBT.TAG_ANY_NUMERIC) ? payload.getInteger(TAG_TASK_ID) : -1;
 
-        if (qId.isPresent() && tId >= 0) {
-            IQuest quest = QuestingAPI.getAPI(ApiReference.QUEST_DB)
-                .get(qId.get());
-            ITask task = quest == null ? null
-                : quest.getTasks()
-                    .getValue(tId);
+        if (!questId.isPresent() || taskId < 0) {
+            return;
+        }
 
-            if (task instanceof TaskCheckbox) {
-                ParticipantInfo pInfo = new ParticipantInfo(sender);
-                List<UUID> playersToMark = QBConfig.fullySyncQuests ? pInfo.ALL_UUIDS
-                    : Collections.singletonList(pInfo.UUID);
-                for (UUID user : playersToMark) {
-                    task.setComplete(user);
-                    if (QuestingAPI.getPlayer(user) == null) {
-                        continue;
-                    }
-                    QuestCache qc = (QuestCache) QuestingAPI.getPlayer(user)
-                        .getExtendedProperties(QuestCache.LOC_QUEST_CACHE.toString());
-                    if (qc != null) {
-                        qc.markQuestDirty(qId.get());
-                    }
-                }
-            }
+        IQuest quest = QuestDatabase.INSTANCE.get(questId.get());
+        if (quest == null) return;
+
+        ITask task = quest.getTasks()
+            .getValue(taskId);
+        if (!(task instanceof TaskCheckbox)) return;
+
+        ParticipantInfo pInfo = new ParticipantInfo(sender);
+        List<UUID> playerIdsToMark = QBConfig.fullySyncQuests ? pInfo.ALL_UUIDS : Collections.singletonList(pInfo.UUID);
+
+        for (UUID playerId : playerIdsToMark) {
+            task.setComplete(playerId);
+
+            EntityPlayerMP player = QuestingAPI.getPlayer(playerId);
+            if (player == null) continue;
+
+            QuestCache qc = (QuestCache) player.getExtendedProperties(QuestCache.LOC_QUEST_CACHE.toString());
+            if (qc != null) qc.markQuestDirty(questId.get());
         }
     }
 }

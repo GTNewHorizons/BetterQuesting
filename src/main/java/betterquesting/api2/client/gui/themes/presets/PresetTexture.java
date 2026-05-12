@@ -46,9 +46,6 @@ public enum PresetTexture {
     SCROLL_H_1("scroll_h_1"),
     SCROLL_H_2("scroll_h_2"),
 
-    METER_V_0("meter_v_0"),
-    METER_V_1("meter_v_1"),
-
     METER_H_0("meter_h_0"),
     METER_H_1("meter_h_1"),
 
@@ -184,13 +181,6 @@ public enum PresetTexture {
         reg.setDefaultTexture(
             SCROLL_H_2.key,
             new SlicedTexture(TX_SIMPLE, new GuiRectangle(24, 20, 8, 8), new GuiPadding(3, 3, 3, 3)));
-
-        reg.setDefaultTexture(
-            METER_V_0.key,
-            new SlicedTexture(TX_SIMPLE, new GuiRectangle(48, 12, 8, 8), new GuiPadding(3, 3, 3, 3)));
-        reg.setDefaultTexture(
-            METER_V_1.key,
-            new SlicedTexture(TX_SIMPLE, new GuiRectangle(56, 12, 8, 8), new GuiPadding(3, 3, 3, 3)));
 
         reg.setDefaultTexture(
             METER_H_0.key,

@@ -4,6 +4,7 @@ import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
+import net.minecraftforge.common.util.Constants;
 
 import betterquesting.api.client.gui.misc.IVolatileScreen;
 import betterquesting.api.misc.ICallback;
@@ -30,23 +31,23 @@ import betterquesting.api2.utils.QuestTranslation;
 public class GuiNbtEditor extends GuiScreenCanvas implements IPEventListener, IVolatileScreen {
 
     private final NBTBase nbt;
-    private final ICallback<NBTTagCompound> comCallback;
-    private final ICallback<NBTTagList> lstCallback;
+    private final ICallback<NBTTagCompound> compoundCallback;
+    private final ICallback<NBTTagList> listCallback;
 
     public GuiNbtEditor(GuiScreen parent, NBTTagCompound tag, ICallback<NBTTagCompound> callback) {
         super(parent);
 
         this.nbt = tag;
-        this.comCallback = callback;
-        this.lstCallback = null;
+        this.compoundCallback = callback;
+        this.listCallback = null;
     }
 
     public GuiNbtEditor(GuiScreen parent, NBTTagList tag, ICallback<NBTTagList> callback) {
         super(parent);
 
         this.nbt = tag;
-        this.comCallback = null;
-        this.lstCallback = callback;
+        this.compoundCallback = null;
+        this.listCallback = callback;
     }
 
     public void initPanel() {
@@ -68,14 +69,14 @@ public class GuiNbtEditor extends GuiScreenCanvas implements IPEventListener, IV
 
         PanelTextBox txTitle = new PanelTextBox(
             new GuiTransform(GuiAlign.TOP_EDGE, new GuiPadding(0, 16, 0, -32), 0),
-            QuestTranslation
-                .translate(nbt.getId() == 9 ? "betterquesting.title.json_array" : "betterquesting.title.json_object"))
-                    .setAlignment(1);
+            QuestTranslation.translate(
+                nbt.getId() == Constants.NBT.TAG_LIST ? "betterquesting.title.json_array"
+                    : "betterquesting.title.json_object")).setAlignment(1);
         txTitle.setColor(PresetColor.TEXT_HEADER.getColor());
         cvBackground.addPanel(txTitle);
 
         PanelScrollingNBT pnEdit;
-        if (nbt.getId() == 10) {
+        if (nbt.getId() == Constants.NBT.TAG_COMPOUND) {
             pnEdit = new PanelScrollingNBT(
                 new GuiTransform(GuiAlign.FULL_BOX, new GuiPadding(16, 32, 24, 32), 0),
                 (NBTTagCompound) nbt,
@@ -138,14 +139,13 @@ public class GuiNbtEditor extends GuiScreenCanvas implements IPEventListener, IV
     private void onButtonPress(PEventButton event) {
         IPanelButton btn = event.getButton();
 
-        if (btn.getButtonID() == 0) // Exit
-        {
+        if (btn.getButtonID() == 0) { // Exit
             mc.displayGuiScreen(this.parent);
 
-            if (nbt.getId() == 10 && comCallback != null) {
-                comCallback.setValue((NBTTagCompound) nbt);
-            } else if (nbt.getId() == 9 && lstCallback != null) {
-                lstCallback.setValue((NBTTagList) nbt);
+            if (nbt.getId() == Constants.NBT.TAG_COMPOUND && compoundCallback != null) {
+                compoundCallback.setValue((NBTTagCompound) nbt);
+            } else if (nbt.getId() == Constants.NBT.TAG_LIST && listCallback != null) {
+                listCallback.setValue((NBTTagList) nbt);
             }
         }
     }

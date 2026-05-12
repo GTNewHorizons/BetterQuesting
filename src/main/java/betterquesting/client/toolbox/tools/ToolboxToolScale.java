@@ -5,16 +5,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.util.vector.Vector4f;
 
 import betterquesting.api.client.toolbox.IToolboxTool;
 import betterquesting.api.questing.IQuestLine;
 import betterquesting.api.questing.IQuestLineEntry;
-import betterquesting.api.utils.NBTConverter;
 import betterquesting.api2.client.gui.controls.PanelButtonQuest;
 import betterquesting.api2.client.gui.misc.GuiRectangle;
 import betterquesting.api2.client.gui.panels.lists.CanvasQuestLine;
@@ -168,15 +164,7 @@ public class ToolboxToolScale implements IToolboxTool {
             }
 
             // Send quest line edits
-            NBTTagCompound chPayload = new NBTTagCompound();
-            NBTTagList cdList = new NBTTagList();
-            NBTTagCompound tagEntry = new NBTTagCompound();
-            NBTConverter.UuidValueType.QUEST_LINE.writeId(lID, tagEntry);
-            tagEntry.setTag("config", qLine.writeToNBT(new NBTTagCompound(), null));
-            cdList.appendTag(tagEntry);
-            chPayload.setTag("data", cdList);
-            chPayload.setInteger("action", 0);
-            NetChapterEdit.sendEdit(chPayload);
+            NetChapterEdit.requestEdit(lID, qLine);
 
             grabList.clear();
             return true;

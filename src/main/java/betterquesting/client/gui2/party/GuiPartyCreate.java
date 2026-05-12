@@ -5,7 +5,6 @@ import java.util.Map.Entry;
 import java.util.UUID;
 
 import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.nbt.NBTTagCompound;
 
 import org.lwjgl.input.Keyboard;
 
@@ -200,16 +199,10 @@ public class GuiPartyCreate extends GuiScreenCanvas implements IPEventListener, 
             mc.displayGuiScreen(this.parent);
         } else if (btn.getButtonID() == 1) // Create
         {
-            NBTTagCompound payload = new NBTTagCompound();
-            payload.setInteger("action", 0);
-            payload.setString("name", flName.getRawText());
-            NetPartyAction.sendAction(payload);
+            NetPartyAction.requestCreate(flName.getRawText());
         } else if (btn.getButtonID() == 2 && btn instanceof PanelButtonStorage) // Join
         {
-            NBTTagCompound payload = new NBTTagCompound();
-            payload.setInteger("action", 4);
-            payload.setInteger("partyID", ((PanelButtonStorage<Integer>) btn).getStoredValue());
-            NetPartyAction.sendAction(payload);
+            NetPartyAction.requestAcceptInvite(((PanelButtonStorage<Integer>) btn).getStoredValue());
         }
     }
 

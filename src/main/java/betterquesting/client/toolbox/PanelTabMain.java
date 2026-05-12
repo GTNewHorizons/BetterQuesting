@@ -5,11 +5,9 @@ import java.util.List;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.EnumChatFormatting;
 
 import betterquesting.api.client.toolbox.IToolboxTool;
-import betterquesting.api.utils.NBTConverter;
 import betterquesting.api2.client.gui.controls.PanelButton;
 import betterquesting.api2.client.gui.controls.PanelButtonStorage;
 import betterquesting.api2.client.gui.misc.GuiRectangle;
@@ -84,18 +82,9 @@ public class PanelTabMain extends CanvasEmpty {
                         mc.currentScreen,
                         cvQuestLine.getQuestLine()
                             .writeToNBT(new NBTTagCompound(), null),
-                        value -> {
-                            NBTTagCompound payload = new NBTTagCompound();
-                            NBTTagList dataList = new NBTTagList();
-                            NBTTagCompound entry = new NBTTagCompound();
-                            NBTConverter.UuidValueType.QUEST_LINE
-                                .writeId(QuestLineDatabase.INSTANCE.lookupKey(cvQuestLine.getQuestLine()), entry);
-                            entry.setTag("config", value);
-                            dataList.appendTag(entry);
-                            payload.setTag("data", dataList);
-                            payload.setInteger("action", 0);
-                            NetChapterEdit.sendEdit(payload);
-                        }));
+                        chapterNBT -> NetChapterEdit.requestEdit(
+                            QuestLineDatabase.INSTANCE.lookupKey(cvQuestLine.getQuestLine()),
+                            chapterNBT)));
             }
         }.setIcon(PresetIcon.ICON_PROPS.getTexture())
             .setTooltip(
@@ -151,7 +140,6 @@ public class PanelTabMain extends CanvasEmpty {
 
     }
 
-    @SuppressWarnings("unchecked")
     private static List<String> makeToolTip(String title, String desc) {
         List<String> list = new ArrayList<>();
         list.add(title);
