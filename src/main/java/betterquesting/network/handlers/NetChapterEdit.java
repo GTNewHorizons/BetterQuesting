@@ -69,7 +69,7 @@ public class NetChapterEdit {
     public static void requestEdit(UUID chapterId, NBTTagCompound chapterNBT) {
         NBTTagList chapters = new NBTTagList();
         NBTTagCompound chapterEntry = new NBTTagCompound();
-        NBTConverter.UuidValueType.QUEST_LINE.writeId(chapterId, chapterNBT);
+        NBTConverter.UuidValueType.QUEST_LINE.writeId(chapterId, chapterEntry);
         chapterEntry.setTag(TAG_QUEST_LINE, chapterNBT);
         chapters.appendTag(chapterEntry);
 
