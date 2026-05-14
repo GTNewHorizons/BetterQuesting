@@ -99,15 +99,7 @@ public class ToolboxToolNew implements IToolboxTool {
         NetQuestEdit.sendEdit(quPayload);
 
         // Sync Line
-        NBTTagCompound chPayload = new NBTTagCompound();
-        NBTTagList cdList = new NBTTagList();
-        NBTTagCompound cTag = new NBTTagCompound();
-        NBTConverter.UuidValueType.QUEST_LINE.writeId(lID, cTag);
-        cTag.setTag("config", qLine.writeToNBT(new NBTTagCompound(), null));
-        cdList.appendTag(cTag);
-        chPayload.setTag("data", cdList);
-        chPayload.setInteger("action", 0);
-        NetChapterEdit.sendEdit(chPayload);
+        NetChapterEdit.requestEdit(lID, qLine);
 
         return true;
     }

@@ -813,7 +813,7 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
     private void claimAll(List<UUID> claimIdList, boolean forceChoice) {
         if (claimIdList == null || claimIdList.isEmpty()) return;
         if (forceChoice) {
-            NetQuestAction.requestClaimForced(claimIdList);
+            NetQuestAction.requestClaimForceChoice(claimIdList);
         } else {
             NetQuestAction.requestClaim(claimIdList);
         }
