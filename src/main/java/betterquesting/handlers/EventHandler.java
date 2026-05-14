@@ -96,6 +96,7 @@ public class EventHandler {
         handleOnOpenQuests();
     }
 
+    @SideOnly(Side.CLIENT)
     private void handleOnOpenQuests() {
         if (BQ_Keybindings.openQuests.isPressed()) {
             Minecraft mc = Minecraft.getMinecraft();
