@@ -336,18 +336,8 @@ public class GuiQuestLineAddRemove extends GuiScreenCanvas implements IPEventLis
     }
 
     private void SendChanges() {
-        if (questLine == null) {
-            return;
+        if (questLine != null) {
+            NetChapterEdit.requestEdit(lineID, questLine);
         }
-
-        NBTTagCompound payload = new NBTTagCompound();
-        NBTTagList dataList = new NBTTagList();
-        NBTTagCompound entry = new NBTTagCompound();
-        NBTConverter.UuidValueType.QUEST_LINE.writeId(lineID, entry);
-        entry.setTag("config", questLine.writeToNBT(new NBTTagCompound(), null));
-        dataList.appendTag(entry);
-        payload.setTag("data", dataList);
-        payload.setInteger("action", 0);
-        NetChapterEdit.sendEdit(payload);
     }
 }

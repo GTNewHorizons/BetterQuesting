@@ -213,15 +213,7 @@ public class ToolboxToolCopy implements IToolboxTool {
         NetQuestEdit.sendEdit(quPayload);
 
         // Send quest line edits
-        NBTTagCompound chPayload = new NBTTagCompound();
-        NBTTagList cdList = new NBTTagList();
-        NBTTagCompound tagEntry = new NBTTagCompound();
-        NBTConverter.UuidValueType.QUEST_LINE.writeId(lID, tagEntry);
-        tagEntry.setTag("config", qLine.writeToNBT(new NBTTagCompound(), null));
-        cdList.appendTag(tagEntry);
-        chPayload.setTag("data", cdList);
-        chPayload.setInteger("action", 0);
-        NetChapterEdit.sendEdit(chPayload);
+        NetChapterEdit.requestEdit(lID, qLine);
 
         return true;
     }
