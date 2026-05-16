@@ -27,8 +27,8 @@ import betterquesting.storage.NameCache;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
-public class NetBulkSync // Clears local data and negotiates a full resync with the server
-{
+// Clears local data and negotiates a full resync with the server
+public class NetBulkSync {
 
     private static final ResourceLocation ID_NAME = new ResourceLocation("betterquesting:main_sync");
 
@@ -45,8 +45,8 @@ public class NetBulkSync // Clears local data and negotiates a full resync with 
         payload.setBoolean("reset", reset);
         payload.setBoolean("respond", respond);
 
-        if (player == null) // Don't use this on a large server unless absolutely necessary!
-        {
+        // Don't use this on a large server unless absolutely necessary!
+        if (player == null) {
             PacketSender.INSTANCE.sendToAll(new QuestingPacket(ID_NAME, payload));
         } else {
             PacketSender.INSTANCE.sendToPlayers(new QuestingPacket(ID_NAME, payload), player);
@@ -88,15 +88,14 @@ public class NetBulkSync // Clears local data and negotiates a full resync with 
 
     @SideOnly(Side.CLIENT)
     private static void onClient(NBTTagCompound message) {
+        // DON'T do this on LAN hosts
         if (message.getBoolean("reset") && !Minecraft.getMinecraft()
-            .isIntegratedServerRunning()) // DON'T do this on LAN hosts
-        {
+            .isIntegratedServerRunning()) {
             SaveLoadHandler.INSTANCE.unloadDatabases();
         }
 
-        if (message.getBoolean("respond")) // Client doesn't really have to honour this but it would mess with things
-                                           // otherwise
-        {
+        // Client doesn't really have to honor this, but it would mess with things otherwise
+        if (message.getBoolean("respond")) {
             PacketSender.INSTANCE.sendToServer(new QuestingPacket(ID_NAME, new NBTTagCompound()));
         }
     }

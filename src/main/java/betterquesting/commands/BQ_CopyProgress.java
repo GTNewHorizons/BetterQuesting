@@ -1,13 +1,11 @@
 package betterquesting.commands;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.CommandException;
@@ -18,7 +16,8 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.management.PlayerProfileCache;
 import net.minecraft.util.ChatComponentText;
 
-import com.google.common.collect.Lists;
+import org.jetbrains.annotations.Nullable;
+
 import com.mojang.authlib.GameProfile;
 
 import betterquesting.api.questing.IQuest;
@@ -32,19 +31,16 @@ public class BQ_CopyProgress extends CommandBase {
         return 2;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public List<String> addTabCompletionOptions(ICommandSender p_71516_1_, String[] p_71516_2_) {
-        if (p_71516_2_.length > 2) return null;
+    public List<String> addTabCompletionOptions(ICommandSender sender, String[] args) {
+        if (args.length > 2) return null;
 
-        String s = p_71516_2_.length != 0 ? p_71516_2_[p_71516_2_.length - 1] : "";
-        return ((Stream<EntityPlayerMP>) MinecraftServer.getServer()
-            .getConfigurationManager().playerEntityList.stream()
-                .filter(i -> i instanceof EntityPlayerMP)).filter(
-                    o -> o.getDisplayName()
-                        .startsWith(s))
-                    .map(EntityPlayer::getDisplayName)
-                    .collect(Collectors.toList());
+        MinecraftServer server = MinecraftServer.getServer();
+        return CommandBase.getListOfStringsMatchingLastWord(
+            args,
+            server.getConfigurationManager().playerEntityList.stream()
+                .map(EntityPlayerMP::getDisplayName)
+                .toArray(String[]::new));
     }
 
     @Override
@@ -53,8 +49,8 @@ public class BQ_CopyProgress extends CommandBase {
     }
 
     @Override
-    public List getCommandAliases() {
-        return Lists.newArrayList(getCommandName());
+    public List<String> getCommandAliases() {
+        return Collections.singletonList(getCommandName());
     }
 
     @Override
@@ -68,78 +64,70 @@ public class BQ_CopyProgress extends CommandBase {
             throw new CommandException("Wrong arguments");
         }
 
-        UUID fromUUID;
-        UUID toUUID;
+        UUID fromUUID = null;
+        UUID toUUID = null;
         if (args.length == 2) {
-            fromUUID = GetPlayerUUID(args[0]);
-            toUUID = GetPlayerUUID(args[1]);
-        } else if (sender instanceof EntityPlayer) {
-            fromUUID = ((EntityPlayer) sender).getPersistentID();
-            toUUID = GetPlayerUUID(args[0]);
-        } else {
+            fromUUID = getPlayerUUID(args[0]);
+            toUUID = getPlayerUUID(args[1]);
+        } else if (sender instanceof EntityPlayer player) {
+            fromUUID = player.getPersistentID();
+            toUUID = getPlayerUUID(args[0]);
+        }
+
+        if (fromUUID == null || toUUID == null) {
             throw new CommandException("Wrong arguments");
         }
 
-        long current = System.currentTimeMillis();
+        long now = System.currentTimeMillis();
         List<UUID> ids = new ArrayList<>();
         for (Map.Entry<UUID, IQuest> questDBEntry : QuestDatabase.INSTANCE.entrySet()) {
             IQuest quest = questDBEntry.getValue();
             if (quest.isComplete(fromUUID) && !quest.isComplete(toUUID)) {
-                quest.setComplete(toUUID, current);
+                quest.setComplete(toUUID, now);
                 ids.add(questDBEntry.getKey());
             }
         }
 
-        EntityPlayerMP player = getPlayerAdvanced(sender, toUUID.toString());
+        EntityPlayerMP player = getPlayerAdvanced(toUUID);
         if (player != null) {
             NetQuestSync.sendSync(player, ids, false, true);
         }
 
-        sender.addChatMessage(new ChatComponentText("Completed " + ids.size() + " for " + toUUID));
+        sender.addChatMessage(new ChatComponentText("Completed " + ids.size() + " quests for " + toUUID));
     }
 
-    @SuppressWarnings("unchecked")
-    public static EntityPlayerMP getPlayerAdvanced(ICommandSender p_82359_0_, String p_82359_1_) {
-        Optional onlinePlayer = MinecraftServer.getServer()
-            .getConfigurationManager().playerEntityList.stream()
-                .filter(i -> i instanceof EntityPlayerMP)
-                .filter(
-                    o -> ((EntityPlayerMP) o).getPersistentID()
-                        .toString()
-                        .equals(p_82359_1_)
-                        || ((EntityPlayerMP) o).getDisplayName()
-                            .equals(p_82359_1_))
-                .findFirst();
-        try {
-            return onlinePlayer.isPresent() ? (EntityPlayerMP) onlinePlayer.get() : getPlayer(p_82359_0_, p_82359_1_);
-        } catch (Exception e) {
-            return null;
-        }
+    public static EntityPlayerMP getPlayerAdvanced(UUID playerId) {
+        MinecraftServer server = MinecraftServer.getServer();
+        return server.getConfigurationManager().playerEntityList.stream()
+            .filter(
+                player -> player.getPersistentID()
+                    .equals(playerId))
+            .findFirst()
+            .orElse(null);
     }
 
-    @SuppressWarnings("unchecked")
-    private static UUID GetPlayerUUID(String data) {
+    @Nullable
+    private static UUID getPlayerUUID(String data) {
+        MinecraftServer server = MinecraftServer.getServer();
         try {
             return UUID.fromString(data);
         } catch (IllegalArgumentException e) {
-            Optional onlinePlayer = MinecraftServer.getServer()
-                .getConfigurationManager().playerEntityList.stream()
-                    .filter(i -> i instanceof EntityPlayerMP)
-                    .filter(
-                        o -> ((EntityPlayerMP) o).getPersistentID()
-                            .toString()
-                            .equals(data)
-                            || ((EntityPlayerMP) o).getDisplayName()
-                                .equals(data))
-                    .findFirst();
-            if (onlinePlayer.isPresent()) return ((EntityPlayerMP) onlinePlayer.get()).getPersistentID();
+            Optional<EntityPlayerMP> onlinePlayer = server.getConfigurationManager().playerEntityList.stream()
+                .filter(
+                    player -> player.getDisplayName()
+                        .equals(data))
+                .findFirst();
 
-            GameProfile gameProfile = new PlayerProfileCache(
-                MinecraftServer.getServer(),
-                MinecraftServer.field_152367_a).func_152655_a(data);
+            if (onlinePlayer.isPresent()) {
+                return onlinePlayer.get()
+                    .getPersistentID();
+            }
+
+            GameProfile gameProfile = new PlayerProfileCache(server, MinecraftServer.field_152367_a)
+                .func_152655_a(data);
             if (gameProfile != null) return gameProfile.getId();
 
-            return UUID.nameUUIDFromBytes(data.getBytes(StandardCharsets.UTF_8));
+            return null;
         }
     }
 }

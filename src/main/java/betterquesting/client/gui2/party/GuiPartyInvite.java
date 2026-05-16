@@ -6,7 +6,6 @@ import java.util.UUID;
 
 import net.minecraft.client.gui.GuiPlayerInfo;
 import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.nbt.NBTTagCompound;
 
 import org.lwjgl.input.Keyboard;
 
@@ -51,7 +50,6 @@ public class GuiPartyInvite extends GuiScreenCanvas implements IPEventListener {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void initPanel() {
         super.initPanel();
 
@@ -155,27 +153,16 @@ public class GuiPartyInvite extends GuiScreenCanvas implements IPEventListener {
     @SuppressWarnings("unchecked")
     private void onButtonPress(PEventButton event) {
         IPanelButton btn = event.getButton();
+        long FIVE_MINUTES = 5 * 60 * 1000;
 
-        if (btn.getButtonID() == 0) // Exit
-        {
+        if (btn.getButtonID() == 0) { // Exit
             mc.displayGuiScreen(this.parent);
-        } else if (btn.getButtonID() == 1 && flName.getRawText()
-            .length() > 0) // Manual Invite
-        {
-            NBTTagCompound payload = new NBTTagCompound();
-            payload.setInteger("action", 3);
-            payload.setInteger("partyID", partyID);
-            payload.setString("username", flName.getRawText());
-            payload.setLong("expiry", 300000L); // 5 minutes in milliseconds
-            NetPartyAction.sendAction(payload);
-        } else if (btn.getButtonID() == 2 && btn instanceof PanelButtonStorage) // Invite
-        {
-            NBTTagCompound payload = new NBTTagCompound();
-            payload.setInteger("action", 3);
-            payload.setInteger("partyID", partyID);
-            payload.setString("username", ((PanelButtonStorage<String>) btn).getStoredValue());
-            payload.setLong("expiry", 300000L); // 5 minutes in milliseconds
-            NetPartyAction.sendAction(payload);
-        }
+        } else if (btn.getButtonID() == 1 && !flName.getRawText()
+            .isEmpty()) { // Manual Invite
+                NetPartyAction.requestInvite(partyID, flName.getRawText(), FIVE_MINUTES);
+            } else if (btn.getButtonID() == 2 && btn instanceof PanelButtonStorage) { // Invite
+                NetPartyAction
+                    .requestInvite(partyID, ((PanelButtonStorage<String>) btn).getStoredValue(), FIVE_MINUTES);
+            }
     }
 }
