@@ -307,6 +307,7 @@ public class GuiTextEditor extends GuiScreenCanvas implements IPEventListener, I
                     || nextL == 'q'
                     || nextL == 'z'
                     || nextL == 'v'
+                    || nextL == 'u'
                     || nextL == 'g') {
                     i += 1;
                     continue;
@@ -336,6 +337,7 @@ public class GuiTextEditor extends GuiScreenCanvas implements IPEventListener, I
                     || nextL == 'q'
                     || nextL == 'z'
                     || nextL == 'v'
+                    || nextL == 'u'
                     || nextL == 'g') {
                     i += 1;
                     continue;

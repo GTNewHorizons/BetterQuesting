@@ -995,7 +995,7 @@ public class RenderUtils {
                     i += 1;
                 }
                 // §z, §v — wave/flip toggles (accumulate like style codes)
-                else if (c0l == 'z' || c0l == 'v') {
+                else if (c0l == 'z' || c0l == 'v' || c0l == 'u') {
                     s1.append("\u00a7")
                         .append(c0);
                     i += 1;
@@ -1038,8 +1038,8 @@ public class RenderUtils {
                     s1 = new StringBuilder("&" + c0);
                     i += 1;
                 }
-                // &z, &v — wave/flip toggles (accumulate)
-                else if (c0l == 'z' || c0l == 'v') {
+                // &z, &v, &u — wave/flip/shadow toggles (accumulate)
+                else if (c0l == 'z' || c0l == 'v' || c0l == 'u') {
                     s1.append("&")
                         .append(c0);
                     i += 1;
