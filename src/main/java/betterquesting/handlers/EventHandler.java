@@ -87,6 +87,17 @@ public class EventHandler {
     @SubscribeEvent
     @SideOnly(Side.CLIENT)
     public void onKey(InputEvent.KeyInputEvent event) {
+        handleOnOpenQuests();
+    }
+
+    @SubscribeEvent
+    @SideOnly(Side.CLIENT)
+    public void onMouse(InputEvent.MouseInputEvent event) {
+        handleOnOpenQuests();
+    }
+
+    @SideOnly(Side.CLIENT)
+    private void handleOnOpenQuests() {
         if (BQ_Keybindings.openQuests.isPressed()) {
             Minecraft mc = Minecraft.getMinecraft();
             if (BQ_Settings.useBookmark && GuiHome.bookmark != null) {
