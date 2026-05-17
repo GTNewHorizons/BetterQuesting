@@ -1,15 +1,12 @@
 package betterquesting.client.toolbox.tools;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-
 import betterquesting.api.client.toolbox.IToolboxTool;
 import betterquesting.api.questing.IQuest;
-import betterquesting.api.utils.NBTConverter;
 import betterquesting.api2.client.gui.controls.PanelButtonQuest;
 import betterquesting.api2.client.gui.misc.GuiRectangle;
 import betterquesting.api2.client.gui.panels.lists.CanvasQuestLine;
@@ -113,7 +110,7 @@ public class ToolboxToolLink implements IToolboxTool {
                     .getValue();
                 boolean mod2 = false;
 
-                NBTTagList dataList = new NBTTagList();
+                HashMap<UUID, IQuest> questsToEdit = new HashMap<>();
 
                 for (PanelButtonQuest b1 : linking) {
                     IQuest q1 = b1.getStoredValue()
@@ -147,30 +144,21 @@ public class ToolboxToolLink implements IToolboxTool {
                     }
 
                     if (mod1) {
-                        NBTTagCompound entry = NBTConverter.UuidValueType.QUEST.writeId(
+                        questsToEdit.put(
                             b1.getStoredValue()
-                                .getKey());
-                        entry.setTag(
-                            "config",
+                                .getKey(),
                             b1.getStoredValue()
-                                .getValue()
-                                .writeToNBT(new NBTTagCompound()));
-                        dataList.appendTag(entry);
+                                .getValue());
                     }
                 }
 
                 if (mod2) {
-                    NBTTagCompound entry = NBTConverter.UuidValueType.QUEST.writeId(
+                    questsToEdit.put(
                         b2.getStoredValue()
-                            .getKey());
-                    entry.setTag("config", q2.writeToNBT(new NBTTagCompound()));
-                    dataList.appendTag(entry);
+                            .getKey(),
+                        q2);
                 }
-
-                NBTTagCompound payload = new NBTTagCompound();
-                payload.setTag("data", dataList);
-                payload.setInteger("action", 0);
-                NetQuestEdit.sendEdit(payload);
+                NetQuestEdit.requestEdit(questsToEdit);
 
                 linking.clear();
                 return true;

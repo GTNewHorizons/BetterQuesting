@@ -4,13 +4,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-
 import betterquesting.api.client.toolbox.IToolboxTool;
 import betterquesting.api.questing.IQuestLine;
 import betterquesting.api.questing.IQuestLineEntry;
-import betterquesting.api.utils.NBTConverter;
 import betterquesting.api2.client.gui.controls.PanelButtonQuest;
 import betterquesting.api2.client.gui.misc.GuiRectangle;
 import betterquesting.api2.client.gui.panels.lists.CanvasQuestLine;
@@ -90,13 +86,7 @@ public class ToolboxToolNew implements IToolboxTool {
         }
 
         // Sync Quest
-        NBTTagCompound quPayload = new NBTTagCompound();
-        NBTTagList qdList = new NBTTagList();
-        NBTTagCompound qTag = NBTConverter.UuidValueType.QUEST.writeId(qID);
-        qdList.appendTag(qTag);
-        quPayload.setTag("data", qdList);
-        quPayload.setInteger("action", 3);
-        NetQuestEdit.sendEdit(quPayload);
+        NetQuestEdit.requestCreate(qID);
 
         // Sync Line
         NetChapterEdit.requestEdit(lID, qLine);
