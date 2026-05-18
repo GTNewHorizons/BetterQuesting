@@ -4,7 +4,6 @@ import java.util.concurrent.Callable;
 
 import net.minecraft.command.ICommandManager;
 import net.minecraft.command.ServerCommandManager;
-import net.minecraft.launchwrapper.Launch;
 import net.minecraft.server.MinecraftServer;
 import net.minecraftforge.common.MinecraftForge;
 
@@ -12,7 +11,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import betterquesting.api.storage.BQ_Settings;
 import betterquesting.commands.BQ_CommandAdmin;
-import betterquesting.commands.BQ_CommandDebug;
 import betterquesting.commands.BQ_CommandUser;
 import betterquesting.commands.BQ_CopyProgress;
 import betterquesting.core.BetterQuesting;
@@ -57,10 +55,6 @@ public class CommonProxy {
         manager.registerCommand(new BQ_CopyProgress());
         manager.registerCommand(new BQ_CommandAdmin());
         manager.registerCommand(new BQ_CommandUser());
-
-        if ((Boolean) Launch.blackboard.get("fml.deobfuscatedEnvironment")) {
-            manager.registerCommand(new BQ_CommandDebug());
-        }
 
         SaveLoadHandler.INSTANCE.loadDatabases(server);
         if (BQ_Settings.loadDefaultsOnStartup) {

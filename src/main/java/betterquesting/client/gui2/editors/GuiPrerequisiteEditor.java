@@ -8,8 +8,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
 
 import org.lwjgl.input.Keyboard;
 
@@ -19,7 +17,6 @@ import betterquesting.api.client.gui.misc.INeedsRefresh;
 import betterquesting.api.client.gui.misc.IVolatileScreen;
 import betterquesting.api.questing.IQuest;
 import betterquesting.api.questing.IQuest.RequirementType;
-import betterquesting.api.utils.NBTConverter;
 import betterquesting.api2.client.gui.GuiScreenCanvas;
 import betterquesting.api2.client.gui.controls.IPanelButton;
 import betterquesting.api2.client.gui.controls.PanelButton;
@@ -276,20 +273,10 @@ public class GuiPrerequisiteEditor extends GuiScreenCanvas implements IPEventLis
         } else if (btn.getButtonID() == 4 && btn instanceof PanelButtonStorage) // Delete
         {
             Map.Entry<UUID, IQuest> entry = ((PanelButtonStorage<Map.Entry<UUID, IQuest>>) btn).getStoredValue();
-            NBTTagCompound payload = new NBTTagCompound();
-            payload.setTag(
-                "questIDs",
-                NBTConverter.UuidValueType.QUEST.writeIds(Collections.singletonList(entry.getKey())));
-            payload.setInteger("action", 1);
-            NetQuestEdit.sendEdit(payload);
+            NetQuestEdit.requestDelete(Collections.singletonList(entry.getKey()));
         } else if (btn.getButtonID() == 5) // New
         {
-            NBTTagCompound payload = new NBTTagCompound();
-            NBTTagList dataList = new NBTTagList();
-            NBTTagCompound entry = new NBTTagCompound();
-            dataList.appendTag(entry);
-            payload.setTag("data", dataList);
-            NetQuestEdit.sendEdit(payload);
+            NetQuestEdit.requestCreate();
         } else if (btn.getButtonID() == 6) // set type
         {
             Map.Entry<UUID, IQuest> entry = ((PanelButtonStorage<Map.Entry<UUID, IQuest>>) btn).getStoredValue();
@@ -317,14 +304,6 @@ public class GuiPrerequisiteEditor extends GuiScreenCanvas implements IPEventLis
     }
 
     private void SendChanges() {
-        NBTTagCompound payload = new NBTTagCompound();
-        NBTTagList dataList = new NBTTagList();
-        NBTTagCompound entry = new NBTTagCompound();
-        NBTConverter.UuidValueType.QUEST.writeId(questID, entry);
-        entry.setTag("config", quest.writeToNBT(new NBTTagCompound()));
-        dataList.appendTag(entry);
-        payload.setTag("data", dataList);
-        payload.setInteger("action", 0);
-        NetQuestEdit.sendEdit(payload);
+        NetQuestEdit.requestEdit(Collections.singletonMap(questID, quest));
     }
 }

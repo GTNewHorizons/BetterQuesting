@@ -13,6 +13,7 @@ import javax.annotation.Nullable;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
+import net.minecraftforge.common.util.Constants;
 
 import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.enums.EnumPartyStatus;
@@ -32,28 +33,29 @@ public class PartyManager extends SimpleDatabase<IParty> implements IPartyDataba
 
     public static final PartyManager INSTANCE = new PartyManager();
 
-    public static void SyncPartyQuests(IParty party, UUID targetPlayer, boolean prohibitClaim) {
+    public static void SyncPartyQuests(IParty party, UUID targetPlayer, boolean markClaimed) {
         ArrayList<UUID> uuids = new ArrayList<>();
         uuids.add(targetPlayer);
-        SyncPartyQuests(party, uuids, prohibitClaim);
+        SyncPartyQuests(party, uuids, markClaimed);
     }
 
-    public static void SyncPartyQuests(IParty party, boolean prohibitClaim) {
-        SyncPartyQuests(party, party.getMembers(), prohibitClaim);
+    public static void SyncPartyQuests(IParty party, boolean markClaimed) {
+        SyncPartyQuests(party, party.getMembers(), markClaimed);
     }
 
-    private static void SyncPartyQuests(IParty party, List<UUID> targetUUIDs, boolean prohibitClaim) {
+    private static void SyncPartyQuests(IParty party, List<UUID> targetUUIDs, boolean markClaimed) {
         new Thread(() -> {
             BetterQuesting.logger.info("Start force party quest sync");
             List<UUID> partyMembers = party.getMembers();
 
-            List<SyncPlayerContainer> t = targetUUIDs.stream()
+            List<SyncPlayerContainer> targetPlayers = targetUUIDs.stream()
                 .map(SyncPlayerContainer::new)
                 .collect(Collectors.toList());
 
             for (Map.Entry<UUID, IQuest> questEntry : QuestDatabase.INSTANCE.entrySet()) {
                 IQuest quest = questEntry.getValue();
                 long completionTime = -1;
+
                 for (UUID member : partyMembers) {
                     NBTTagCompound completionInfo = quest.getCompletionInfo(member);
                     if (completionInfo != null) {
@@ -62,28 +64,29 @@ public class PartyManager extends SimpleDatabase<IParty> implements IPartyDataba
                     }
                 }
 
-                if (completionTime != -1) {
-                    for (SyncPlayerContainer target : t) {
-                        if (quest.isComplete(target.uuid)) continue;
-                        quest.setComplete(target.uuid, completionTime);
-                        if (prohibitClaim) {
-                            quest.setClaimed(target.uuid, completionTime);
-                        }
-                        if (target.isPlayerOnline()) {
-                            target.questCache.markQuestDirty(questEntry.getKey());
-                        }
+                if (completionTime == -1) {
+                    continue;
+                }
 
-                        target.questsCompleted += 1;
+                for (SyncPlayerContainer target : targetPlayers) {
+                    if (quest.isComplete(target.uuid)) continue;
+                    quest.setComplete(target.uuid, completionTime);
+                    if (markClaimed) {
+                        quest.setClaimed(target.uuid, completionTime);
                     }
+                    if (target.isPlayerOnline()) {
+                        target.questCache.markQuestDirty(questEntry.getKey());
+                    }
+                    target.questsCompleted += 1;
                 }
             }
 
-            for (SyncPlayerContainer syncPlayerContainer : t) {
+            for (SyncPlayerContainer syncPlayerContainer : targetPlayers) {
                 if (syncPlayerContainer.questsCompleted == 0) continue;
                 BetterQuesting.logger.info(
-                    "Force party quest sync: completed " + syncPlayerContainer.questsCompleted
-                        + " quests for "
-                        + syncPlayerContainer.playerName);
+                    "Force party quest sync: completed {} quests for {}",
+                    syncPlayerContainer.questsCompleted,
+                    syncPlayerContainer.playerName);
             }
         }).start();
     }
@@ -100,23 +103,21 @@ public class PartyManager extends SimpleDatabase<IParty> implements IPartyDataba
     @Nullable
     @Override
     public synchronized DBEntry<IParty> getParty(@Nonnull UUID uuid) {
-        if (!QuestSettings.INSTANCE.getProperty(NativeProps.PARTY_ENABLE)) return null; // We're merely preventing
-                                                                                        // access. Not erasing data
+        // We're merely preventing access. Not erasing data
+        if (!QuestSettings.INSTANCE.getProperty(NativeProps.PARTY_ENABLE)) return null;
 
         Integer cachedID = partyCache.get(uuid);
         IParty cachedParty = cachedID == null ? null : getValue(cachedID);
 
-        if (cachedID != null && cachedParty == null) // Disbanded party
-        {
+        if (cachedID != null && cachedParty == null) { // Disbanded party
             partyCache.remove(uuid);
-        } else if (cachedParty != null) // Active party. Check validity...
-        {
+        } else if (cachedParty != null) { // Active party. Check validity...
             EnumPartyStatus status = cachedParty.getStatus(uuid);
             if (status != null) return new DBEntry<>(cachedID, cachedParty);
             partyCache.remove(uuid); // User isn't a party member anymore
         }
 
-        // NOTE: A server with a lot of solo players may still hammer this loop. Optimise further?
+        // NOTE: A server with a lot of solo players may still hammer this loop. Optimize further?
         for (DBEntry<IParty> entry : getEntries()) {
             EnumPartyStatus status = entry.getValue()
                 .getStatus(uuid);
@@ -150,7 +151,7 @@ public class PartyManager extends SimpleDatabase<IParty> implements IPartyDataba
         for (int i = 0; i < json.tagCount(); i++) {
             NBTTagCompound jp = json.getCompoundTagAt(i);
 
-            int partyID = jp.hasKey("partyID", 99) ? jp.getInteger("partyID") : -1;
+            int partyID = jp.hasKey("partyID", Constants.NBT.TAG_ANY_NUMERIC) ? jp.getInteger("partyID") : -1;
             if (partyID < 0) continue;
 
             IParty party = new PartyInstance();
@@ -169,14 +170,13 @@ public class PartyManager extends SimpleDatabase<IParty> implements IPartyDataba
         partyCache.clear();
     }
 
-    private static class SyncPlayerContainer {
+    private static final class SyncPlayerContainer {
 
-        public SyncPlayerContainer(UUID uuid, EntityPlayerMP entityPlayerMP, QuestCache questCache, String playerName) {
-            this.uuid = uuid;
-            this.player = entityPlayerMP;
-            this.questCache = questCache;
-            this.playerName = playerName;
-        }
+        public final UUID uuid;
+        public final EntityPlayerMP player;
+        public final QuestCache questCache;
+        public final String playerName;
+        public int questsCompleted = 0;
 
         public SyncPlayerContainer(UUID uuid) {
             this.uuid = uuid;
@@ -187,12 +187,6 @@ public class PartyManager extends SimpleDatabase<IParty> implements IPartyDataba
             this.playerName = player != null ? player.getDisplayName()
                 : String.format("%s (%s)", uuid.toString(), NameCache.INSTANCE.getName(uuid));
         }
-
-        public UUID uuid;
-        public EntityPlayerMP player;
-        public QuestCache questCache;
-        public String playerName;
-        public Integer questsCompleted = 0;
 
         public boolean isPlayerOnline() {
             return player != null;

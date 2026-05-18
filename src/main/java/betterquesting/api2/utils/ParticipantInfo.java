@@ -9,11 +9,13 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.server.MinecraftServer;
 import net.minecraftforge.common.util.FakePlayer;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.questing.party.IParty;
@@ -23,16 +25,16 @@ import betterquesting.questing.party.PartyManager;
 
 public class ParticipantInfo {
 
-    public final EntityPlayer PLAYER;
-    public final UUID UUID;
+    public final @NotNull EntityPlayer PLAYER;
+    public final @NotNull UUID UUID;
 
-    public final List<UUID> ALL_UUIDS;
-    public final List<EntityPlayer> ACTIVE_PLAYERS;
-    public final List<UUID> ACTIVE_UUIDS;
+    public final @NotNull List<UUID> ALL_UUIDS;
+    public final @NotNull List<EntityPlayer> ACTIVE_PLAYERS;
+    public final @NotNull List<UUID> ACTIVE_UUIDS;
 
-    public final DBEntry<IParty> PARTY_INSTANCE;
+    public final @Nullable DBEntry<IParty> PARTY_INSTANCE;
 
-    public ParticipantInfo(@Nonnull EntityPlayer player) {
+    public ParticipantInfo(@NotNull EntityPlayer player) {
         this.PLAYER = player;
         this.UUID = QuestingAPI.getQuestingUUID(player);
         this.PARTY_INSTANCE = PartyManager.INSTANCE.getParty(this.UUID);
@@ -46,45 +48,41 @@ public class ParticipantInfo {
             return;
         }
 
-        List<EntityPlayer> actPl = new ArrayList<>();
-        List<UUID> actID = new ArrayList<>();
-        List<UUID> allID = new ArrayList<>();
+        ArrayList<EntityPlayer> activePlayers = new ArrayList<>();
+        ArrayList<UUID> activePlayerIds = new ArrayList<>();
+        ArrayList<UUID> allPlayerIds = new ArrayList<>();
 
-        for (UUID mem : PARTY_INSTANCE.getValue()
+        for (UUID memberId : PARTY_INSTANCE.getValue()
             .getMembers()) {
-            allID.add(mem);
+            allPlayerIds.add(memberId);
 
-            EntityPlayer pMem = null;
-            for (Object o : server.getConfigurationManager().playerEntityList) {
-                if (((EntityPlayer) o).getGameProfile()
+            for (EntityPlayerMP playerMP : server.getConfigurationManager().playerEntityList) {
+                if (playerMP.getGameProfile()
                     .getId()
-                    .equals(mem)) {
-                    pMem = (EntityPlayer) o;
+                    .equals(memberId)) {
+                    activePlayers.add(playerMP);
+                    activePlayerIds.add(memberId);
+                    break;
                 }
-            }
-
-            if (pMem != null) {
-                actPl.add(pMem);
-                actID.add(mem);
             }
         }
 
         // Really shouldn't be modifying these lists anyway but just for safety
-        this.ACTIVE_PLAYERS = Collections.unmodifiableList(actPl);
-        this.ACTIVE_UUIDS = Collections.unmodifiableList(actID);
-        this.ALL_UUIDS = Collections.unmodifiableList(allID);
+        this.ACTIVE_PLAYERS = Collections.unmodifiableList(activePlayers);
+        this.ACTIVE_UUIDS = Collections.unmodifiableList(activePlayerIds);
+        this.ALL_UUIDS = Collections.unmodifiableList(allPlayerIds);
     }
 
-    public void markDirty(UUID questId) // Only marks quests dirty for the immediate participating player
-    {
+    /** Only marks quests dirty for the immediate participating player */
+    public void markDirty(UUID questId) {
         QuestCache qc = (QuestCache) PLAYER.getExtendedProperties(QuestCache.LOC_QUEST_CACHE.toString());
         if (qc != null) {
             qc.markQuestDirty(questId);
         }
     }
 
-    public void markDirtyParty(UUID questId) // Marks quests as dirty for the entire (active) party
-    {
+    /** Marks quests as dirty for the entire (active) party */
+    public void markDirtyParty(UUID questId) {
         ACTIVE_PLAYERS.forEach((value) -> {
             QuestCache qc = (QuestCache) value.getExtendedProperties(QuestCache.LOC_QUEST_CACHE.toString());
             if (qc != null) {
@@ -93,9 +91,9 @@ public class ParticipantInfo {
         });
     }
 
-    @Nonnull
-    public Set<UUID> getSharedQuests() // Returns an array of all quests which one or more participants have unlocked
-    {
+    /** Returns an array of all quests which one or more participants have unlocked */
+    @NotNull
+    public Set<UUID> getSharedQuests() {
         return ACTIVE_PLAYERS.stream()
             .map(p -> (QuestCache) p.getExtendedProperties(QuestCache.LOC_QUEST_CACHE.toString()))
             .filter(Objects::nonNull)

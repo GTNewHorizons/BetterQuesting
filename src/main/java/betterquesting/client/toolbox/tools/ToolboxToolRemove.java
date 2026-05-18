@@ -3,14 +3,10 @@ package betterquesting.client.toolbox.tools;
 import java.util.List;
 import java.util.UUID;
 
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-
 import org.lwjgl.input.Keyboard;
 
 import betterquesting.api.client.toolbox.IToolboxTool;
 import betterquesting.api.questing.IQuestLine;
-import betterquesting.api.utils.NBTConverter;
 import betterquesting.api2.client.gui.controls.PanelButtonQuest;
 import betterquesting.api2.client.gui.panels.lists.CanvasQuestLine;
 import betterquesting.client.gui2.editors.designer.PanelToolController;
@@ -55,15 +51,7 @@ public class ToolboxToolRemove implements IToolboxTool {
             }
 
             // Sync Line
-            NBTTagCompound chPayload = new NBTTagCompound();
-            NBTTagList cdList = new NBTTagList();
-            NBTTagCompound cTag = new NBTTagCompound();
-            NBTConverter.UuidValueType.QUEST_LINE.writeId(QuestLineDatabase.INSTANCE.lookupKey(line), cTag);
-            cTag.setTag("config", line.writeToNBT(new NBTTagCompound(), null));
-            cdList.appendTag(cTag);
-            chPayload.setTag("data", cdList);
-            chPayload.setInteger("action", 0);
-            NetChapterEdit.sendEdit(chPayload);
+            NetChapterEdit.requestEdit(QuestLineDatabase.INSTANCE.lookupKey(line), line);
             return true;
         }
 
@@ -100,15 +88,7 @@ public class ToolboxToolRemove implements IToolboxTool {
                     .getKey());
 
             // Sync Line
-            NBTTagCompound chPayload = new NBTTagCompound();
-            NBTTagList cdList = new NBTTagList();
-            NBTTagCompound cTag = new NBTTagCompound();
-            NBTConverter.UuidValueType.QUEST_LINE.writeId(QuestLineDatabase.INSTANCE.lookupKey(line), cTag);
-            cTag.setTag("config", line.writeToNBT(new NBTTagCompound(), null));
-            cdList.appendTag(cTag);
-            chPayload.setTag("data", cdList);
-            chPayload.setInteger("action", 0);
-            NetChapterEdit.sendEdit(chPayload);
+            NetChapterEdit.requestEdit(QuestLineDatabase.INSTANCE.lookupKey(line), line);
             return true;
         }
 
