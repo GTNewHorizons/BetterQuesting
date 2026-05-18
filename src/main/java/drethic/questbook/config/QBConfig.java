@@ -32,7 +32,7 @@ public class QBConfig {
             Configuration.CATEGORY_GENERAL,
             "spawnWithBook",
             false,
-            "Enable this option so new players will spawn with a Quest Book. Default: false");
+            "Enable this option so new players will spawn with a Quest Book.  Default: false");
         disablePartyNotifications = configBoolOption(
             Configuration.CATEGORY_GENERAL,
             "disablePartyNotifications",
@@ -47,7 +47,7 @@ public class QBConfig {
             Configuration.CATEGORY_GENERAL,
             "syncQuestRewards",
             false,
-            "Fully sync quest rewards between party members.  Default: false");
+            "Quest rewards can only be claimed once per party.  Default: false");
 
         qbconfig.save();
     }
