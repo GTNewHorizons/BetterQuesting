@@ -38,7 +38,6 @@ import bq_standard.tasks.base.TaskProgressableBase;
 import bq_standard.tasks.factory.FactoryTaskRetrieval;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
-import drethic.questbook.config.QBConfig;
 
 public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskInventory, IItemTask, ITaskItemInput {
 
@@ -143,9 +142,7 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
     public void detect(ParticipantInfo pInfo, Map.Entry<UUID, IQuest> quest) {
         if (isComplete(pInfo.UUID)) return;
 
-        Detector detector = new Detector(
-            this,
-            (consume && !QBConfig.fullySyncQuests) ? Collections.singletonList(pInfo.UUID) : pInfo.ALL_UUIDS);
+        Detector detector = new Detector(this, pInfo.ALL_UUIDS);
 
         final List<InventoryPlayer> invoList;
         if (consume) {
@@ -179,20 +176,12 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
 
             updated = true;
 
-            if (consume && !QBConfig.fullySyncQuests) {
-                setComplete(value.getFirst());
-            } else {
-                progress.forEach((pair) -> setComplete(pair.getFirst()));
-                break;
-            }
+            progress.forEach((pair) -> setComplete(pair.getFirst()));
+            break;
         }
 
         if (updated) {
-            if (consume && !QBConfig.fullySyncQuests) {
-                pInfo.markDirty(quest.getKey());
-            } else {
-                pInfo.markDirtyParty(quest.getKey());
-            }
+            pInfo.markDirtyParty(quest.getKey());
         }
     }
 
@@ -233,9 +222,7 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
         if (owner == null || input == null || !consume || isComplete(owner)) return input;
 
         ParticipantInfo pInfo = new ParticipantInfo(QuestingAPI.getPlayer(owner));
-        Detector detector = new Detector(
-            this,
-            QBConfig.fullySyncQuests ? pInfo.ALL_UUIDS : Collections.singletonList(pInfo.UUID));
+        Detector detector = new Detector(this, pInfo.ALL_UUIDS);
 
         final ItemStack stack = input.copy();
 
@@ -356,13 +343,10 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
                     int remaining = rStack.stackSize - value.getSecond()[i];
 
                     if (task.consume) {
-                        if (QBConfig.fullySyncQuests && runner.equals(value.getFirst())) {
+                        if (runner.equals(value.getFirst())) {
                             ItemStack removed = consumer.apply(remaining);
                             int temp = i;
                             progress.forEach(p -> p.getSecond()[temp] += removed.stackSize);
-                        } else if (!QBConfig.fullySyncQuests) {
-                            ItemStack removed = consumer.apply(remaining);
-                            value.getSecond()[i] += removed.stackSize;
                         }
                     } else {
                         int temp = Math.min(remaining, remCounts[n]);

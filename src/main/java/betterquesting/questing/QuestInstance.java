@@ -247,7 +247,7 @@ public class QuestInstance implements IQuest {
         }
 
         ParticipantInfo pInfo = new ParticipantInfo(player);
-        List<UUID> playersToMark = QBConfig.fullySyncQuests ? pInfo.ALL_UUIDS : Collections.singletonList(pInfo.UUID);
+        List<UUID> playersToMark = QBConfig.syncQuestRewards ? pInfo.ALL_UUIDS : Collections.singletonList(pInfo.UUID);
 
         synchronized (completeUsers) {
             for (UUID user : playersToMark) {
