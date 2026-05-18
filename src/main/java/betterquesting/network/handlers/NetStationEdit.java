@@ -27,61 +27,70 @@ public class NetStationEdit {
 
     private static final ResourceLocation ID_NAME = new ResourceLocation("betterquesting:station_edit");
 
+    private static final int ACTION_RESET = 0;
+    private static final int ACTION_SETUP = 1;
+
+    private static final String TAG_ACTION = "action";
+    private static final String TAG_TASK_ID = "taskID";
+    private static final String TAG_TILE_POS_X = "tilePosX";
+    private static final String TAG_TILE_POS_Y = "tilePosY";
+    private static final String TAG_TILE_POS_Z = "tilePosZ";
+
     public static void registerHandler() {
         PacketTypeRegistry.INSTANCE.registerServerHandler(ID_NAME, NetStationEdit::onServer);
     }
 
     @SideOnly(Side.CLIENT)
-    public static void setupStation(int posX, int posY, int posZ, UUID questID, int taskID) {
+    public static void resetStation(int posX, int posY, int posZ) {
         NBTTagCompound payload = new NBTTagCompound();
-        payload.setInteger("action", 1);
-        NBTConverter.UuidValueType.QUEST.writeId(questID, payload);
-        payload.setInteger("taskID", taskID);
-        payload.setInteger("tilePosX", posX);
-        payload.setInteger("tilePosY", posY);
-        payload.setInteger("tilePosZ", posZ);
+        payload.setInteger(TAG_ACTION, ACTION_RESET);
+        payload.setInteger(TAG_TILE_POS_X, posX);
+        payload.setInteger(TAG_TILE_POS_Y, posY);
+        payload.setInteger(TAG_TILE_POS_Z, posZ);
         PacketSender.INSTANCE.sendToServer(new QuestingPacket(ID_NAME, payload));
     }
 
     @SideOnly(Side.CLIENT)
-    public static void resetStation(int posX, int posY, int posZ) {
+    public static void setupStation(int posX, int posY, int posZ, UUID questID, int taskID) {
         NBTTagCompound payload = new NBTTagCompound();
-        payload.setInteger("action", 0);
-        payload.setInteger("tilePosX", posX);
-        payload.setInteger("tilePosY", posY);
-        payload.setInteger("tilePosZ", posZ);
+        payload.setInteger(TAG_ACTION, ACTION_SETUP);
+        NBTConverter.UuidValueType.QUEST.writeId(questID, payload);
+        payload.setInteger(TAG_TASK_ID, taskID);
+        payload.setInteger(TAG_TILE_POS_X, posX);
+        payload.setInteger(TAG_TILE_POS_Y, posY);
+        payload.setInteger(TAG_TILE_POS_Z, posZ);
         PacketSender.INSTANCE.sendToServer(new QuestingPacket(ID_NAME, payload));
     }
 
     private static void onServer(Tuple2<NBTTagCompound, EntityPlayerMP> message) {
-        NBTTagCompound data = message.getFirst();
-        int px = data.getInteger("tilePosX");
-        int py = data.getInteger("tilePosY");
-        int pz = data.getInteger("tilePosZ");
-        TileEntity tile = message.getSecond().worldObj.getTileEntity(px, py, pz);
+        NBTTagCompound payload = message.getFirst();
+        EntityPlayerMP sender = message.getSecond();
 
-        if (tile instanceof TileSubmitStation) {
-            TileSubmitStation oss = (TileSubmitStation) tile;
-            if (oss.isUseableByPlayer(message.getSecond())) {
-                int action = data.getInteger("action");
-                if (action == 0) {
-                    oss.reset();
-                } else if (action == 1) {
-                    UUID QID = QuestingAPI.getQuestingUUID(message.getSecond());
-                    IQuest quest = QuestDatabase.INSTANCE.get(NBTConverter.UuidValueType.QUEST.readId(data));
-                    ITask task = quest == null ? null
-                        : quest.getTasks()
-                            .getValue(data.getInteger("taskID"));
-                    if (quest != null && task != null) {
-                        if (!quest.isUnlocked(QID) || !task.isComplete(QID)) {
-                            BetterQuesting.logger.warn(
-                                MarkerManager.getMarker("SuspiciousPackets"),
-                                "Player {} tried to set task to completed or not yet unlocked one.",
-                                message.getSecond()
-                                    .getGameProfile());
-                        }
-                        oss.setupTask(QID, quest, task);
+        int px = payload.getInteger(TAG_TILE_POS_X);
+        int py = payload.getInteger(TAG_TILE_POS_Y);
+        int pz = payload.getInteger(TAG_TILE_POS_Z);
+        TileEntity tile = sender.worldObj.getTileEntity(px, py, pz);
+
+        if (!(tile instanceof TileSubmitStation oss)) return;
+        if (!oss.isUseableByPlayer(sender)) return;
+
+        switch (payload.getInteger(TAG_ACTION)) {
+            case ACTION_RESET -> oss.reset();
+            case ACTION_SETUP -> {
+                UUID senderId = QuestingAPI.getQuestingUUID(sender);
+                IQuest quest = QuestDatabase.INSTANCE.get(NBTConverter.UuidValueType.QUEST.readId(payload));
+                ITask task = quest == null ? null
+                    : quest.getTasks()
+                        .getValue(payload.getInteger(TAG_TASK_ID));
+
+                if (quest != null && task != null) {
+                    if (!quest.isUnlocked(senderId) || !task.isComplete(senderId)) {
+                        BetterQuesting.logger.warn(
+                            MarkerManager.getMarker("SuspiciousPackets"),
+                            "Player {} tried to set task to completed or not yet unlocked one.",
+                            sender.getGameProfile());
                     }
+                    oss.setupTask(senderId, quest, task);
                 }
             }
         }
