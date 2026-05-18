@@ -47,7 +47,7 @@ public class QBConfig {
             Configuration.CATEGORY_GENERAL,
             "syncQuestRewards",
             false,
-            "Fully sync quests rewards between party members.  Default: false");
+            "Fully sync quest rewards between party members.  Default: false");
 
         qbconfig.save();
     }
