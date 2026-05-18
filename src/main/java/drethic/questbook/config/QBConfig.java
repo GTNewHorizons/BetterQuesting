@@ -16,7 +16,7 @@ public class QBConfig {
     public static boolean spawnWithBook;
     public static boolean disablePartyNotifications;
     public static boolean disableQuestNotifications;
-    public static boolean fullySyncQuests;
+    public static boolean syncQuestRewards;
 
     public static final void init(FMLPreInitializationEvent e) {
         QBLogger.logger.info("Loading config file.");
@@ -43,11 +43,11 @@ public class QBConfig {
             "disableQuestNotifications",
             false,
             "[NYI]Disable quest notifications.  Default: false");
-        fullySyncQuests = configBoolOption(
+        syncQuestRewards = configBoolOption(
             Configuration.CATEGORY_GENERAL,
-            "fullySyncQuests",
+            "syncQuestRewards",
             false,
-            "[NYI]Fully sync quests between party members, including quest rewards, checkbox quests, and [consume] retrieval quests.  Default: false");
+            "Fully sync quests rewards between party members.  Default: false");
 
         qbconfig.save();
     }

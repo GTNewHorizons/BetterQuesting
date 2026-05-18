@@ -1,6 +1,5 @@
 package betterquesting.questing;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -48,7 +47,6 @@ import betterquesting.questing.tasks.TaskStorage;
 import betterquesting.storage.PropertyContainer;
 import betterquesting.storage.QuestSettings;
 import bq_standard.rewards.RewardChoice;
-import drethic.questbook.config.QBConfig;
 
 public class QuestInstance implements IQuest {
 
@@ -247,7 +245,7 @@ public class QuestInstance implements IQuest {
         }
 
         ParticipantInfo pInfo = new ParticipantInfo(player);
-        List<UUID> playersToMark = QBConfig.fullySyncQuests ? pInfo.ALL_UUIDS : Collections.singletonList(pInfo.UUID);
+        List<UUID> playersToMark = pInfo.ALL_UUIDS;
 
         synchronized (completeUsers) {
             for (UUID user : playersToMark) {

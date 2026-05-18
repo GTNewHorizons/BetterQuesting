@@ -1,6 +1,5 @@
 package bq_standard.network.handlers;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -21,7 +20,6 @@ import betterquesting.api2.utils.Tuple2;
 import bq_standard.tasks.TaskCheckbox;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
-import drethic.questbook.config.QBConfig;
 
 public class NetTaskCheckbox {
 
@@ -56,8 +54,7 @@ public class NetTaskCheckbox {
 
             if (task instanceof TaskCheckbox) {
                 ParticipantInfo pInfo = new ParticipantInfo(sender);
-                List<UUID> playersToMark = QBConfig.fullySyncQuests ? pInfo.ALL_UUIDS
-                    : Collections.singletonList(pInfo.UUID);
+                List<UUID> playersToMark = pInfo.ALL_UUIDS;
                 for (UUID user : playersToMark) {
                     task.setComplete(user);
                     if (QuestingAPI.getPlayer(user) == null) {
