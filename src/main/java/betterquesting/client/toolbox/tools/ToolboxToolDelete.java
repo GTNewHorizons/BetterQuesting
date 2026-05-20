@@ -5,12 +5,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-import net.minecraft.nbt.NBTTagCompound;
-
 import org.lwjgl.input.Keyboard;
 
 import betterquesting.api.client.toolbox.IToolboxTool;
-import betterquesting.api.utils.NBTConverter;
 import betterquesting.api2.client.gui.controls.PanelButtonQuest;
 import betterquesting.api2.client.gui.panels.lists.CanvasQuestLine;
 import betterquesting.client.gui2.editors.designer.PanelToolController;
@@ -63,10 +60,7 @@ public class ToolboxToolDelete implements IToolboxTool {
                     .getKey());
         }
 
-        NBTTagCompound payload = new NBTTagCompound();
-        payload.setTag("questIDs", NBTConverter.UuidValueType.QUEST.writeIds(questIDs));
-        payload.setInteger("action", 1);
-        NetQuestEdit.sendEdit(payload);
+        NetQuestEdit.requestDelete(questIDs);
 
         return true;
     }
@@ -97,10 +91,7 @@ public class ToolboxToolDelete implements IToolboxTool {
                     .getKey());
         }
 
-        NBTTagCompound payload = new NBTTagCompound();
-        payload.setTag("questIDs", NBTConverter.UuidValueType.QUEST.writeIds(questIDs));
-        payload.setInteger("action", 1);
-        NetQuestEdit.sendEdit(payload);
+        NetQuestEdit.requestDelete(questIDs);
 
         return true;
     }

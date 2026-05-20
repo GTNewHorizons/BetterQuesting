@@ -1,18 +1,18 @@
 package betterquesting.client.toolbox.tools;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.UUID;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
 
 import org.lwjgl.input.Keyboard;
 
 import betterquesting.api.client.toolbox.IToolboxTool;
 import betterquesting.api.properties.NativeProps;
+import betterquesting.api.questing.IQuest;
 import betterquesting.api.utils.BigItemStack;
-import betterquesting.api.utils.NBTConverter;
 import betterquesting.api2.client.gui.controls.PanelButtonQuest;
 import betterquesting.api2.client.gui.panels.lists.CanvasQuestLine;
 import betterquesting.client.gui2.editors.designer.PanelToolController;
@@ -57,27 +57,19 @@ public class ToolboxToolIcon implements IToolboxTool {
     private void changeIcon(List<PanelButtonQuest> list, BigItemStack refItem) {
         Minecraft mc = Minecraft.getMinecraft();
         mc.displayGuiScreen(new GuiItemSelection(mc.currentScreen, refItem, value -> {
-            NBTTagList dataList = new NBTTagList();
+            HashMap<UUID, IQuest> questsToEdit = new HashMap<>();
             for (PanelButtonQuest b : list) {
                 b.getStoredValue()
                     .getValue()
                     .setProperty(NativeProps.ICON, value);
 
-                NBTTagCompound entry = NBTConverter.UuidValueType.QUEST.writeId(
+                questsToEdit.put(
                     b.getStoredValue()
-                        .getKey());
-                entry.setTag(
-                    "config",
+                        .getKey(),
                     b.getStoredValue()
-                        .getValue()
-                        .writeToNBT(new NBTTagCompound()));
-                dataList.appendTag(entry);
+                        .getValue());
             }
-
-            NBTTagCompound payload = new NBTTagCompound();
-            payload.setTag("data", dataList);
-            payload.setInteger("action", 0);
-            NetQuestEdit.sendEdit(payload);
+            NetQuestEdit.requestEdit(questsToEdit);
         }));
     }
 
