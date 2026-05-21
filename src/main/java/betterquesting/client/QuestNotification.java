@@ -7,12 +7,15 @@ import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.PositionedSound;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 
 import org.lwjgl.opengl.GL11;
+
+import com.gtnewhorizon.gtnhlib.client.title.TitleAPI;
 
 import betterquesting.api.properties.NativeProps;
 import betterquesting.api.storage.BQ_Settings;
@@ -25,12 +28,32 @@ import cpw.mods.fml.relauncher.SideOnly;
 @SideOnly(Side.CLIENT)
 public class QuestNotification {
 
+    private static final boolean HAS_TITLE_API;
+    static {
+        boolean found;
+        try {
+            Class.forName("com.gtnewhorizon.gtnhlib.client.title.TitleAPI");
+            found = true;
+        } catch (ClassNotFoundException e) {
+            found = false;
+        }
+        HAS_TITLE_API = found;
+    }
+
     private static final List<QuestNotice> notices = new ArrayList<>();
 
     public static void ScheduleNotice(String mainTxt, String subTxt, ItemStack icon, String sound) {
         if (BQ_Settings.questNotices) {
             notices.add(new QuestNotice(mainTxt, subTxt, icon, sound));
         }
+    }
+
+    private static void showTitleIfAvailable(String mainTxt, String subTxt) {
+        if (!HAS_TITLE_API) return;
+        TitleAPI.setTimes(10, 40, 10);
+        TitleAPI.setSubtitle(
+            subTxt != null && !subTxt.isEmpty() ? new ChatComponentText(QuestTranslation.translate(subTxt)) : null);
+        TitleAPI.setTitle(new ChatComponentText(QuestTranslation.translate(mainTxt)));
     }
 
     public static void resetNotices() {
@@ -59,6 +82,7 @@ public class QuestNotification {
             }
             notice.init = true;
             notice.startTime = Minecraft.getSystemTime();
+            showTitleIfAvailable(notice.mainTxt, notice.subTxt);
             // lower volume for default xp jingle, standard volume for custom sounds
             float volume = notice.sound.equals(NativeProps.SOUND_COMPLETE.getDefault()) ? 0.25f : 1f;
             mc.getSoundHandler()
@@ -69,6 +93,8 @@ public class QuestNotification {
             notices.remove(0);
             return;
         }
+
+        if (HAS_TITLE_API) return;
 
         float alpha = notice.getTime() <= 4F ? Math.min(1F, notice.getTime()) : Math.max(0F, 5F - notice.getTime());
         alpha = MathHelper.clamp_float(alpha, 0.02F, 1F);
