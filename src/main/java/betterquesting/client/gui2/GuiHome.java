@@ -132,23 +132,7 @@ public class GuiHome extends GuiScreenCanvas implements IPEventListener {
         PanelButton btnNotif = new PanelButton(
             new GuiTransform(GuiAlign.BOTTOM_RIGHT, -140, -52, 136, 16, 0),
             420,
-            (BQ_Settings.questNotices ? QuestTranslation.translate("betterquesting.notification.enabled")
-                : QuestTranslation.translate("betterquesting.notification.disabled"))) {
-
-            @Override
-            public void onButtonClick() {
-                BQ_Settings.questNotices = !BQ_Settings.questNotices;
-                if (betterquesting.handlers.ConfigHandler.config != null) {
-                    betterquesting.handlers.ConfigHandler.config
-                        .get(Configuration.CATEGORY_GENERAL, "Quest Notices", true)
-                        .set(BQ_Settings.questNotices);
-                    betterquesting.handlers.ConfigHandler.config.save();
-                }
-                this.setText(
-                    BQ_Settings.questNotices ? QuestTranslation.translate("betterquesting.notification.enabled")
-                        : QuestTranslation.translate("betterquesting.notification.disabled"));
-            }
-        };
+            QuestTranslation.translate("betterquesting.notification.settings"));
         btnNotif
             .setTooltip(Collections.singletonList(QuestTranslation.translate("betterquesting.notification.tooltip")));
         inCan.addPanel(btnNotif);
@@ -239,6 +223,9 @@ public class GuiHome extends GuiScreenCanvas implements IPEventListener {
                 // this.initGui(); // Reset the whole thing
                 doClose();
             }
+        } else if (btn.getButtonID() == 420) // Notification Settings
+        {
+            mc.displayGuiScreen(new GuiNotificationSettings(this));
         } /*
            * else if(btn.getButtonID() == 6) // Test screen
            * {
