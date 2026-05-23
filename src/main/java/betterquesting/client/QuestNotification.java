@@ -32,9 +32,9 @@ public class QuestNotification {
     static {
         boolean found;
         try {
-            Class.forName("com.gtnewhorizon.gtnhlib.client.title.TitleAPI");
-            found = true;
-        } catch (ClassNotFoundException e) {
+            found = ClassLoader.getSystemClassLoader()
+                .getResource("com/gtnewhorizon/gtnhlib/client/title/TitleAPI.class") != null;
+        } catch (Exception e) {
             found = false;
         }
         HAS_TITLE_API = found;
@@ -50,7 +50,7 @@ public class QuestNotification {
 
     private static void showTitleIfAvailable(String mainTxt, String subTxt) {
         if (!HAS_TITLE_API) return;
-        TitleAPI.setTimes(10, 40, 10);
+        TitleAPI.setTimes(10, 60, 20);
         TitleAPI.setSubtitle(
             subTxt != null && !subTxt.isEmpty() ? new ChatComponentText(QuestTranslation.translate(subTxt)) : null);
         TitleAPI.setTitle(new ChatComponentText(QuestTranslation.translate(mainTxt)));
