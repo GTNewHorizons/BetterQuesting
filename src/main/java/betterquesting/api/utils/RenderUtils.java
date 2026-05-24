@@ -989,13 +989,8 @@ public class RenderUtils {
                     s1 = new StringBuilder(p_78282_0_.substring(i, i + 14));
                     i += 13;
                 }
-                // §q — rainbow, acts as a color (resets styles)
-                else if (c0l == 'q') {
-                    s1 = new StringBuilder("\u00a7" + c0);
-                    i += 1;
-                }
-                // §z, §v — wave/flip toggles (accumulate like style codes)
-                else if (c0l == 'z' || c0l == 'v') {
+                // §q/§z/§v: effects (accumulate, don't reset styles)
+                else if (c0l == 'q' || c0l == 'z' || c0l == 'v') {
                     s1.append("\u00a7")
                         .append(c0);
                     i += 1;
@@ -1033,13 +1028,8 @@ public class RenderUtils {
                     s1 = new StringBuilder(p_78282_0_.substring(i, i + 8));
                     i += 7;
                 }
-                // &q — rainbow (color-like, resets styles)
-                else if (c0l == 'q') {
-                    s1 = new StringBuilder("&" + c0);
-                    i += 1;
-                }
-                // &z, &v — wave/flip toggles (accumulate)
-                else if (c0l == 'z' || c0l == 'v') {
+                // &q/&z/&v: effects (accumulate, don't reset styles)
+                else if (c0l == 'q' || c0l == 'z' || c0l == 'v') {
                     s1.append("&")
                         .append(c0);
                     i += 1;
