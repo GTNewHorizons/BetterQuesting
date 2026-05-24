@@ -14,6 +14,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.event.ClickEvent;
 import net.minecraft.event.HoverEvent;
+import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.server.MinecraftServer;
@@ -346,13 +347,25 @@ public class EventHandler {
             }
         }
 
+        String particle = quest.getProperty(NativeProps.COMPLETION_PARTICLE);
+        String animation = quest.getProperty(NativeProps.COMPLETION_ANIMATION);
+        BigItemStack confettiBig = quest.getProperty(NativeProps.CONFETTI_ICON);
+        ItemStack confettiStack = confettiBig != null ? confettiBig.getBaseStack() : null;
+        ItemStack confettiIcon = (confettiStack != null && confettiStack.getItem() != Items.stick) ? confettiStack
+            : null;
+        int particleCount = quest.getProperty(NativeProps.PARTICLE_COUNT);
+
         NetNotices.sendNotice(
             quest.getProperty(NativeProps.GLOBAL) ? null : new EntityPlayerMP[] { (EntityPlayerMP) player },
             icon,
             mainText,
             questName,
             questIdStr,
-            sound);
+            sound,
+            particle,
+            animation,
+            confettiIcon,
+            particleCount);
     }
 
     @SubscribeEvent
