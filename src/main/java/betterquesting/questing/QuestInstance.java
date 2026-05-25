@@ -74,6 +74,10 @@ public class QuestInstance implements IQuest {
         setupValue(NativeProps.SOUND_COMPLETE);
         setupValue(NativeProps.SOUND_UPDATE);
         // setupValue(NativeProps.SOUND_UNLOCK);
+        setupValue(NativeProps.COMPLETION_PARTICLE);
+        setupValue(NativeProps.COMPLETION_ANIMATION);
+        setupValue(NativeProps.PARTICLE_COUNT);
+        setupValue(NativeProps.CONFETTI_ICON);
 
         setupValue(NativeProps.LOGIC_QUEST, EnumLogic.AND);
         setupValue(NativeProps.LOGIC_TASK, EnumLogic.AND);
