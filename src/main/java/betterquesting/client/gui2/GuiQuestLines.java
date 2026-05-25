@@ -924,7 +924,9 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
 
     private boolean isQuestCompletedForQuestline(UUID playerID, IQuest q) {
         if (q.isComplete(playerID)) return true; // Completed quest
-        if (q.getProperty(NativeProps.VISIBILITY) == EnumQuestVisibility.HIDDEN) return true; // Always hidden quest
+        EnumQuestVisibility vis = q.getProperty(NativeProps.VISIBILITY);
+        if (vis == EnumQuestVisibility.HIDDEN) return true; // Always hidden quest
+        if (vis == EnumQuestVisibility.SECRET) return true; // Always secret quest
         if (q.getProperty(NativeProps.LOGIC_QUEST) == EnumLogic.XOR) { // Quest with choice
             int reqCount = 0;
             for (UUID qRequirementId : q.getRequirements()) {
