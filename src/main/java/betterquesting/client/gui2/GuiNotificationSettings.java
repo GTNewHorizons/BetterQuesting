@@ -405,8 +405,10 @@ public class GuiNotificationSettings extends GuiScreenCanvas implements IPEventL
                     "Test Quest",
                     new ItemStack(Items.diamond),
                     NativeProps.SOUND_COMPLETE.getDefault());
-                Minecraft.getMinecraft()
-                    .displayGuiScreen(null);
+                if (!"off".equals(BQ_Settings.notificationStyle)) {
+                    Minecraft.getMinecraft()
+                        .displayGuiScreen(null);
+                }
                 break;
             case BTN_DONE:
                 saveConfig();
