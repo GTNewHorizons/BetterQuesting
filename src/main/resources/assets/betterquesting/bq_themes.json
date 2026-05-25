@@ -213,7 +213,7 @@
       "betterquesting:gui_divider":
       {
         "colorType": "betterquesting:color_static",
-        "color": "FF000000"
+        "color": "FFAB925A"
       },
       "betterquesting:grid_major":
       {
@@ -567,7 +567,7 @@
       "betterquesting:gui_divider":
       {
         "colorType": "betterquesting:color_static",
-        "color": "FFFFFFFF"
+        "color": "FF565656"
       },
       "betterquesting:grid_major":
       {
@@ -904,6 +904,14 @@
         "bounds": [120, 56, 24, 24],
         "padding": [11, 11, 11, 11],
         "sliceMode": 2
+     }
+    },
+    "colors":
+    {
+      "betterquesting:gui_divider":
+      {
+        "colorType": "betterquesting:color_static",
+        "color": "FF754228"
       }
     }
   },
@@ -1100,6 +1108,14 @@
         "atlas": "betterquesting:textures/gui/gui_themes.png",
         "bounds": [168, 56, 24, 24],
         "stretch": true
+     }
+    },
+    "colors":
+    {
+      "betterquesting:gui_divider":
+      {
+        "colorType": "betterquesting:color_static",
+        "color": "FF714F1F"
       }
     }
   },
@@ -1300,6 +1316,14 @@
         "bounds": [216, 56, 24, 24],
         "padding": [11, 11, 11, 11],
         "sliceMode": 2
+     }
+    },
+    "colors":
+    {
+      "betterquesting:gui_divider":
+      {
+        "colorType": "betterquesting:color_static",
+        "color": "FF23423A"
       }
     }
   },
@@ -1510,6 +1534,10 @@
       "betterquesting:text_main": {
         "colorType": "betterquesting:color_static",
         "color": "FF000000"
+      },
+      "betterquesting:gui_divider": {
+        "colorType": "betterquesting:color_static",
+        "color": "FF0B232B"
       }
     }
   },
@@ -1710,6 +1738,14 @@
         "bounds": [72, 136, 24, 24],
         "padding": [10, 10, 10, 10],
         "sliceMode": 1
+     }
+    },
+    "colors":
+    {
+      "betterquesting:gui_divider":
+      {
+        "colorType": "betterquesting:color_static",
+        "color": "FF000000"
       }
     }
   },
@@ -1943,7 +1979,7 @@
       "betterquesting:gui_divider":
       {
         "colorType": "betterquesting:color_static",
-        "color": "FFFFFFFF"
+        "color": "FF919191"
       },
       "betterquesting:grid_major":
       {
