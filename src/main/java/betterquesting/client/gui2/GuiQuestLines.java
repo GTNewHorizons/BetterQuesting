@@ -8,9 +8,11 @@ import java.awt.datatransfer.StringSelection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import net.minecraft.client.Minecraft;
@@ -126,6 +128,7 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
     private PanelTextBox txTitle;
     private PanelTextBox txDesc;
     private PanelTextBox completionText;
+    private PanelTextBox txGlobalCompletion;
 
     private PanelButton claimAll;
 
@@ -133,6 +136,8 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
     private static boolean viewMode;
     private int questsCompleted = 0;
     private int totalQuests = 0;
+    private int globalQuestsCompleted = 0;
+    private int globalTotalQuests = 0;
 
     private GuiQuestSearch searchGui;
     private GuiBookmarks bookmarksGui;
@@ -274,9 +279,16 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
         });
         cvBackground.addPanel(cvChapterTray);
 
-        cvLines = new CanvasScrolling(new GuiTransform(GuiAlign.FULL_BOX, new GuiPadding(8, 8, 16, 8), 0));
+        cvLines = new CanvasScrolling(new GuiTransform(GuiAlign.FULL_BOX, new GuiPadding(8, 20, 16, 8), 0));
         cvChapterTray.getCanvasOpen()
             .addPanel(cvLines);
+
+        txGlobalCompletion = new PanelTextBox(
+            new GuiTransform(new Vector4f(0F, 0F, 1F, 0F), new GuiPadding(8, 8, 16, -20), 0),
+            "");
+        txGlobalCompletion.setColor(PresetColor.TEXT_HEADER.getColor());
+        cvChapterTray.getCanvasOpen()
+            .addPanel(txGlobalCompletion);
 
         scLines = new PanelVScrollBar(new GuiTransform(GuiAlign.RIGHT_EDGE, new GuiPadding(-16, 8, 8, 8), 0));
         cvLines.setScrollDriverY(scLines);
@@ -906,6 +918,8 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
         }
 
         if (cvChapterTray.isTrayOpen()) buildChapterList();
+
+        computeGlobalCompletion();
     }
 
     private boolean isQuestCompletedForQuestline(UUID playerID, IQuest q) {
@@ -1004,8 +1018,55 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
                 questsCompleted++;
             }
         }
-        completionText
-            .setText(QuestTranslation.translate("betterquesting.title.completion", questsCompleted, totalQuests));
+        String completionPercent = totalQuests > 0 ? String.format("%.2f", questsCompleted * 100.0 / totalQuests)
+            : "0.00";
+        completionText.setText(
+            QuestTranslation
+                .translate("betterquesting.title.completion", questsCompleted, totalQuests, completionPercent));
+    }
+
+    private void computeGlobalCompletion() {
+        UUID playerUUId = QuestingAPI.getQuestingUUID(mc.thePlayer);
+
+        globalQuestsCompleted = 0;
+        globalTotalQuests = 0;
+
+        Set<UUID> seen = new HashSet<>();
+
+        for (Tuple2<Map.Entry<UUID, IQuestLine>, Integer> visChapter : visChapters) {
+            IQuestLine line = visChapter.getFirst()
+                .getValue();
+            for (Map.Entry<UUID, IQuestLineEntry> entry : line.entrySet()) {
+                UUID questId = entry.getKey();
+                if (!seen.add(questId)) continue; // already counted in another visible line
+
+                IQuest quest = QuestingAPI.getAPI(ApiReference.QUEST_DB)
+                    .get(questId);
+                if (quest == null) {
+                    if (BQ_Settings.logNullQuests) {
+                        BetterQuesting.logger.warn("Skipping null quest with ID {}", questId);
+                    }
+                    continue;
+                }
+
+                globalTotalQuests++;
+                if (quest.isComplete(playerUUId) || !quest.isUnlockable(playerUUId)) {
+                    globalQuestsCompleted++;
+                }
+            }
+        }
+
+        if (txGlobalCompletion != null) {
+            String percent = globalTotalQuests > 0
+                ? String.format("%.2f", globalQuestsCompleted * 100.0 / globalTotalQuests)
+                : "0.00";
+            txGlobalCompletion.setText(
+                QuestTranslation.translate(
+                    "betterquesting.title.completion_total",
+                    globalQuestsCompleted,
+                    globalTotalQuests,
+                    percent));
+        }
     }
 
     private void openQuestLine(Map.Entry<UUID, IQuestLine> q) {
