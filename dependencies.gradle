@@ -6,7 +6,7 @@ dependencies {
     compileOnly 'com.cubefury.vendingmachine:VendingMachine:0.4.1:dev'
 
     implementation 'com.github.GTNewHorizons:NotEnoughItems:2.8.98-GTNH:dev'
-    compileOnly 'com.github.GTNewHorizons:GTNHLib:0.10.3:dev'
+    compileOnly 'com.github.GTNewHorizons:GTNHLib:0.10.7:dev'
 
     // For testing translations
     runtimeOnly 'com.github.GTNewHorizons:TX-Loader:1.8.10'
