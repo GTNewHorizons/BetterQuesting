@@ -1012,6 +1012,11 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
                 continue;
             }
 
+            EnumQuestVisibility vis = quest.getProperty(NativeProps.VISIBILITY);
+            if (vis == EnumQuestVisibility.HIDDEN || vis == EnumQuestVisibility.SECRET) {
+                continue;
+            }
+
             totalQuests++;
 
             if (quest.isComplete(playerUUId) || !quest.isUnlockable(playerUUId)) {
@@ -1043,9 +1048,11 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
                 IQuest quest = QuestingAPI.getAPI(ApiReference.QUEST_DB)
                     .get(questId);
                 if (quest == null) {
-                    if (BQ_Settings.logNullQuests) {
-                        BetterQuesting.logger.warn("Skipping null quest with ID {}", questId);
-                    }
+                    continue;
+                }
+
+                EnumQuestVisibility vis = quest.getProperty(NativeProps.VISIBILITY);
+                if (vis == EnumQuestVisibility.HIDDEN || vis == EnumQuestVisibility.SECRET) {
                     continue;
                 }
 
