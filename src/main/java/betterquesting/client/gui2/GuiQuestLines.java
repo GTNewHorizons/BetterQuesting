@@ -1019,6 +1019,10 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
                 continue;
             }
 
+            if (!quest.getProperty(NativeProps.COUNT_AS_QUEST)) {
+                continue; // excluded from completion count
+            }
+
             totalQuests++;
 
             if (quest.isComplete(playerUUId) || !quest.isUnlockable(playerUUId)) {
@@ -1056,6 +1060,10 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
                 EnumQuestVisibility vis = quest.getProperty(NativeProps.VISIBILITY);
                 if (vis == EnumQuestVisibility.HIDDEN || vis == EnumQuestVisibility.SECRET) {
                     continue;
+                }
+
+                if (!quest.getProperty(NativeProps.COUNT_AS_QUEST)) {
+                    continue; // excluded from completion count
                 }
 
                 globalTotalQuests++;

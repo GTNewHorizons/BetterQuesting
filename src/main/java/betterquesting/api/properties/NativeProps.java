@@ -48,6 +48,9 @@ public class NativeProps {
     public static final IPropertyType<Boolean> SIMULTANEOUS = new PropertyTypeBoolean(
         new ResourceLocation("betterquesting:simultaneous"),
         false);
+    public static final IPropertyType<Boolean> COUNT_AS_QUEST = new PropertyTypeBoolean(
+        new ResourceLocation("betterquesting:countAsQuest"),
+        true);
 
     public static final IPropertyType<EnumQuestVisibility> VISIBILITY = new PropertyTypeEnum<>(
         new ResourceLocation("betterquesting:visibility"),
