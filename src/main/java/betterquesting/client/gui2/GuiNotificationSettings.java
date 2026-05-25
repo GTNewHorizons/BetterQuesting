@@ -410,6 +410,7 @@ public class GuiNotificationSettings extends GuiScreenCanvas implements IPEventL
                 break;
             case BTN_PREVIEW:
                 saveConfig();
+                QuestNotification.setPendingScreen(new GuiNotificationSettings(parent));
                 QuestNotification.ScheduleNotice(
                     "betterquesting.notice.complete",
                     "Test Quest",
@@ -458,6 +459,9 @@ public class GuiNotificationSettings extends GuiScreenCanvas implements IPEventL
 
     private void cycleAnimation() {
         switch (BQ_Settings.notificationIconAnimation) {
+            case "none":
+                BQ_Settings.notificationIconAnimation = "fly_in";
+                break;
             case "fly_in":
                 BQ_Settings.notificationIconAnimation = "spin";
                 break;
@@ -465,7 +469,7 @@ public class GuiNotificationSettings extends GuiScreenCanvas implements IPEventL
                 BQ_Settings.notificationIconAnimation = "none";
                 break;
             default:
-                BQ_Settings.notificationIconAnimation = "spin";
+                BQ_Settings.notificationIconAnimation = "fly_in";
                 break;
         }
     }
@@ -563,14 +567,14 @@ public class GuiNotificationSettings extends GuiScreenCanvas implements IPEventL
         BQ_Settings.notificationStyle = "title";
         BQ_Settings.questNotices = true;
         BQ_Settings.showNotificationIcon = true;
-        BQ_Settings.notificationIconAnimation = "spin";
+        BQ_Settings.notificationIconAnimation = "none";
         BQ_Settings.notificationParticle = "none";
         BQ_Settings.notificationTitleScale = 0;
         BQ_Settings.notificationSubtitleScale = 0;
         BQ_Settings.notificationDuration = 4.5f;
         BQ_Settings.notificationFadeIn = 0.5f;
         BQ_Settings.notificationFadeOut = 1.0f;
-        BQ_Settings.notificationIconScale = 2.0f;
+        BQ_Settings.notificationIconScale = 4.0f;
         BQ_Settings.notificationIconOffsetY = -25;
         saveConfig();
     }
@@ -589,7 +593,7 @@ public class GuiNotificationSettings extends GuiScreenCanvas implements IPEventL
             .set(BQ_Settings.notificationFadeIn);
         ConfigHandler.config.get(Configuration.CATEGORY_GENERAL, "Notification Fade Out", 1.0)
             .set(BQ_Settings.notificationFadeOut);
-        ConfigHandler.config.get(Configuration.CATEGORY_GENERAL, "Notification Icon Scale", 2.0)
+        ConfigHandler.config.get(Configuration.CATEGORY_GENERAL, "Notification Icon Scale", 4.0)
             .set(BQ_Settings.notificationIconScale);
         ConfigHandler.config.get(Configuration.CATEGORY_GENERAL, "Notification Icon Offset Y", 0)
             .set(BQ_Settings.notificationIconOffsetY);
@@ -597,7 +601,7 @@ public class GuiNotificationSettings extends GuiScreenCanvas implements IPEventL
             .set(BQ_Settings.notificationTitleScale);
         ConfigHandler.config.get(Configuration.CATEGORY_GENERAL, "Notification Subtitle Scale", 0.0)
             .set(BQ_Settings.notificationSubtitleScale);
-        ConfigHandler.config.get(Configuration.CATEGORY_GENERAL, "Notification Icon Animation", "fly_in")
+        ConfigHandler.config.get(Configuration.CATEGORY_GENERAL, "Notification Icon Animation", "none")
             .set(BQ_Settings.notificationIconAnimation);
         ConfigHandler.config.get(Configuration.CATEGORY_GENERAL, "Notification Particle", "none")
             .set(BQ_Settings.notificationParticle);

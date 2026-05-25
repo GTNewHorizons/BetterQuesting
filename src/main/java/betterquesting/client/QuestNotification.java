@@ -6,6 +6,7 @@ import java.util.List;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.PositionedSound;
+import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
@@ -33,7 +34,7 @@ public class QuestNotification {
     static {
         boolean found;
         try {
-            found = ClassLoader.getSystemClassLoader()
+            found = QuestNotification.class.getClassLoader()
                 .getResource("com/gtnewhorizon/gtnhlib/client/title/TitleAPI.class") != null;
         } catch (Exception e) {
             found = false;
@@ -42,6 +43,11 @@ public class QuestNotification {
     }
 
     private static final List<QuestNotice> notices = new ArrayList<>();
+    private static GuiScreen pendingScreen = null;
+
+    public static void setPendingScreen(GuiScreen screen) {
+        pendingScreen = screen;
+    }
 
     public static void ScheduleNotice(String mainTxt, String subTxt, ItemStack icon, String sound) {
         ScheduleNotice(mainTxt, subTxt, icon, sound, "default", "default", null, -1);
@@ -138,6 +144,7 @@ public class QuestNotification {
 
         if (notices.size() >= 20 || "off".equals(BQ_Settings.notificationStyle)) {
             notices.clear();
+            pendingScreen = null;
             return;
         }
 
@@ -165,6 +172,10 @@ public class QuestNotification {
         float displayDuration = BQ_Settings.notificationDuration;
         if (notice.getTime() >= displayDuration) {
             notices.remove(0);
+            if (notices.isEmpty() && pendingScreen != null) {
+                mc.displayGuiScreen(pendingScreen);
+                pendingScreen = null;
+            }
             return;
         }
 

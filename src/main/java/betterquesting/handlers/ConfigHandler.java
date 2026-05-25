@@ -64,10 +64,10 @@ public class ConfigHandler {
         BQ_Settings.notificationIconScale = config.getFloat(
             "Notification Icon Scale",
             Configuration.CATEGORY_GENERAL,
-            2.0f,
+            4.0f,
             0.5f,
             8.0f,
-            "Size of the quest icon in title notifications (default 2.0 = 32x32 pixels)");
+            "Size of the quest icon in title notifications (default 4.0 = 64x64 pixels)");
         BQ_Settings.notificationIconOffsetY = config.getInt(
             "Notification Icon Offset Y",
             Configuration.CATEGORY_GENERAL,
@@ -92,7 +92,7 @@ public class ConfigHandler {
         BQ_Settings.notificationIconAnimation = config.getString(
             "Notification Icon Animation",
             Configuration.CATEGORY_GENERAL,
-            "spin",
+            "none",
             "Icon animation style during fade-in: none, fly_in, spin");
         BQ_Settings.notificationParticle = config.getString(
             "Notification Particle",

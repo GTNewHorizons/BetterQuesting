@@ -25,11 +25,11 @@ public class BQ_Settings {
     public static float notificationDuration = 4.5f;
     public static float notificationFadeIn = 0.5f;
     public static float notificationFadeOut = 1.0f;
-    public static float notificationIconScale = 2.0f;
+    public static float notificationIconScale = 4.0f;
     public static int notificationIconOffsetY = -25;
     public static float notificationTitleScale = 0;
     public static float notificationSubtitleScale = 0;
-    public static String notificationIconAnimation = "spin";
+    public static String notificationIconAnimation = "none";
     public static String notificationParticle = "none";
     public static boolean dirtyMode = true;
     public static float scrollMultiplier = 0.1F;
