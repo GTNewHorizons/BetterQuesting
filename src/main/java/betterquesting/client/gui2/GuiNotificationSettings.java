@@ -20,10 +20,14 @@ import betterquesting.api2.client.gui.events.PanelEvent;
 import betterquesting.api2.client.gui.events.types.PEventButton;
 import betterquesting.api2.client.gui.misc.GuiAlign;
 import betterquesting.api2.client.gui.misc.GuiPadding;
+import betterquesting.api2.client.gui.misc.GuiRectangle;
 import betterquesting.api2.client.gui.misc.GuiTransform;
 import betterquesting.api2.client.gui.panels.CanvasEmpty;
 import betterquesting.api2.client.gui.panels.CanvasTextured;
+import betterquesting.api2.client.gui.panels.IGuiCanvas;
+import betterquesting.api2.client.gui.panels.bars.PanelVScrollBar;
 import betterquesting.api2.client.gui.panels.content.PanelTextBox;
+import betterquesting.api2.client.gui.panels.lists.CanvasScrolling;
 import betterquesting.api2.client.gui.resources.colors.GuiColorStatic;
 import betterquesting.api2.client.gui.themes.presets.PresetColor;
 import betterquesting.api2.client.gui.themes.presets.PresetTexture;
@@ -99,66 +103,61 @@ public class GuiNotificationSettings extends GuiScreenCanvas implements IPEventL
                 .setColor(PresetColor.TEXT_HEADER.getColor());
         inCan.addPanel(title);
 
-        int y = 24;
+        CanvasScrolling scrollCan = new CanvasScrolling(
+            new GuiTransform(new Vector4f(left, 0F, right, 1F), new GuiPadding(-centerW / 2, 20, -centerW / 2, 24), 0))
+                .enableBlocking(false);
+        inCan.addPanel(scrollCan);
+
+        PanelVScrollBar scrollBar = new PanelVScrollBar(
+            new GuiTransform(
+                new Vector4f(right, 0F, right, 1F),
+                new GuiPadding(centerW / 2 + 16, 20, -centerW / 2 - 24, 24),
+                0));
+        inCan.addPanel(scrollBar);
+        scrollCan.setScrollDriverY(scrollBar);
+
+        int y = 0;
         int rowH = 20;
 
-        PanelTextBox lblStyle = new PanelTextBox(
-            new GuiTransform(new Vector4f(left, 0F, right, 0F), -centerW / 2, y + 4, centerW / 2 - 4, 12, 0),
-            QuestTranslation.translate("betterquesting.notification.style")).setAlignment(2)
-                .setColor(PresetColor.TEXT_MAIN.getColor());
-        inCan.addPanel(lblStyle);
-        btnStyle = new PanelButton(
-            new GuiTransform(new Vector4f(left, 0F, right, 0F), 4, y, centerW / 2 - 4, 16, 0),
+        addCycleRow(
+            scrollCan,
+            y,
+            centerW,
+            QuestTranslation.translate("betterquesting.notification.style"),
             BTN_STYLE,
             getStyleLabel());
-        inCan.addPanel(btnStyle);
-
         y += rowH;
 
-        PanelTextBox lblIcon = new PanelTextBox(
-            new GuiTransform(new Vector4f(left, 0F, right, 0F), -centerW / 2, y + 4, centerW / 2 - 4, 12, 0),
-            QuestTranslation.translate("betterquesting.notification.showicon")).setAlignment(2)
-                .setColor(PresetColor.TEXT_MAIN.getColor());
-        inCan.addPanel(lblIcon);
-        btnIcon = new PanelButton(
-            new GuiTransform(new Vector4f(left, 0F, right, 0F), 4, y, centerW / 2 - 4, 16, 0),
+        addCycleRow(
+            scrollCan,
+            y,
+            centerW,
+            QuestTranslation.translate("betterquesting.notification.showicon"),
             BTN_ICON,
             getIconLabel());
-        inCan.addPanel(btnIcon);
-
         y += rowH;
 
-        PanelTextBox lblAnimate = new PanelTextBox(
-            new GuiTransform(new Vector4f(left, 0F, right, 0F), -centerW / 2, y + 4, centerW / 2 - 4, 12, 0),
-            QuestTranslation.translate("betterquesting.notification.animate")).setAlignment(2)
-                .setColor(PresetColor.TEXT_MAIN.getColor());
-        inCan.addPanel(lblAnimate);
-        btnAnimate = new PanelButton(
-            new GuiTransform(new Vector4f(left, 0F, right, 0F), 4, y, centerW / 2 - 4, 16, 0),
+        addCycleRow(
+            scrollCan,
+            y,
+            centerW,
+            QuestTranslation.translate("betterquesting.notification.animate"),
             BTN_ANIMATE,
             getAnimateLabel());
-        inCan.addPanel(btnAnimate);
-
         y += rowH;
 
-        PanelTextBox lblParticle = new PanelTextBox(
-            new GuiTransform(new Vector4f(left, 0F, right, 0F), -centerW / 2, y + 4, centerW / 2 - 4, 12, 0),
-            QuestTranslation.translate("betterquesting.notification.particle")).setAlignment(2)
-                .setColor(PresetColor.TEXT_MAIN.getColor());
-        inCan.addPanel(lblParticle);
-        btnParticle = new PanelButton(
-            new GuiTransform(new Vector4f(left, 0F, right, 0F), 4, y, centerW / 2 - 4, 16, 0),
+        addCycleRow(
+            scrollCan,
+            y,
+            centerW,
+            QuestTranslation.translate("betterquesting.notification.particle"),
             BTN_PARTICLE,
             getParticleLabel());
-        inCan.addPanel(btnParticle);
-
         y += rowH;
 
         addNumberRow(
-            inCan,
+            scrollCan,
             y,
-            left,
-            right,
             centerW,
             QuestTranslation.translate("betterquesting.notification.titlescale"),
             formatScaleOrAuto(BQ_Settings.notificationTitleScale),
@@ -168,10 +167,8 @@ public class GuiNotificationSettings extends GuiScreenCanvas implements IPEventL
         y += rowH;
 
         addNumberRow(
-            inCan,
+            scrollCan,
             y,
-            left,
-            right,
             centerW,
             QuestTranslation.translate("betterquesting.notification.subtitlescale"),
             formatScaleOrAuto(BQ_Settings.notificationSubtitleScale),
@@ -181,10 +178,8 @@ public class GuiNotificationSettings extends GuiScreenCanvas implements IPEventL
         y += rowH;
 
         addNumberRow(
-            inCan,
+            scrollCan,
             y,
-            left,
-            right,
             centerW,
             QuestTranslation.translate("betterquesting.notification.duration"),
             formatSeconds(BQ_Settings.notificationDuration),
@@ -194,10 +189,8 @@ public class GuiNotificationSettings extends GuiScreenCanvas implements IPEventL
         y += rowH;
 
         addNumberRow(
-            inCan,
+            scrollCan,
             y,
-            left,
-            right,
             centerW,
             QuestTranslation.translate("betterquesting.notification.fadein"),
             formatSeconds(BQ_Settings.notificationFadeIn),
@@ -207,10 +200,8 @@ public class GuiNotificationSettings extends GuiScreenCanvas implements IPEventL
         y += rowH;
 
         addNumberRow(
-            inCan,
+            scrollCan,
             y,
-            left,
-            right,
             centerW,
             QuestTranslation.translate("betterquesting.notification.fadeout"),
             formatSeconds(BQ_Settings.notificationFadeOut),
@@ -219,18 +210,14 @@ public class GuiNotificationSettings extends GuiScreenCanvas implements IPEventL
             2);
         y += rowH;
 
-        txtStatus = new PanelTextBox(
-            new GuiTransform(new Vector4f(0F, 0F, 1F, 0F), new GuiPadding(0, y, 0, -(y + 12)), 0),
-            getStatusText()).setAlignment(1);
+        txtStatus = new PanelTextBox(new GuiRectangle(0, y, centerW, 12, 0), getStatusText()).setAlignment(1);
         updateStatusColor();
-        inCan.addPanel(txtStatus);
+        scrollCan.addPanel(txtStatus);
         y += 16;
 
         addNumberRow(
-            inCan,
+            scrollCan,
             y,
-            left,
-            right,
             centerW,
             QuestTranslation.translate("betterquesting.notification.iconscale"),
             formatScale(BQ_Settings.notificationIconScale),
@@ -240,27 +227,24 @@ public class GuiNotificationSettings extends GuiScreenCanvas implements IPEventL
         y += rowH;
 
         addNumberRow(
-            inCan,
+            scrollCan,
             y,
-            left,
-            right,
             centerW,
             QuestTranslation.translate("betterquesting.notification.iconoffset"),
             String.valueOf(BQ_Settings.notificationIconOffsetY),
             BTN_ICON_OFFSET_DOWN,
             BTN_ICON_OFFSET_UP,
             4);
-        y += rowH + 8;
 
         int btnW = (centerW - 8) / 3;
         PanelButton resetBtn = new PanelButton(
-            new GuiTransform(new Vector4f(left, 0F, right, 0F), -centerW / 2, y, btnW, 16, 0),
+            new GuiTransform(new Vector4f(left, 1F, right, 1F), -centerW / 2, -16, btnW, 16, 0),
             BTN_RESET,
             QuestTranslation.translate("betterquesting.notification.reset"));
         inCan.addPanel(resetBtn);
 
         PanelButton previewBtn = new PanelButton(
-            new GuiTransform(new Vector4f(left, 0F, right, 0F), -centerW / 2 + btnW + 4, y, btnW, 16, 0),
+            new GuiTransform(new Vector4f(left, 1F, right, 1F), -centerW / 2 + btnW + 4, -16, btnW, 16, 0),
             BTN_PREVIEW,
             QuestTranslation.translate("betterquesting.notification.preview"));
         previewBtn.setTooltip(
@@ -268,24 +252,35 @@ public class GuiNotificationSettings extends GuiScreenCanvas implements IPEventL
         inCan.addPanel(previewBtn);
 
         PanelButton doneBtn = new PanelButton(
-            new GuiTransform(new Vector4f(left, 0F, right, 0F), -centerW / 2 + (btnW + 4) * 2, y, btnW, 16, 0),
+            new GuiTransform(new Vector4f(left, 1F, right, 1F), -centerW / 2 + (btnW + 4) * 2, -16, btnW, 16, 0),
             BTN_DONE,
             QuestTranslation.translate("betterquesting.notification.done"));
         inCan.addPanel(doneBtn);
     }
 
-    private void addNumberRow(CanvasEmpty canvas, int y, float left, float right, int centerW, String label,
-        String value, int btnDownId, int btnUpId, int idx) {
-        PanelTextBox lbl = new PanelTextBox(
-            new GuiTransform(new Vector4f(left, 0F, right, 0F), -centerW / 2, y + 4, centerW / 2 - 4, 12, 0),
-            label).setAlignment(2)
-                .setColor(PresetColor.TEXT_MAIN.getColor());
+    private void addCycleRow(IGuiCanvas canvas, int y, int w, String label, int btnId, String btnLabel) {
+        PanelTextBox lbl = new PanelTextBox(new GuiRectangle(0, y + 4, w / 2 - 4, 12, 0), label).setAlignment(2)
+            .setColor(PresetColor.TEXT_MAIN.getColor());
         canvas.addPanel(lbl);
 
-        PanelTextBox val = new PanelTextBox(
-            new GuiTransform(new Vector4f(left, 0F, right, 0F), 4, y + 4, centerW / 2 - 40, 12, 0),
-            value).setAlignment(1)
-                .setColor(PresetColor.TEXT_MAIN.getColor());
+        PanelButton btn = new PanelButton(new GuiRectangle(w / 2 + 4, y, w / 2 - 4, 16, 0), btnId, btnLabel);
+        canvas.addPanel(btn);
+
+        if (btnId == BTN_STYLE) btnStyle = btn;
+        else if (btnId == BTN_ICON) btnIcon = btn;
+        else if (btnId == BTN_ANIMATE) btnAnimate = btn;
+        else if (btnId == BTN_PARTICLE) btnParticle = btn;
+    }
+
+    private void addNumberRow(IGuiCanvas canvas, int y, int w, String label, String value, int btnDownId, int btnUpId,
+        int idx) {
+        PanelTextBox lbl = new PanelTextBox(new GuiRectangle(0, y + 4, w / 2 - 4, 12, 0), label).setAlignment(2)
+            .setColor(PresetColor.TEXT_MAIN.getColor());
+        canvas.addPanel(lbl);
+
+        PanelTextBox val = new PanelTextBox(new GuiRectangle(w / 2 + 4, y + 4, w / 2 - 44, 12, 0), value)
+            .setAlignment(1)
+            .setColor(PresetColor.TEXT_MAIN.getColor());
         canvas.addPanel(val);
 
         if (idx == 0) txtDuration = val;
@@ -296,16 +291,10 @@ public class GuiNotificationSettings extends GuiScreenCanvas implements IPEventL
         else if (idx == 5) txtTitleScale = val;
         else if (idx == 6) txtSubScale = val;
 
-        PanelButton btnDown = new PanelButton(
-            new GuiTransform(new Vector4f(right, 0F, right, 0F), centerW / 2 - 36, y, 16, 16, 0),
-            btnDownId,
-            "-");
+        PanelButton btnDown = new PanelButton(new GuiRectangle(w - 36, y, 16, 16, 0), btnDownId, "-");
         canvas.addPanel(btnDown);
 
-        PanelButton btnUp = new PanelButton(
-            new GuiTransform(new Vector4f(right, 0F, right, 0F), centerW / 2 - 16, y, 16, 16, 0),
-            btnUpId,
-            "+");
+        PanelButton btnUp = new PanelButton(new GuiRectangle(w - 16, y, 16, 16, 0), btnUpId, "+");
         canvas.addPanel(btnUp);
     }
 

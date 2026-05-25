@@ -55,7 +55,14 @@ public class QuestNotification {
 
     public static void ScheduleNotice(String mainTxt, String subTxt, ItemStack icon, String sound, String particle,
         String animation, ItemStack confettiIcon, int particleCount) {
-        if ("off".equals(BQ_Settings.notificationStyle)) return;
+        if ("off".equals(BQ_Settings.notificationStyle)) {
+            if (pendingScreen != null) {
+                Minecraft.getMinecraft()
+                    .displayGuiScreen(pendingScreen);
+                pendingScreen = null;
+            }
+            return;
+        }
         notices.add(new QuestNotice(mainTxt, subTxt, icon, sound, particle, animation, confettiIcon, particleCount));
     }
 
