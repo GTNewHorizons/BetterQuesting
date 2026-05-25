@@ -86,6 +86,7 @@ public class QuestInstance implements IQuest {
         setupValue(NativeProps.MAIN, false);
         setupValue(NativeProps.GLOBAL_SHARE, false);
         setupValue(NativeProps.SIMULTANEOUS, false);
+        setupValue(NativeProps.COUNT_AS_QUEST, true);
         setupValue(NativeProps.VISIBILITY, EnumQuestVisibility.NORMAL);
     }
 
@@ -521,6 +522,9 @@ public class QuestInstance implements IQuest {
     @Override
     public void readFromNBT(NBTTagCompound jObj) {
         this.qInfo.readFromNBT(jObj.getCompoundTag("properties"));
+        // Prepopulate so the flag is visible in the raw-NBT editor without manual entry.
+        // Writes the default (true) when absent, preserves any stored value otherwise.
+        this.qInfo.setProperty(NativeProps.COUNT_AS_QUEST, this.qInfo.getProperty(NativeProps.COUNT_AS_QUEST));
         this.tasks.readFromNBT(jObj.getTagList("tasks", 10), false);
         this.rewards.readFromNBT(jObj.getTagList("rewards", 10), false);
 
