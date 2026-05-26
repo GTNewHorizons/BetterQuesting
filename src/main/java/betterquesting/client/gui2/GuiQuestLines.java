@@ -927,6 +927,7 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
         EnumQuestVisibility vis = q.getProperty(NativeProps.VISIBILITY);
         if (vis == EnumQuestVisibility.HIDDEN) return true; // Always hidden quest
         if (vis == EnumQuestVisibility.SECRET) return true; // Always secret quest
+        if (!q.getProperty(NativeProps.COUNT_AS_QUEST)) return true; // Excluded from completion count
         if (q.getProperty(NativeProps.LOGIC_QUEST) == EnumLogic.XOR) { // Quest with choice
             int reqCount = 0;
             for (UUID qRequirementId : q.getRequirements()) {
@@ -1019,6 +1020,10 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
                 continue;
             }
 
+            if (!quest.getProperty(NativeProps.COUNT_AS_QUEST)) {
+                continue; // excluded from completion count
+            }
+
             totalQuests++;
 
             if (quest.isComplete(playerUUId) || !quest.isUnlockable(playerUUId)) {
@@ -1056,6 +1061,10 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
                 EnumQuestVisibility vis = quest.getProperty(NativeProps.VISIBILITY);
                 if (vis == EnumQuestVisibility.HIDDEN || vis == EnumQuestVisibility.SECRET) {
                     continue;
+                }
+
+                if (!quest.getProperty(NativeProps.COUNT_AS_QUEST)) {
+                    continue; // excluded from completion count
                 }
 
                 globalTotalQuests++;
