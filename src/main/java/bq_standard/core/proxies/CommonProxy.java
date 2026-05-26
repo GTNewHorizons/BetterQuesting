@@ -34,6 +34,7 @@ import bq_standard.tasks.factory.FactoryTaskInteractItem;
 import bq_standard.tasks.factory.FactoryTaskLocation;
 import bq_standard.tasks.factory.FactoryTaskMeeting;
 import bq_standard.tasks.factory.FactoryTaskOptionalRetrieval;
+import bq_standard.tasks.factory.FactoryTaskPartialRetrieval;
 import bq_standard.tasks.factory.FactoryTaskRetrieval;
 import bq_standard.tasks.factory.FactoryTaskScoreboard;
 import bq_standard.tasks.factory.FactoryTaskXP;
@@ -70,6 +71,7 @@ public class CommonProxy {
         taskReg.register(FactoryTaskInteractItem.INSTANCE);
         taskReg.register(FactoryTaskInteractEntity.INSTANCE);
         taskReg.register(FactoryTaskOptionalRetrieval.INSTANCE);
+        taskReg.register(FactoryTaskPartialRetrieval.INSTANCE);
 
         IRegistry<IFactoryData<IReward, NBTTagCompound>, IReward> rewardReg = QuestingAPI
             .getAPI(ApiReference.REWARD_REG);
