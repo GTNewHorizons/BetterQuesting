@@ -19,9 +19,6 @@ import cpw.mods.fml.relauncher.SideOnly;
 
 public class TaskPartialRetrieval extends TaskRetrieval {
 
-    // Extra Region Properties
-    public int minTasks = 1;
-
     @Override
     public String getUnlocalisedName() {
         return BQ_Standard.MODID + ".task.partial_retrieval";
@@ -38,18 +35,13 @@ public class TaskPartialRetrieval extends TaskRetrieval {
         boolean updated = resync;
 
         for (Tuple2<UUID, int[]> value : progress) {
-            int count = 0;
             for (int j = 0; j < requiredItems.size(); j++) {
                 if (value.getSecond()[j] >= requiredItems.get(j).stackSize) {
-                    count++;
+                    updated = true;
+                    progress.forEach((pair) -> setComplete(pair.getFirst()));
+                    break;
                 }
             }
-
-            if (count < minTasks) continue;
-
-            updated = true;
-            progress.forEach((pair) -> setComplete(pair.getFirst()));
-            break;
         }
 
         if (updated) {
