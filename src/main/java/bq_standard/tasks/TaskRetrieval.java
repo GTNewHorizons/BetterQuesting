@@ -167,7 +167,7 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
         checkAndComplete(pInfo, quest, detector.updated, detector.progress);
     }
 
-    protected void checkAndComplete(ParticipantInfo pInfo, Map.Entry<UUID, IQuest> quest, boolean resync,
+    private void checkAndComplete(ParticipantInfo pInfo, Map.Entry<UUID, IQuest> quest, boolean resync,
         List<Tuple2<UUID, int[]>> progress) {
         boolean updated = resync;
 
