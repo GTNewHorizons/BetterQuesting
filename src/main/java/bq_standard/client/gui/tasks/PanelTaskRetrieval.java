@@ -85,7 +85,9 @@ public class PanelTaskRetrieval extends CanvasMinimum {
                     .append(QuestTranslation.translate("betterquesting.tooltip.incomplete"));
             }
 
-            PanelTextBox text = new PanelTextBox(new GuiRectangle(32, i * height + 16, listW - 28, 28, 0), sb.toString());
+            PanelTextBox text = new PanelTextBox(
+                new GuiRectangle(32, i * height + 16, listW - 28, 28, 0),
+                sb.toString());
             text.setColor(PresetColor.TEXT_MAIN.getColor());
             this.addPanel(text);
 
