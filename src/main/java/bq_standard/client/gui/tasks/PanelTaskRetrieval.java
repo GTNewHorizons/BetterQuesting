@@ -89,14 +89,13 @@ public class PanelTaskRetrieval extends CanvasMinimum {
             text.setColor(PresetColor.TEXT_MAIN.getColor());
             this.addPanel(text);
 
-            if (task.requireOnlyOneItem) {
-                if (task.requiredItems.size() - i == 1) continue;
+            if (!task.requireOnlyOneItem) continue;
+            if (task.requiredItems.size() - i == 1) continue;
 
-                PanelTextBox testText = new PanelTextBox(new GuiRectangle(0, i * height + 51, 28, 10, 0), "OR");
-                testText.setColor(PresetColor.TEXT_HIGHLIGHT.getColor());
-                testText.setAlignment(1);
-                this.addPanel(testText);
-            }
+            PanelTextBox testText = new PanelTextBox(new GuiRectangle(0, i * height + 51, 28, 10, 0), "OR");
+            testText.setColor(PresetColor.TEXT_HIGHLIGHT.getColor());
+            testText.setAlignment(1);
+            this.addPanel(testText);
         }
 
         recalcSizes();
