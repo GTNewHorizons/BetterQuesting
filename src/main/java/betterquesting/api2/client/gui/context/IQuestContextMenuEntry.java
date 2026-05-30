@@ -10,9 +10,9 @@ import betterquesting.api.questing.IQuest;
  */
 public interface IQuestContextMenuEntry {
 
-	/** Display label shown in the context menu. */
-	String getLabel(UUID questId, IQuest quest);
+    /** Display label shown in the context menu. */
+    String getLabel(UUID questId, IQuest quest);
 
-	/** Called when the player clicks this entry. The popup is closed automatically after this runs. */
-	Runnable getAction(UUID questId, IQuest quest);
+    /** Called when the player clicks this entry. The popup is closed automatically after this runs. */
+    Runnable getAction(UUID questId, IQuest quest);
 }
