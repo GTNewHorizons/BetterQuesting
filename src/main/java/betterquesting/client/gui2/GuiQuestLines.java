@@ -65,6 +65,8 @@ import betterquesting.api2.client.gui.panels.lists.CanvasHoverTray;
 import betterquesting.api2.client.gui.panels.lists.CanvasQuestLine;
 import betterquesting.api2.client.gui.panels.lists.CanvasScrolling;
 import betterquesting.api2.client.gui.popups.PopChoiceExt;
+import betterquesting.api2.client.gui.context.IQuestContextMenuEntry;
+import betterquesting.api2.client.gui.context.QuestContextMenuRegistry;
 import betterquesting.api2.client.gui.popups.PopContextMenuHoverSub;
 import betterquesting.api2.client.gui.resources.colors.GuiColorPulse;
 import betterquesting.api2.client.gui.resources.colors.GuiColorStatic;
@@ -593,7 +595,7 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
                             RenderUtils
                                 .getStringWidth(QuestTranslation.translate("betterquesting.btn.view_dependants"), fr));
 
-                        int menuItemCount = 5; // bookmark, share, copy, deps, dependants
+                        int menuItemCount = 5 + QuestContextMenuRegistry.getEntries().size(); // bookmark, share, copy, deps, dependants + external
                         PopContextMenuHoverSub popup = new PopContextMenuHoverSub(
                             new GuiRectangle(mx, my, maxWidth + 20, menuItemCount * 16),
                             true);
@@ -680,6 +682,16 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
                             popup.addSubMenu(
                                 QuestTranslation.translate("betterquesting.btn.view_dependants"),
                                 dependantEntries);
+                        }
+
+                        // External entries registered by other mods
+                        for (IQuestContextMenuEntry ext : QuestContextMenuRegistry.getEntries()) {
+                            final IQuest capturedQuest = theQuest;
+                            final UUID capturedId = questId;
+                            popup.addButton(ext.getLabel(capturedId, capturedQuest), null, () -> {
+                                ext.getAction(capturedId, capturedQuest).run();
+                                closePopup();
+                            });
                         }
 
                         openPopup(popup);
