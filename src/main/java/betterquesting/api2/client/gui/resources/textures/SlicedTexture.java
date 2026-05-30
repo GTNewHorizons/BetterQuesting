@@ -40,6 +40,8 @@ public class SlicedTexture implements IGuiTexture {
     public void drawTexture(int x, int y, int width, int height, float zLevel, float partialTick, IGuiColor color) {
         if (width <= 0 || height <= 0) return;
 
+        GL11.glGetError();
+
         int w = Math.max(width, texBorder.getLeft() + texBorder.getRight());
         int h = Math.max(height, texBorder.getTop() + texBorder.getBottom());
         int dx = x;
@@ -80,8 +82,8 @@ public class SlicedTexture implements IGuiTexture {
             int iw = texBounds.getWidth() - texBorder.getLeft() - texBorder.getRight();
             int ih = texBounds.getHeight() - texBorder.getTop() - texBorder.getBottom();
 
-            float sx = (float) (w - (texBounds.getWidth() - iw)) / (float) iw;
-            float sy = (float) (h - (texBounds.getHeight() - ih)) / (float) ih;
+            float sx = (iw > 0) ? (float) (w - (texBounds.getWidth() - iw)) / (float) iw : 1F;
+            float sy = (ih > 0) ? (float) (h - (texBounds.getHeight() - ih)) / (float) ih : 1F;
 
             Minecraft.getMinecraft().renderEngine.bindTexture(texture);
 
@@ -200,13 +202,13 @@ public class SlicedTexture implements IGuiTexture {
                 zLevel);
             GL11.glPopMatrix();
         } else {
-            float sx = (float) w / (float) texBounds.getWidth();
-            float sy = (float) h / (float) texBounds.getHeight();
+            float sx = (texBounds.getWidth() > 0) ? (float) w / texBounds.getWidth() : 1F;
+            float sy = (texBounds.getHeight() > 0) ? (float) h / texBounds.getHeight() : 1F;
             GL11.glTranslatef(dx, dy, 0F);
             GL11.glScalef(sx, sy, 1F);
 
             GL11.glEnable(GL11.GL_BLEND);
-            OpenGlHelper.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ZERO);
+            OpenGlHelper.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, 1, 0);
 
             Minecraft.getMinecraft().renderEngine.bindTexture(texture);
             GuiUtils.drawTexturedModalRect(
@@ -236,9 +238,6 @@ public class SlicedTexture implements IGuiTexture {
         return this.texBorder;
     }
 
-    /**
-     * Enables texture slicing. Will stretch to fit if disabled
-     */
     public SlicedTexture setSliceMode(SliceMode mode) {
         this.sliceMode = mode;
         return this;
@@ -273,14 +272,13 @@ public class SlicedTexture implements IGuiTexture {
             .setSliceMode(SliceMode.values()[slice % 3]);
     }
 
-    // Slightly modified version from GuiUtils.class
     private static void drawContinuousTexturedBox(ResourceLocation res, int x, int y, int u, int v, int width,
         int height, int textureWidth, int textureHeight, int topBorder, int bottomBorder, int leftBorder,
         int rightBorder, float zLevel) {
         Minecraft.getMinecraft().renderEngine.bindTexture(res);
 
         GL11.glEnable(GL11.GL_BLEND);
-        OpenGlHelper.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ZERO);
+        OpenGlHelper.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, 1, 0);
 
         int fillerWidth = textureWidth - leftBorder - rightBorder;
         int fillerHeight = textureHeight - topBorder - bottomBorder;
@@ -293,9 +291,7 @@ public class SlicedTexture implements IGuiTexture {
         int remainderHeight = canvasHeight % fillerHeight;
 
         // Draw Border
-        // Top Left
         GuiUtils.drawTexturedModalRect(x, y, u, v, leftBorder, topBorder, zLevel);
-        // Top Right
         GuiUtils.drawTexturedModalRect(
             x + leftBorder + canvasWidth,
             y,
@@ -304,7 +300,6 @@ public class SlicedTexture implements IGuiTexture {
             rightBorder,
             topBorder,
             zLevel);
-        // Bottom Left
         GuiUtils.drawTexturedModalRect(
             x,
             y + topBorder + canvasHeight,
@@ -313,7 +308,6 @@ public class SlicedTexture implements IGuiTexture {
             leftBorder,
             bottomBorder,
             zLevel);
-        // Bottom Right
         GuiUtils.drawTexturedModalRect(
             x + leftBorder + canvasWidth,
             y + topBorder + canvasHeight,
@@ -324,7 +318,6 @@ public class SlicedTexture implements IGuiTexture {
             zLevel);
 
         for (int i = 0; i < xPasses + (remainderWidth > 0 ? 1 : 0); i++) {
-            // Top Border
             GuiUtils.drawTexturedModalRect(
                 x + leftBorder + (i * fillerWidth),
                 y,
@@ -333,7 +326,6 @@ public class SlicedTexture implements IGuiTexture {
                 (i == xPasses ? remainderWidth : fillerWidth),
                 topBorder,
                 zLevel);
-            // Bottom Border
             GuiUtils.drawTexturedModalRect(
                 x + leftBorder + (i * fillerWidth),
                 y + topBorder + canvasHeight,
@@ -342,8 +334,6 @@ public class SlicedTexture implements IGuiTexture {
                 (i == xPasses ? remainderWidth : fillerWidth),
                 bottomBorder,
                 zLevel);
-
-            // Throw in some filler for good measure
             for (int j = 0; j < yPasses + (remainderHeight > 0 ? 1 : 0); j++) GuiUtils.drawTexturedModalRect(
                 x + leftBorder + (i * fillerWidth),
                 y + topBorder + (j * fillerHeight),
@@ -354,9 +344,7 @@ public class SlicedTexture implements IGuiTexture {
                 zLevel);
         }
 
-        // Side Borders
         for (int j = 0; j < yPasses + (remainderHeight > 0 ? 1 : 0); j++) {
-            // Left Border
             GuiUtils.drawTexturedModalRect(
                 x,
                 y + topBorder + (j * fillerHeight),
@@ -365,7 +353,6 @@ public class SlicedTexture implements IGuiTexture {
                 leftBorder,
                 (j == yPasses ? remainderHeight : fillerHeight),
                 zLevel);
-            // Right Border
             GuiUtils.drawTexturedModalRect(
                 x + leftBorder + canvasWidth,
                 y + topBorder + (j * fillerHeight),
