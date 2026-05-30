@@ -34,6 +34,7 @@ public class PanelTaskRetrieval extends CanvasMinimum {
     public void initPanel() {
         super.initPanel();
         int listW = initialRect.getWidth();
+        int height = task.requireOnlyOneItem ? 48 : 32;
 
         UUID uuid = QuestingAPI.getQuestingUUID(Minecraft.getMinecraft().thePlayer);
         int[] progress = task.getUsersProgress(uuid);
@@ -54,7 +55,7 @@ public class PanelTaskRetrieval extends CanvasMinimum {
                 continue;
             }
 
-            GuiRectangle guiRectangle = new GuiRectangle(0, i * 32 + 16, 28, 28, 0);
+            GuiRectangle guiRectangle = new GuiRectangle(0, i * height + 16, 28, 28, 0);
             PanelItemSlot slot = PanelItemSlotBuilder.forValue(stack, guiRectangle)
                 .oreDict(true)
                 .build();
@@ -76,7 +77,7 @@ public class PanelTaskRetrieval extends CanvasMinimum {
                 .append(stack.stackSize)
                 .append("\n");
 
-            if (isComplete || progress[i] >= stack.stackSize) {
+            if (progress[i] >= stack.stackSize) {
                 sb.append(EnumChatFormatting.GREEN)
                     .append(QuestTranslation.translate("betterquesting.tooltip.complete"));
             } else {
@@ -84,9 +85,19 @@ public class PanelTaskRetrieval extends CanvasMinimum {
                     .append(QuestTranslation.translate("betterquesting.tooltip.incomplete"));
             }
 
-            PanelTextBox text = new PanelTextBox(new GuiRectangle(32, i * 32 + 16, listW - 28, 28, 0), sb.toString());
+            PanelTextBox text = new PanelTextBox(
+                new GuiRectangle(32, i * height + 16, listW - 28, 28, 0),
+                sb.toString());
             text.setColor(PresetColor.TEXT_MAIN.getColor());
             this.addPanel(text);
+
+            if (!task.requireOnlyOneItem) continue;
+            if (task.requiredItems.size() - i == 1) continue;
+
+            PanelTextBox testText = new PanelTextBox(new GuiRectangle(0, i * height + 51, 28, 10, 0), "OR");
+            testText.setColor(PresetColor.TEXT_HIGHLIGHT.getColor());
+            testText.setAlignment(1);
+            this.addPanel(testText);
         }
 
         recalcSizes();

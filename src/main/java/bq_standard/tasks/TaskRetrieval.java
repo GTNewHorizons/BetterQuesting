@@ -48,6 +48,7 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
     public boolean consume = false;
     public boolean groupDetect = false;
     public boolean autoConsume = false;
+    public boolean requireOnlyOneItem = false;
 
     @Override
     public NBTTagCompound writeToNBT(NBTTagCompound nbt) {
@@ -56,6 +57,7 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
         nbt.setBoolean("consume", consume);
         nbt.setBoolean("groupDetect", groupDetect);
         nbt.setBoolean("autoConsume", autoConsume);
+        nbt.setBoolean("requireOnlyOneItem", requireOnlyOneItem);
 
         NBTTagList itemArray = new NBTTagList();
         for (BigItemStack stack : this.requiredItems) {
@@ -73,6 +75,7 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
         consume = nbt.getBoolean("consume");
         groupDetect = nbt.getBoolean("groupDetect");
         autoConsume = nbt.getBoolean("autoConsume");
+        requireOnlyOneItem = nbt.getBoolean("requireOnlyOneItem");
 
         requiredItems.clear();
         NBTTagList iList = nbt.getTagList("requiredItems", Constants.NBT.TAG_COMPOUND);
@@ -170,7 +173,10 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
 
         topLoop: for (Tuple2<UUID, int[]> value : progress) {
             for (int j = 0; j < requiredItems.size(); j++) {
-                if (value.getSecond()[j] >= requiredItems.get(j).stackSize) continue;
+                if (value.getSecond()[j] >= requiredItems.get(j).stackSize) {
+                    if (requireOnlyOneItem) break;
+                    continue;
+                }
                 continue topLoop;
             }
 
