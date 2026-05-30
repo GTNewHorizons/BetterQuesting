@@ -13,6 +13,6 @@ public interface IQuestContextMenuEntry {
 	/** Display label shown in the context menu. */
 	String getLabel(UUID questId, IQuest quest);
 
-	/** Called when the player clicks this entry. Close the popup yourself if needed. */
+	/** Called when the player clicks this entry. The popup is closed automatically after this runs. */
 	Runnable getAction(UUID questId, IQuest quest);
 }
