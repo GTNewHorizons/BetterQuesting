@@ -15,6 +15,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.server.MinecraftServer;
 
+import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.storage.INameCache;
 
 public final class NameCache implements INameCache {
@@ -26,10 +27,7 @@ public final class NameCache implements INameCache {
     @Override
     public synchronized boolean updateName(@Nonnull EntityPlayerMP player) {
         MinecraftServer server = player.mcServer;
-        NBTTagCompound tag = cache.computeIfAbsent(
-            player.getGameProfile()
-                .getId(),
-            (key) -> new NBTTagCompound());
+        NBTTagCompound tag = cache.computeIfAbsent(QuestingAPI.getQuestingUUID(player), (key) -> new NBTTagCompound());
 
         String name = player.getGameProfile()
             .getName();

@@ -11,6 +11,7 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.ChatComponentTranslation;
 
+import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.properties.NativeProps;
 import betterquesting.api.questing.IQuest;
 import betterquesting.api.utils.UuidConverter;
@@ -76,8 +77,7 @@ public class QuestCommandReset extends QuestCommandBase {
         EntityPlayerMP player = null;
         if (uuid != null) {
             for (EntityPlayerMP p : (List<EntityPlayerMP>) server.getConfigurationManager().playerEntityList) {
-                if (p.getGameProfile()
-                    .getId()
+                if (QuestingAPI.getQuestingUUID(p)
                     .equals(uuid)) {
                     player = p;
                     break;
