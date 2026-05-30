@@ -390,6 +390,10 @@ public class EventHandler {
 
         EntityPlayerMP mpPlayer = (EntityPlayerMP) event.player;
 
+        // Load this player's progress lazily on connect (covers the integrated
+        // server host too, since the owner branch below returns early).
+        SaveLoadHandler.INSTANCE.loadPlayerProgress(QuestingAPI.getQuestingUUID(mpPlayer));
+
         if (BetterQuesting.proxy.isClient() && !MinecraftServer.getServer()
             .isDedicatedServer()
             && MinecraftServer.getServer()
