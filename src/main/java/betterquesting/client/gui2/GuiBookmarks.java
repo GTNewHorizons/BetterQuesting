@@ -1,7 +1,5 @@
 package betterquesting.client.gui2;
 
-import java.awt.Toolkit;
-import java.awt.datatransfer.StringSelection;
 import java.util.UUID;
 import java.util.function.Consumer;
 
@@ -141,22 +139,13 @@ public class GuiBookmarks extends GuiScreenCanvas {
                             .addButton(QuestTranslation.translate("betterquesting.btn.share_quest"), null, questSharer);
 
                         Runnable copyQuestId = () -> {
-                            StringSelection stringToCopy = new StringSelection(UuidConverter.encodeUuid(questId));
-                            try {
-                                Toolkit.getDefaultToolkit()
-                                    .getSystemClipboard()
-                                    .setContents(stringToCopy, null);
-                                mc.thePlayer.addChatMessage(
-                                    new ChatComponentText(
-                                        QuestTranslation.translate("betterquesting.msg.copy_quest_copied")));
-                                mc.thePlayer.addChatMessage(
-                                    new ChatComponentText(
-                                        "  " + EnumChatFormatting.AQUA + UuidConverter.encodeUuid(questId)));
-                            } catch (IllegalStateException e) {
-                                mc.thePlayer.addChatMessage(
-                                    new ChatComponentText(
-                                        QuestTranslation.translate("betterquesting.msg.copy_quest_failed")));
-                            }
+                            String questIdString = UuidConverter.encodeUuid(questId);
+                            GuiScreen.setClipboardString(questIdString);
+                            mc.thePlayer.addChatMessage(
+                                new ChatComponentText(
+                                    QuestTranslation.translate("betterquesting.msg.copy_quest_copied")));
+                            mc.thePlayer
+                                .addChatMessage(new ChatComponentText("  " + EnumChatFormatting.AQUA + questIdString));
                             closePopup();
                         };
                         popup.addButton(QuestTranslation.translate("betterquesting.btn.copy_quest"), null, copyQuestId);
