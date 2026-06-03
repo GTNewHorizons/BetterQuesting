@@ -1,20 +1,17 @@
 package bq_standard.client.gui.editors.tasks;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraft.util.ResourceLocation;
 
 import org.lwjgl.input.Keyboard;
 
 import betterquesting.api.api.ApiReference;
 import betterquesting.api.api.QuestingAPI;
-import betterquesting.api.network.QuestingPacket;
 import betterquesting.api.questing.IQuest;
-import betterquesting.api.utils.NBTConverter;
 import betterquesting.api2.client.gui.GuiScreenCanvas;
 import betterquesting.api2.client.gui.controls.PanelButton;
 import betterquesting.api2.client.gui.controls.PanelButtonStorage;
@@ -31,6 +28,7 @@ import betterquesting.api2.client.gui.themes.presets.PresetColor;
 import betterquesting.api2.client.gui.themes.presets.PresetGUIs;
 import betterquesting.api2.client.gui.themes.presets.PresetTexture;
 import betterquesting.api2.utils.QuestTranslation;
+import betterquesting.network.handlers.NetQuestEdit;
 import bq_standard.tasks.TaskScoreboard;
 import bq_standard.tasks.TaskScoreboard.ScoreOperation;
 
@@ -138,27 +136,7 @@ public class GuiEditTaskScoreboard extends GuiScreenCanvas {
             });
     }
 
-    private static final ResourceLocation QUEST_EDIT = new ResourceLocation("betterquesting:quest_edit"); // TODO:
-                                                                                                          // Really need
-                                                                                                          // to make the
-                                                                                                          // native
-                                                                                                          // packet
-                                                                                                          // types
-                                                                                                          // accessible
-                                                                                                          // in the API
-
     private void sendChanges() {
-        NBTTagCompound payload = new NBTTagCompound();
-        NBTTagList dataList = new NBTTagList();
-        NBTTagCompound entry = NBTConverter.UuidValueType.QUEST.writeId(quest.getKey());
-        entry.setTag(
-            "config",
-            quest.getValue()
-                .writeToNBT(new NBTTagCompound()));
-        dataList.appendTag(entry);
-        payload.setTag("data", dataList);
-        payload.setInteger("action", 0); // Action: Update data
-        QuestingAPI.getAPI(ApiReference.PACKET_SENDER)
-            .sendToServer(new QuestingPacket(QUEST_EDIT, payload));
+        NetQuestEdit.requestEdit(Collections.singletonMap(quest.getKey(), quest.getValue()));
     }
 }

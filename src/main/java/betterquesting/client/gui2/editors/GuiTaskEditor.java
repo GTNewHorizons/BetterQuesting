@@ -1,6 +1,7 @@
 package betterquesting.client.gui2.editors;
 
 import java.util.ArrayDeque;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
@@ -8,7 +9,6 @@ import java.util.UUID;
 
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.EnumChatFormatting;
 
 import org.lwjgl.util.vector.Vector4f;
@@ -19,7 +19,6 @@ import betterquesting.api.client.gui.misc.INeedsRefresh;
 import betterquesting.api.client.gui.misc.IVolatileScreen;
 import betterquesting.api.questing.IQuest;
 import betterquesting.api.questing.tasks.ITask;
-import betterquesting.api.utils.NBTConverter;
 import betterquesting.api2.client.gui.GuiScreenCanvas;
 import betterquesting.api2.client.gui.controls.IPanelButton;
 import betterquesting.api2.client.gui.controls.PanelButton;
@@ -132,7 +131,7 @@ public class GuiTaskEditor extends GuiScreenCanvas implements IPEventListener, I
 
             @Override
             protected boolean addResult(IFactoryData<ITask, NBTTagCompound> entry, int index, int cachedWidth) {
-                this.addPanel(
+                this.addBatchPanel(
                     new PanelButtonStorage<>(
                         new GuiRectangle(0, index * 16, cachedWidth, 16, 0),
                         1,
@@ -259,13 +258,6 @@ public class GuiTaskEditor extends GuiScreenCanvas implements IPEventListener, I
     }
 
     private void SendChanges() {
-        NBTTagCompound payload = new NBTTagCompound();
-        NBTTagList dataList = new NBTTagList();
-        NBTTagCompound entry = NBTConverter.UuidValueType.QUEST.writeId(qID);
-        entry.setTag("config", quest.writeToNBT(new NBTTagCompound()));
-        dataList.appendTag(entry);
-        payload.setTag("data", dataList);
-        payload.setInteger("action", 0);
-        NetQuestEdit.sendEdit(payload);
+        NetQuestEdit.requestEdit(Collections.singletonMap(qID, quest));
     }
 }
