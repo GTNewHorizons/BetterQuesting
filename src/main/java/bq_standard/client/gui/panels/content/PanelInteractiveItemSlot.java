@@ -7,15 +7,15 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.ResourceLocation;
-
-import com.mojang.realmsclient.gui.ChatFormatting;
 
 import betterquesting.api.utils.BigItemStack;
 import betterquesting.api2.client.gui.SceneController;
 import betterquesting.api2.client.gui.misc.IGuiRect;
 import betterquesting.api2.client.gui.panels.content.PanelItemSlot;
 import betterquesting.api2.client.gui.popups.PopItemList;
+import betterquesting.api2.utils.QuestTranslation;
 import codechicken.nei.api.ShortcutInputHandler;
 
 /**
@@ -54,7 +54,8 @@ public class PanelInteractiveItemSlot extends PanelItemSlot {
         if (isMouseHovered && getCallback() == null) {
             if (popupVariants && GuiContainer.isShiftKeyDown() && SceneController.getActiveScene() != null) {
                 SceneController.getActiveScene()
-                    .openPopup(new PopItemList("Valid Items", oreVariants));
+                    .openPopup(
+                        new PopItemList(QuestTranslation.translate("betterquesting.title.valid_items"), oreVariants));
             } else if (ShortcutInputHandler.handleMouseClick(getBaseStackOfSameSize())) {
                 playClickSound();
                 return true;
@@ -92,7 +93,9 @@ public class PanelInteractiveItemSlot extends PanelItemSlot {
             // Need to copy as some mods might return an immutable list
             List<String> newList = new ArrayList<>(list.size() + 1);
             newList.addAll(list);
-            newList.add(ChatFormatting.GRAY + ChatFormatting.ITALIC.toString() + "Shift+click to see valid items");
+            newList.add(
+                EnumChatFormatting.GRAY + EnumChatFormatting.ITALIC.toString()
+                    + QuestTranslation.translate("betterquesting.tooltip.popup_valid_items"));
             return newList;
         }
         return list;

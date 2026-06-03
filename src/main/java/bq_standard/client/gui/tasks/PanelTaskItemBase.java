@@ -88,6 +88,7 @@ public abstract class PanelTaskItemBase<T extends TaskProgressableBase<int[]>> e
     @Override
     public void drawPanel(int mx, int my, float partialTick) {
         for (int i = 0; i < getItemCount(); i++) {
+            if (itemSlots[i] == null) continue;
             BigItemStack stack = itemSlots[i].getStoredValue();
             if (stack != stackCache[i]) {
                 stackCache[i] = stack;

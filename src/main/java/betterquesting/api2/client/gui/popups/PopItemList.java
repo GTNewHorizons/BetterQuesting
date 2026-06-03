@@ -47,7 +47,8 @@ public class PopItemList extends CanvasEmpty {
                 new GuiTransform(GuiAlign.FULL_BOX, new GuiPadding(0, 0, 0, 0), 1),
                 new ColorTexture(new GuiColorStatic(0x80000000))));
 
-        int itemsPerRow = Math.min((int) ((getTransform().getWidth() * 0.5f) / 36), list.size());
+        int itemsPerRow = (int) ((getTransform().getWidth() * 0.5f) / 36);
+        itemsPerRow = MathHelper.clamp_int(itemsPerRow, 1, list.size());
         int rowCount = MathHelper.ceiling_float_int((float) list.size() / itemsPerRow);
         int popupHeightPx = (int) (Math.min(rowCount, 5.5f) * 36) + 32;
         float popupHeightFlt = popupHeightPx / (float) getTransform().getHeight();
