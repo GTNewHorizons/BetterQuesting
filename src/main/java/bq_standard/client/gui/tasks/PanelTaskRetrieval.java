@@ -14,8 +14,11 @@ import bq_standard.tasks.TaskRetrieval;
 
 public class PanelTaskRetrieval extends PanelTaskItemBase<TaskRetrieval> {
 
+    int height;
+
     public PanelTaskRetrieval(IGuiRect rect, TaskRetrieval task) {
         super(rect, task);
+        height = task.requireOnlyOneItem ? 48 : 32;
     }
 
     @Override
@@ -30,12 +33,12 @@ public class PanelTaskRetrieval extends PanelTaskItemBase<TaskRetrieval> {
 
     @Override
     protected GuiRectangle createItemSlotRect(int i) {
-        return new GuiRectangle(0, i * 32 + 16, 28, 28, 0);
+        return new GuiRectangle(0, i * height + 16, 28, 28, 0);
     }
 
     @Override
     protected GuiRectangle createTextBoxRect(int i, int width) {
-        return new GuiRectangle(32, i * 32 + 16, width - 28, 28, 0);
+        return new GuiRectangle(32, i * height + 16, width - 28, 28, 0);
     }
 
     @Override
@@ -47,5 +50,15 @@ public class PanelTaskRetrieval extends PanelTaskItemBase<TaskRetrieval> {
                 new GuiTransform(GuiAlign.TOP_EDGE, 0, 0, listW, 16, 0),
                 QuestTranslation.translate("bq_standard.btn.consume", sCon))
                     .setColor(PresetColor.TEXT_MAIN.getColor()));
+    }
+
+    @Override
+    protected void itemExtraInfo(int i) {
+        if (!task.requireOnlyOneItem || task.requiredItems.size() - i <= 1) return;
+
+        PanelTextBox orRetrievalText = new PanelTextBox(new GuiRectangle(0, i * 48 + 50, 28, 18, 0), "OR");
+        orRetrievalText.setColor(PresetColor.TEXT_HIGHLIGHT.getColor());
+        orRetrievalText.setAlignment(1);
+        this.addPanel(orRetrievalText);
     }
 }
