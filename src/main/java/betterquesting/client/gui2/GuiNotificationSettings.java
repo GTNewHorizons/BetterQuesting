@@ -61,11 +61,17 @@ public class GuiNotificationSettings extends GuiScreenCanvas implements IPEventL
     private static final int BTN_ANIMATE = 19;
     private static final int BTN_RESET = 20;
     private static final int BTN_PARTICLE = 21;
+    private static final int BTN_POS_X_DOWN = 22;
+    private static final int BTN_POS_X_UP = 23;
+    private static final int BTN_POS_Y_DOWN = 24;
+    private static final int BTN_POS_Y_UP = 25;
+    private static final int BTN_EFFECT = 26;
 
     private PanelButton btnStyle;
     private PanelButton btnIcon;
     private PanelButton btnAnimate;
     private PanelButton btnParticle;
+    private PanelButton btnEffect;
     private PanelTextBox txtDuration;
     private PanelTextBox txtStatus;
     private PanelTextBox txtFadeIn;
@@ -74,9 +80,13 @@ public class GuiNotificationSettings extends GuiScreenCanvas implements IPEventL
     private PanelTextBox txtIconOffset;
     private PanelTextBox txtTitleScale;
     private PanelTextBox txtSubScale;
+    private PanelTextBox txtPosX;
+    private PanelTextBox txtPosY;
 
     public GuiNotificationSettings(GuiScreen parent) {
         super(parent);
+        // opening this screen dismisses the one-time discovery hint for good
+        BQ_Settings.notificationHintSeen = true;
     }
 
     @Override
@@ -153,6 +163,15 @@ public class GuiNotificationSettings extends GuiScreenCanvas implements IPEventL
             QuestTranslation.translate("betterquesting.notification.particle"),
             BTN_PARTICLE,
             getParticleLabel());
+        y += rowH;
+
+        addCycleRow(
+            scrollCan,
+            y,
+            centerW,
+            QuestTranslation.translate("betterquesting.notification.effect"),
+            BTN_EFFECT,
+            getEffectLabel());
         y += rowH;
 
         addNumberRow(
@@ -235,6 +254,28 @@ public class GuiNotificationSettings extends GuiScreenCanvas implements IPEventL
             BTN_ICON_OFFSET_DOWN,
             BTN_ICON_OFFSET_UP,
             4);
+        y += rowH;
+
+        addNumberRow(
+            scrollCan,
+            y,
+            centerW,
+            QuestTranslation.translate("betterquesting.notification.posx"),
+            String.valueOf(BQ_Settings.notificationTitleOffsetX),
+            BTN_POS_X_DOWN,
+            BTN_POS_X_UP,
+            7);
+        y += rowH;
+
+        addNumberRow(
+            scrollCan,
+            y,
+            centerW,
+            QuestTranslation.translate("betterquesting.notification.posy"),
+            String.valueOf(BQ_Settings.notificationTitleOffsetY),
+            BTN_POS_Y_DOWN,
+            BTN_POS_Y_UP,
+            8);
 
         int btnW = (centerW - 8) / 3;
         PanelButton resetBtn = new PanelButton(
@@ -270,6 +311,7 @@ public class GuiNotificationSettings extends GuiScreenCanvas implements IPEventL
         else if (btnId == BTN_ICON) btnIcon = btn;
         else if (btnId == BTN_ANIMATE) btnAnimate = btn;
         else if (btnId == BTN_PARTICLE) btnParticle = btn;
+        else if (btnId == BTN_EFFECT) btnEffect = btn;
     }
 
     private void addNumberRow(IGuiCanvas canvas, int y, int w, String label, String value, int btnDownId, int btnUpId,
@@ -290,6 +332,8 @@ public class GuiNotificationSettings extends GuiScreenCanvas implements IPEventL
         else if (idx == 4) txtIconOffset = val;
         else if (idx == 5) txtTitleScale = val;
         else if (idx == 6) txtSubScale = val;
+        else if (idx == 7) txtPosX = val;
+        else if (idx == 8) txtPosY = val;
 
         PanelButton btnDown = new PanelButton(new GuiRectangle(w - 36, y, 16, 16, 0), btnDownId, "-");
         canvas.addPanel(btnDown);
@@ -325,6 +369,10 @@ public class GuiNotificationSettings extends GuiScreenCanvas implements IPEventL
             case BTN_PARTICLE:
                 cycleParticle();
                 btnParticle.setText(getParticleLabel());
+                break;
+            case BTN_EFFECT:
+                cycleEffect();
+                btnEffect.setText(getEffectLabel());
                 break;
             case BTN_DUR_DOWN:
                 BQ_Settings.notificationDuration = Math.max(1.0f, BQ_Settings.notificationDuration - 0.5f);
@@ -392,6 +440,22 @@ public class GuiNotificationSettings extends GuiScreenCanvas implements IPEventL
                     : Math.min(8.0f, BQ_Settings.notificationSubtitleScale + 0.5f);
                 txtSubScale.setText(formatScaleOrAuto(BQ_Settings.notificationSubtitleScale));
                 break;
+            case BTN_POS_X_DOWN:
+                BQ_Settings.notificationTitleOffsetX = Math.max(-1000, BQ_Settings.notificationTitleOffsetX - 5);
+                txtPosX.setText(String.valueOf(BQ_Settings.notificationTitleOffsetX));
+                break;
+            case BTN_POS_X_UP:
+                BQ_Settings.notificationTitleOffsetX = Math.min(1000, BQ_Settings.notificationTitleOffsetX + 5);
+                txtPosX.setText(String.valueOf(BQ_Settings.notificationTitleOffsetX));
+                break;
+            case BTN_POS_Y_DOWN:
+                BQ_Settings.notificationTitleOffsetY = Math.max(-1000, BQ_Settings.notificationTitleOffsetY - 5);
+                txtPosY.setText(String.valueOf(BQ_Settings.notificationTitleOffsetY));
+                break;
+            case BTN_POS_Y_UP:
+                BQ_Settings.notificationTitleOffsetY = Math.min(1000, BQ_Settings.notificationTitleOffsetY + 5);
+                txtPosY.setText(String.valueOf(BQ_Settings.notificationTitleOffsetY));
+                break;
             case BTN_RESET:
                 resetDefaults();
                 Minecraft.getMinecraft()
@@ -448,32 +512,79 @@ public class GuiNotificationSettings extends GuiScreenCanvas implements IPEventL
             : QuestTranslation.translate("betterquesting.notification.icon.hide");
     }
 
-    private void cycleAnimation() {
-        switch (BQ_Settings.notificationIconAnimation) {
-            case "none":
-                BQ_Settings.notificationIconAnimation = "fly_in";
-                break;
-            case "fly_in":
-                BQ_Settings.notificationIconAnimation = "spin";
-                break;
-            case "spin":
-                BQ_Settings.notificationIconAnimation = "none";
-                break;
-            default:
-                BQ_Settings.notificationIconAnimation = "fly_in";
-                break;
+    // Shared with the per-quest editor. "default" is prepended there; not part of the player cycle.
+    static final String[] ANIM_ORDER = { "none", "fly_in", "rise", "slide", "zoom", "pop", "spin", "spin_reverse",
+        "bounce", "wobble", "swing", "slam", "tada" };
+
+    static String nextAnim(String cur) {
+        for (int i = 0; i < ANIM_ORDER.length; i++) {
+            if (ANIM_ORDER[i].equals(cur)) return ANIM_ORDER[(i + 1) % ANIM_ORDER.length];
         }
+        return ANIM_ORDER[0];
     }
 
-    private String getAnimateLabel() {
-        switch (BQ_Settings.notificationIconAnimation) {
+    public static String animLabel(String key) {
+        switch (key) {
             case "fly_in":
                 return QuestTranslation.translate("betterquesting.notification.animate.flyin");
+            case "rise":
+                return QuestTranslation.translate("betterquesting.notification.animate.rise");
+            case "slide":
+                return QuestTranslation.translate("betterquesting.notification.animate.slide");
+            case "zoom":
+                return QuestTranslation.translate("betterquesting.notification.animate.zoom");
+            case "pop":
+                return QuestTranslation.translate("betterquesting.notification.animate.pop");
             case "spin":
                 return QuestTranslation.translate("betterquesting.notification.animate.spin");
+            case "spin_reverse":
+                return QuestTranslation.translate("betterquesting.notification.animate.spinrev");
+            case "bounce":
+                return QuestTranslation.translate("betterquesting.notification.animate.bounce");
+            case "wobble":
+                return QuestTranslation.translate("betterquesting.notification.animate.wobble");
+            case "swing":
+                return QuestTranslation.translate("betterquesting.notification.animate.swing");
+            case "slam":
+                return QuestTranslation.translate("betterquesting.notification.animate.slam");
+            case "tada":
+                return QuestTranslation.translate("betterquesting.notification.animate.tada");
             default:
                 return QuestTranslation.translate("betterquesting.notification.animate.none");
         }
+    }
+
+    private void cycleAnimation() {
+        BQ_Settings.notificationIconAnimation = nextAnim(BQ_Settings.notificationIconAnimation);
+    }
+
+    private String getAnimateLabel() {
+        return animLabel(BQ_Settings.notificationIconAnimation);
+    }
+
+    public static String effectLabel(int tier) {
+        switch (tier) {
+            case 3:
+                return QuestTranslation.translate("betterquesting.notification.effect.hyperspace");
+            case 4:
+                return QuestTranslation.translate("betterquesting.notification.effect.singularity");
+            case 5:
+                return QuestTranslation.translate("betterquesting.notification.effect.warp");
+            case 6:
+                return QuestTranslation.translate("betterquesting.notification.effect.lightspeed");
+            default:
+                return QuestTranslation.translate("betterquesting.notification.effect.none");
+        }
+    }
+
+    private void cycleEffect() {
+        int t = (BQ_Settings.notificationEffectTier + 1) % 7;
+        if (t == 1 || t == 2) t = 3; // spark/burst removed
+        BQ_Settings.notificationEffectTier = t;
+    }
+
+    private String getEffectLabel() {
+        return effectLabel(BQ_Settings.notificationEffectTier);
     }
 
     private void cycleParticle() {
@@ -567,6 +678,9 @@ public class GuiNotificationSettings extends GuiScreenCanvas implements IPEventL
         BQ_Settings.notificationFadeOut = 1.0f;
         BQ_Settings.notificationIconScale = 4.0f;
         BQ_Settings.notificationIconOffsetY = -25;
+        BQ_Settings.notificationTitleOffsetX = 0;
+        BQ_Settings.notificationTitleOffsetY = 0;
+        BQ_Settings.notificationEffectTier = 0;
         saveConfig();
     }
 
@@ -596,6 +710,14 @@ public class GuiNotificationSettings extends GuiScreenCanvas implements IPEventL
             .set(BQ_Settings.notificationIconAnimation);
         ConfigHandler.config.get(Configuration.CATEGORY_GENERAL, "Notification Particle", "none")
             .set(BQ_Settings.notificationParticle);
+        ConfigHandler.config.get(Configuration.CATEGORY_GENERAL, "Notification Title Offset X", 0)
+            .set(BQ_Settings.notificationTitleOffsetX);
+        ConfigHandler.config.get(Configuration.CATEGORY_GENERAL, "Notification Title Offset Y", 0)
+            .set(BQ_Settings.notificationTitleOffsetY);
+        ConfigHandler.config.get(Configuration.CATEGORY_GENERAL, "Notification Effect Tier", 0)
+            .set(BQ_Settings.notificationEffectTier);
+        ConfigHandler.config.get(Configuration.CATEGORY_GENERAL, "Notification Hint Seen", false)
+            .set(BQ_Settings.notificationHintSeen);
         ConfigHandler.config.save();
     }
 

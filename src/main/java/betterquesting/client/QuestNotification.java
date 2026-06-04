@@ -23,6 +23,7 @@ import betterquesting.api.properties.NativeProps;
 import betterquesting.api.storage.BQ_Settings;
 import betterquesting.api.utils.RenderUtils;
 import betterquesting.api2.utils.QuestTranslation;
+import betterquesting.network.handlers.NoticeConfig;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -44,18 +45,19 @@ public class QuestNotification {
 
     private static final List<QuestNotice> notices = new ArrayList<>();
     private static GuiScreen pendingScreen = null;
+    private static boolean hintShownThisSession = false;
 
     public static void setPendingScreen(GuiScreen screen) {
         pendingScreen = screen;
     }
 
     public static void ScheduleNotice(String mainTxt, String subTxt, ItemStack icon, String sound) {
-        ScheduleNotice(mainTxt, subTxt, icon, sound, "default", "default", null, -1);
+        ScheduleNotice(mainTxt, subTxt, icon, sound, new NoticeConfig());
     }
 
-    public static void ScheduleNotice(String mainTxt, String subTxt, ItemStack icon, String sound, String particle,
-        String animation, ItemStack confettiIcon, int particleCount) {
-        if ("off".equals(BQ_Settings.notificationStyle)) {
+    public static void ScheduleNotice(String mainTxt, String subTxt, ItemStack icon, String sound,
+        NoticeConfig config) {
+        if ("off".equals(effStyle(config))) {
             if (pendingScreen != null) {
                 Minecraft.getMinecraft()
                     .displayGuiScreen(pendingScreen);
@@ -63,49 +65,108 @@ public class QuestNotification {
             }
             return;
         }
-        notices.add(new QuestNotice(mainTxt, subTxt, icon, sound, particle, animation, confettiIcon, particleCount));
+        boolean showHint = !BQ_Settings.notificationHintSeen && !hintShownThisSession;
+        if (showHint) hintShownThisSession = true;
+        notices.add(new QuestNotice(mainTxt, subTxt, icon, sound, config, showHint));
+    }
+
+    /** Fire a one-off notice for the editor preview, using the same resolution path but never the hint. */
+    public static void previewNotice(String mainTxt, String subTxt, ItemStack icon, String sound, NoticeConfig config) {
+        if ("off".equals(effStyle(config))) return;
+        notices.add(new QuestNotice(mainTxt, subTxt, icon, sound, config, false));
+    }
+
+    /** False when this config would resolve to no notification (player "off" or quest "off"). */
+    public static boolean wouldShow(NoticeConfig config) {
+        return !"off".equals(effStyle(config));
+    }
+
+    // ---- precedence resolution: quest value if set, else player; player "off" always wins ----
+    private static String effStyle(NoticeConfig c) {
+        if ("off".equals(BQ_Settings.notificationStyle)) return "off";
+        return !"default".equals(c.style) ? c.style : BQ_Settings.notificationStyle;
+    }
+
+    private static boolean effTitleMode(NoticeConfig c) {
+        return HAS_TITLE_API && "title".equals(effStyle(c));
+    }
+
+    private static float effDuration(NoticeConfig c) {
+        return c.duration >= 0 ? c.duration : BQ_Settings.notificationDuration;
+    }
+
+    private static float effFadeIn(NoticeConfig c) {
+        return c.fadeIn >= 0 ? c.fadeIn : BQ_Settings.notificationFadeIn;
+    }
+
+    private static float effFadeOut(NoticeConfig c) {
+        return c.fadeOut >= 0 ? c.fadeOut : BQ_Settings.notificationFadeOut;
+    }
+
+    private static boolean effShowIcon(NoticeConfig c) {
+        if ("yes".equals(c.showIcon)) return true;
+        if ("no".equals(c.showIcon)) return false;
+        return BQ_Settings.showNotificationIcon;
+    }
+
+    private static String resolveSubtitle(QuestNotice notice) {
+        if (notice.showHint) {
+            return QuestTranslation.translate("betterquesting.notice.customize_hint");
+        }
+        String custom = notice.config.subtitleText;
+        if (custom != null && !custom.isEmpty()) return QuestTranslation.translate(custom);
+        return notice.subTxt != null ? QuestTranslation.translate(notice.subTxt) : null;
     }
 
     private static void showTitleIfAvailable(QuestNotice notice) {
         if (!HAS_TITLE_API) return;
+        NoticeConfig c = notice.config;
 
-        int fadeInTicks = Math.max(0, (int) (BQ_Settings.notificationFadeIn * 20));
-        int fadeOutTicks = Math.max(0, (int) (BQ_Settings.notificationFadeOut * 20));
-        int totalTicks = Math.max(fadeInTicks + fadeOutTicks + 1, (int) (BQ_Settings.notificationDuration * 20));
+        int fadeInTicks = Math.max(0, (int) (effFadeIn(c) * 20));
+        int fadeOutTicks = Math.max(0, (int) (effFadeOut(c) * 20));
+        int totalTicks = Math.max(fadeInTicks + fadeOutTicks + 1, (int) (effDuration(c) * 20));
         int stayTicks = totalTicks - fadeInTicks - fadeOutTicks;
 
         TitleAPI.setTimes(fadeInTicks, stayTicks, fadeOutTicks);
 
-        if (BQ_Settings.showNotificationIcon && notice.icon != null) {
+        if (effShowIcon(c) && notice.icon != null) {
             TitleAPI.setIcon(notice.icon);
-            TitleAPI.setIconScale(BQ_Settings.notificationIconScale);
-            TitleAPI.setIconOffsetY(BQ_Settings.notificationIconOffsetY);
+            TitleAPI.setIconScale(c.iconScale > 0 ? c.iconScale : BQ_Settings.notificationIconScale);
+            TitleAPI.setIconOffsetY(
+                c.iconOffsetY != Integer.MIN_VALUE ? c.iconOffsetY : BQ_Settings.notificationIconOffsetY);
         } else {
             TitleAPI.setIcon(null);
         }
 
-        if (BQ_Settings.notificationTitleScale > 0) {
-            TitleAPI.setTitleScale(BQ_Settings.notificationTitleScale);
-        }
-        if (BQ_Settings.notificationSubtitleScale > 0) {
-            TitleAPI.setSubtitleScale(BQ_Settings.notificationSubtitleScale);
+        float titleScale = c.titleScale > 0 ? c.titleScale : BQ_Settings.notificationTitleScale;
+        if (titleScale > 0) TitleAPI.setTitleScale(titleScale);
+        float subtitleScale = c.subtitleScale > 0 ? c.subtitleScale : BQ_Settings.notificationSubtitleScale;
+        if (subtitleScale > 0) TitleAPI.setSubtitleScale(subtitleScale);
+
+        int px = c.posX != Integer.MIN_VALUE ? c.posX : BQ_Settings.notificationTitleOffsetX;
+        int py = c.posY != Integer.MIN_VALUE ? c.posY : BQ_Settings.notificationTitleOffsetY;
+        if (c.posX != Integer.MIN_VALUE || c.posY != Integer.MIN_VALUE
+            || BQ_Settings.notificationTitleOffsetX != 0
+            || BQ_Settings.notificationTitleOffsetY != 0) {
+            TitleAPI.setTitlePosition(px, py);
         }
 
-        String particle = "default".equals(notice.particle) ? BQ_Settings.notificationParticle : notice.particle;
+        String particle = "default".equals(c.particle) ? BQ_Settings.notificationParticle : c.particle;
         TitleAPI.setParticleEffect(particleStringToInt(particle));
-        TitleAPI.setParticleCount(notice.particleCount);
+        TitleAPI.setParticleCount(c.particleCount);
 
-        String anim = "default".equals(notice.animation) ? BQ_Settings.notificationIconAnimation : notice.animation;
+        TitleAPI.setEffectTier(c.effectTier >= 0 ? c.effectTier : BQ_Settings.notificationEffectTier);
+
+        String anim = "default".equals(c.animation) ? BQ_Settings.notificationIconAnimation : c.animation;
         TitleAPI.setIconAnimation(animStringToInt(anim));
 
-        ItemStack confetti = notice.confettiIcon != null ? notice.confettiIcon : notice.icon;
+        ItemStack confetti = c.confettiIcon != null ? c.confettiIcon : notice.icon;
         if (confetti != null) {
             TitleAPI.setConfettiIcon(confetti);
         }
 
-        String subTxt = notice.subTxt;
-        TitleAPI.setSubtitle(
-            subTxt != null && !subTxt.isEmpty() ? new ChatComponentText(QuestTranslation.translate(subTxt)) : null);
+        String subLine = resolveSubtitle(notice);
+        TitleAPI.setSubtitle(subLine != null && !subLine.isEmpty() ? new ChatComponentText(subLine) : null);
         TitleAPI.setTitle(new ChatComponentText(QuestTranslation.translate(notice.mainTxt)));
     }
 
@@ -113,8 +174,28 @@ public class QuestNotification {
         switch (anim) {
             case "fly_in":
                 return TitleAPI.ICON_ANIM_FLY_IN;
+            case "rise":
+                return TitleAPI.ICON_ANIM_RISE;
+            case "slide":
+                return TitleAPI.ICON_ANIM_SLIDE;
+            case "zoom":
+                return TitleAPI.ICON_ANIM_ZOOM;
+            case "pop":
+                return TitleAPI.ICON_ANIM_POP;
             case "spin":
                 return TitleAPI.ICON_ANIM_SPIN;
+            case "spin_reverse":
+                return TitleAPI.ICON_ANIM_SPIN_REVERSE;
+            case "bounce":
+                return TitleAPI.ICON_ANIM_BOUNCE;
+            case "wobble":
+                return TitleAPI.ICON_ANIM_WOBBLE;
+            case "swing":
+                return TitleAPI.ICON_ANIM_SWING;
+            case "slam":
+                return TitleAPI.ICON_ANIM_SLAM;
+            case "tada":
+                return TitleAPI.ICON_ANIM_TADA;
             default:
                 return TitleAPI.ICON_ANIM_NONE;
         }
@@ -133,10 +214,6 @@ public class QuestNotification {
             default:
                 return TitleParticleSystem.PARTICLE_NONE;
         }
-    }
-
-    private static boolean useTitleMode() {
-        return HAS_TITLE_API && "title".equals(BQ_Settings.notificationStyle);
     }
 
     public static void resetNotices() {
@@ -167,7 +244,7 @@ public class QuestNotification {
             notice.init = true;
             notice.startTime = Minecraft.getSystemTime();
 
-            if (useTitleMode()) {
+            if (effTitleMode(notice.config)) {
                 showTitleIfAvailable(notice);
             }
 
@@ -176,7 +253,7 @@ public class QuestNotification {
                 .playSound(new QuestCompleteSound(new ResourceLocation(notice.sound), volume));
         }
 
-        float displayDuration = BQ_Settings.notificationDuration;
+        float displayDuration = effDuration(notice.config);
         if (notice.getTime() >= displayDuration) {
             notices.remove(0);
             if (notices.isEmpty() && pendingScreen != null) {
@@ -186,10 +263,10 @@ public class QuestNotification {
             return;
         }
 
-        if (useTitleMode()) return;
+        if (effTitleMode(notice.config)) return;
 
-        float fadeInTime = BQ_Settings.notificationFadeIn;
-        float fadeOutTime = BQ_Settings.notificationFadeOut;
+        float fadeInTime = effFadeIn(notice.config);
+        float fadeOutTime = effFadeOut(notice.config);
         float fadeOutStart = displayDuration - fadeOutTime;
 
         float alpha;
@@ -213,7 +290,7 @@ public class QuestNotification {
             width = MathHelper.ceiling_float_int(width / scale);
             height = MathHelper.ceiling_float_int(height / scale);
 
-            if (BQ_Settings.showNotificationIcon && notice.icon != null) {
+            if (effShowIcon(notice.config) && notice.icon != null) {
                 RenderUtils.RenderItemStack(mc, notice.icon, width / 2 - 8, height / 4 - 20, "", color);
                 GL11.glEnable(GL11.GL_DEPTH_TEST);
             }
@@ -225,7 +302,8 @@ public class QuestNotification {
                 + QuestTranslation.translate(notice.mainTxt);
             int txtW = RenderUtils.getStringWidth(tmp, mc.fontRenderer);
             mc.fontRenderer.drawString(tmp, width / 2 - txtW / 2, height / 4, color, true);
-            tmp = QuestTranslation.translate(notice.subTxt);
+            tmp = resolveSubtitle(notice);
+            if (tmp == null) tmp = "";
             txtW = RenderUtils.getStringWidth(tmp, mc.fontRenderer);
             mc.fontRenderer.drawString(tmp, width / 2 - txtW / 2, height / 4 + 12, color, true);
             GL11.glColor4f(1F, 1F, 1F, 1F);
@@ -237,30 +315,26 @@ public class QuestNotification {
 
         public long startTime;
         public boolean init = false;
+        public final boolean showHint;
         private final String mainTxt;
         private final String subTxt;
         private final ItemStack icon;
         private final String sound;
-        private final String particle;
-        private final String animation;
-        private final ItemStack confettiIcon;
-        private final int particleCount;
+        private final NoticeConfig config;
 
         public QuestNotice(String mainTxt, String subTxt, ItemStack icon, String sound) {
-            this(mainTxt, subTxt, icon, sound, "default", "default", null, -1);
+            this(mainTxt, subTxt, icon, sound, new NoticeConfig(), false);
         }
 
-        public QuestNotice(String mainTxt, String subTxt, ItemStack icon, String sound, String particle,
-            String animation, ItemStack confettiIcon, int particleCount) {
+        public QuestNotice(String mainTxt, String subTxt, ItemStack icon, String sound, NoticeConfig config,
+            boolean showHint) {
             this.startTime = Minecraft.getSystemTime();
             this.mainTxt = mainTxt;
             this.subTxt = subTxt;
             this.icon = icon;
             this.sound = sound;
-            this.particle = particle;
-            this.animation = animation;
-            this.confettiIcon = confettiIcon;
-            this.particleCount = particleCount;
+            this.config = config;
+            this.showHint = showHint;
         }
 
         public float getTime() {
