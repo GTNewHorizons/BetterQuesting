@@ -172,18 +172,22 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
         boolean updated = resync;
 
         topLoop: for (Tuple2<UUID, int[]> value : progress) {
-            for (int j = 0; j < requiredItems.size(); j++) {
-                if (value.getSecond()[j] >= requiredItems.get(j).stackSize) {
-                    if (requireOnlyOneItem) break;
-                    continue;
+            boolean complete = !requireOnlyOneItem;
+
+            for (int i = 0; i < requiredItems.size(); i++) {
+                if (requireOnlyOneItem) {
+                    complete |= value.getSecond()[i] >= requiredItems.get(i).stackSize;
+                    if (complete) break;
+                } else {
+                    complete &= value.getSecond()[i] >= requiredItems.get(i).stackSize;
+                    if (!complete) continue topLoop;
                 }
-                continue topLoop;
             }
 
-            updated = true;
+            if (!complete) continue;
 
+            updated = true;
             progress.forEach((pair) -> setComplete(pair.getFirst()));
-            break;
         }
 
         if (updated) {
