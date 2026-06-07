@@ -45,7 +45,8 @@ public enum FormattingTag {
      * <p>
      * URL tags cannot be nested, and will break if you try.
      */
-    URL("url"),;
+    URL("url"),
+    QUESTLINK("questlink");
 
     public static final ImmutableMap<String, FormattingTag> NAME_TO_VALUE_MAP = ImmutableMap.copyOf(
         Arrays.stream(values())

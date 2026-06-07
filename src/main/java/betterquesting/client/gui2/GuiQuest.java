@@ -431,7 +431,7 @@ public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeeds
         openPopup(popup);
     }
 
-    private void navigateToQuest(UUID targetId) {
+    public void navigateToQuest(UUID targetId) {
         closePopup();
         // Walk the parent chain to find a GuiQuestLines
         GuiQuestLines questLines = null;
@@ -733,6 +733,7 @@ public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeeds
             true,
             true);
         paDesc.setColor(PresetColor.TEXT_MAIN.getColor());// .setFontSize(10);
+        paDesc.setGUI(this);
         csDesc.addCulledPanel(paDesc, false);
         return paDesc;
     }
