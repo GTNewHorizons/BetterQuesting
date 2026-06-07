@@ -300,6 +300,7 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
         public final List<Tuple2<UUID, int[]>> progress;
 
         private final int[] remCounts;
+        private boolean satisfied = false;
 
         public Detector(TaskRetrieval task, @Nonnull List<UUID> uuids) {
             this.task = task;
@@ -329,7 +330,7 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
          *                 Args: (remaining)
          */
         public void run(ItemStack stack, IntFunction<ItemStack> consumer, UUID runner) {
-            if (stack == null || stack.stackSize <= 0) return;
+            if (satisfied || stack == null || stack.stackSize <= 0) return;
             // Allows the stack detection to split across multiple requirements. Counts may vary per person
             Arrays.fill(remCounts, stack.stackSize);
 
@@ -357,11 +358,21 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
                             ItemStack removed = consumer.apply(remaining);
                             int temp = i;
                             progress.forEach(p -> p.getSecond()[temp] += removed.stackSize);
+                            updated = true;
+                            if (task.requireOnlyOneItem && value.getSecond()[temp] >= rStack.stackSize) {
+                                satisfied = true;
+                                return;
+                            }
                         }
                     } else {
                         int temp = Math.min(remaining, remCounts[n]);
                         remCounts[n] -= temp;
                         value.getSecond()[i] += temp;
+                        updated = true;
+                        if (task.requireOnlyOneItem && value.getSecond()[i] >= rStack.stackSize) {
+                            satisfied = true;
+                            return;
+                        }
                     }
                     updated = true;
                 }
