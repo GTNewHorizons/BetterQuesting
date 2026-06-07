@@ -74,6 +74,24 @@ public class QuestInstance implements IQuest {
         setupValue(NativeProps.SOUND_COMPLETE);
         setupValue(NativeProps.SOUND_UPDATE);
         // setupValue(NativeProps.SOUND_UNLOCK);
+        setupValue(NativeProps.COMPLETION_PARTICLE);
+        setupValue(NativeProps.COMPLETION_ANIMATION);
+        setupValue(NativeProps.PARTICLE_COUNT);
+        setupValue(NativeProps.CONFETTI_ICON);
+        setupValue(NativeProps.NOTIFICATION_STYLE);
+        setupValue(NativeProps.NOTIFICATION_SHOW_ICON);
+        setupValue(NativeProps.NOTIFICATION_TITLE);
+        setupValue(NativeProps.NOTIFICATION_SUBTITLE);
+        setupValue(NativeProps.NOTIFICATION_DURATION);
+        setupValue(NativeProps.NOTIFICATION_FADE_IN);
+        setupValue(NativeProps.NOTIFICATION_FADE_OUT);
+        setupValue(NativeProps.NOTIFICATION_TITLE_SCALE);
+        setupValue(NativeProps.NOTIFICATION_SUBTITLE_SCALE);
+        setupValue(NativeProps.NOTIFICATION_ICON_SCALE);
+        setupValue(NativeProps.NOTIFICATION_ICON_OFFSET_Y);
+        setupValue(NativeProps.NOTIFICATION_POS_X);
+        setupValue(NativeProps.NOTIFICATION_POS_Y);
+        setupValue(NativeProps.NOTIFICATION_EFFECT);
 
         setupValue(NativeProps.LOGIC_QUEST, EnumLogic.AND);
         setupValue(NativeProps.LOGIC_TASK, EnumLogic.AND);
@@ -86,6 +104,7 @@ public class QuestInstance implements IQuest {
         setupValue(NativeProps.MAIN, false);
         setupValue(NativeProps.GLOBAL_SHARE, false);
         setupValue(NativeProps.SIMULTANEOUS, false);
+        setupValue(NativeProps.COUNT_AS_QUEST, true);
         setupValue(NativeProps.VISIBILITY, EnumQuestVisibility.NORMAL);
     }
 
@@ -247,7 +266,7 @@ public class QuestInstance implements IQuest {
         }
 
         ParticipantInfo pInfo = new ParticipantInfo(player);
-        List<UUID> playersToMark = QBConfig.fullySyncQuests ? pInfo.ALL_UUIDS : Collections.singletonList(pInfo.UUID);
+        List<UUID> playersToMark = QBConfig.syncQuestRewards ? pInfo.ALL_UUIDS : Collections.singletonList(pInfo.UUID);
 
         synchronized (completeUsers) {
             for (UUID user : playersToMark) {
@@ -521,6 +540,9 @@ public class QuestInstance implements IQuest {
     @Override
     public void readFromNBT(NBTTagCompound jObj) {
         this.qInfo.readFromNBT(jObj.getCompoundTag("properties"));
+        // Prepopulate so the flag is visible in the raw-NBT editor without manual entry.
+        // Writes the default (true) when absent, preserves any stored value otherwise.
+        this.qInfo.setProperty(NativeProps.COUNT_AS_QUEST, this.qInfo.getProperty(NativeProps.COUNT_AS_QUEST));
         this.tasks.readFromNBT(jObj.getTagList("tasks", 10), false);
         this.rewards.readFromNBT(jObj.getTagList("rewards", 10), false);
 

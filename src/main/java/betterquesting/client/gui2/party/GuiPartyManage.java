@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.UUID;
 
 import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.nbt.NBTTagCompound;
 
 import org.lwjgl.input.Keyboard;
 
@@ -273,30 +272,17 @@ public class GuiPartyManage extends GuiScreenCanvas implements IPEventListener, 
     private void onButtonPress(PEventButton event) {
         IPanelButton btn = event.getButton();
 
-        if (btn.getButtonID() == 0) // Exit
-        {
+        if (btn.getButtonID() == 0) { // Exit
             mc.displayGuiScreen(this.parent);
-        } else if (btn.getButtonID() == 2) // Invite
-        {
-            System.out.println("Opening invite screen");
+        } else if (btn.getButtonID() == 2) { // Invite
             mc.displayGuiScreen(new GuiPartyInvite(this));
-        } else if (btn.getButtonID() == 3 && btn instanceof PanelButtonStorage) // Kick/Leave
-        {
+        } else if (btn.getButtonID() == 3 && btn instanceof PanelButtonStorage) { // Kick/Leave
             String id = ((PanelButtonStorage<String>) btn).getStoredValue();
-            NBTTagCompound payload = new NBTTagCompound();
-            payload.setInteger("action", 5);
-            payload.setInteger("partyID", partyID);
-            payload.setString("username", id);
-            NetPartyAction.sendAction(payload);
-        } else if (btn.getButtonID() == 4) // Change name
-        {
+            NetPartyAction.requestKick(partyID, id);
+        } else if (btn.getButtonID() == 4) { // Change name
             party.getProperties()
                 .setProperty(NativeProps.NAME, flName.getRawText());
-            NBTTagCompound payload = new NBTTagCompound();
-            payload.setInteger("action", 2);
-            payload.setInteger("partyID", partyID);
-            payload.setTag("data", party.writeProperties(new NBTTagCompound()));
-            NetPartyAction.sendAction(payload);
+            NetPartyAction.requestEdit(partyID, party);
         }
     }
 }

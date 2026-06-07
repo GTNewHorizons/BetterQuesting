@@ -15,6 +15,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.StringUtils;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.common.util.Constants;
 
 import betterquesting.api.events.DatabaseEvent;
 import betterquesting.api.events.DatabaseEvent.DBType;
@@ -34,6 +35,11 @@ public class NetNameSync {
 
     private static final ResourceLocation ID_NAME = new ResourceLocation("betterquesting:name_sync");
 
+    private static final String TAG_NAME_CACHE = "data";
+    private static final String TAG_NAMES = "names";
+    private static final String TAG_UUIDS = "uuids";
+    private static final String TAG_MERGE = "merge";
+
     public static void registerHandler() {
         PacketTypeRegistry.INSTANCE.registerServerHandler(ID_NAME, NetNameSync::onServer);
 
@@ -42,74 +48,76 @@ public class NetNameSync {
         }
     }
 
+    // NOTE: You can make an empty request if you want EVERYTHING (but I would not recommend it on large servers)
     @SideOnly(Side.CLIENT)
     public static void sendRequest(@Nullable UUID[] uuids, @Nullable String[] names) {
-        // NOTE: You can make an empty request if you want EVERYTHING (but I would not recommend it on large servers)
         NBTTagCompound payload = new NBTTagCompound();
         if (uuids != null) {
-            NBTTagList uList = new NBTTagList();
+            NBTTagList uuidTagList = new NBTTagList();
             for (UUID id : uuids) {
                 if (id == null) continue;
-                uList.appendTag(new NBTTagString(id.toString()));
+                uuidTagList.appendTag(new NBTTagString(id.toString()));
             }
-            payload.setTag("uuids", uList);
+            payload.setTag(TAG_UUIDS, uuidTagList);
         }
         if (names != null) {
-            NBTTagList nList = new NBTTagList();
-            for (String s : names) {
-                if (StringUtils.isNullOrEmpty(s)) continue;
-                nList.appendTag(new NBTTagString(s));
+            NBTTagList nameTagList = new NBTTagList();
+            for (String name : names) {
+                if (StringUtils.isNullOrEmpty(name)) continue;
+                nameTagList.appendTag(new NBTTagString(name));
             }
-            payload.setTag("names", nList);
+            payload.setTag(TAG_NAMES, nameTagList);
         }
         PacketSender.INSTANCE.sendToServer(new QuestingPacket(ID_NAME, payload));
     }
 
+    /** Syncs party player names for a specific player (if passed) or for all party members */
     public static void quickSync(@Nullable EntityPlayerMP player, int partyID) {
         IParty party = PartyManager.INSTANCE.getValue(partyID);
         if (party == null) return;
 
         NBTTagCompound payload = new NBTTagCompound();
-        payload.setTag("data", NameCache.INSTANCE.writeToNBT(new NBTTagList(), party.getMembers()));
-        payload.setBoolean("merge", true);
+        payload.setTag(TAG_NAME_CACHE, NameCache.INSTANCE.writeToNBT(new NBTTagList(), party.getMembers()));
+        payload.setBoolean(TAG_MERGE, true);
 
         if (player != null) {
             PacketSender.INSTANCE.sendToPlayers(new QuestingPacket(ID_NAME, payload), player);
-        } else {
-            MinecraftServer server = FMLCommonHandler.instance()
-                .getMinecraftServerInstance();
-            List<EntityPlayerMP> playerList = new ArrayList<>();
-            for (UUID playerID : party.getMembers()) {
-                EntityPlayerMP p = null;
-                for (Object o : server.getConfigurationManager().playerEntityList) {
-                    if (((EntityPlayerMP) o).getGameProfile()
-                        .getId()
-                        .equals(playerID)) {
-                        p = (EntityPlayerMP) o;
-                        break;
-                    }
-                }
-
-                if (p != null) playerList.add(p);
-            }
-            PacketSender.INSTANCE
-                .sendToPlayers(new QuestingPacket(ID_NAME, payload), playerList.toArray(new EntityPlayerMP[0]));
+            return;
         }
+
+        MinecraftServer server = FMLCommonHandler.instance()
+            .getMinecraftServerInstance();
+        ArrayList<EntityPlayerMP> onlinePlayerList = new ArrayList<>();
+
+        for (UUID playerID : party.getMembers()) {
+            for (EntityPlayerMP playerMP : server.getConfigurationManager().playerEntityList) {
+                if (playerMP.getGameProfile()
+                    .getId()
+                    .equals(playerID)) {
+                    onlinePlayerList.add(playerMP);
+                    break;
+                }
+            }
+        }
+
+        PacketSender.INSTANCE
+            .sendToPlayers(new QuestingPacket(ID_NAME, payload), onlinePlayerList.toArray(new EntityPlayerMP[0]));
     }
 
+    /** Syncs passed names for passed players (if not null) or for all online players */
     public static void sendNames(@Nullable EntityPlayerMP[] players, @Nullable UUID[] uuids, @Nullable String[] names) {
         List<UUID> idList = (uuids == null && names == null) ? null : new ArrayList<>();
         if (uuids != null) idList.addAll(Arrays.asList(uuids));
         if (names != null) {
-            for (String s : names) {
-                UUID id = NameCache.INSTANCE.getUUID(s);
+            for (String name : names) {
+                UUID id = NameCache.INSTANCE.getUUID(name);
                 if (id != null) idList.add(id);
             }
         }
 
         NBTTagCompound payload = new NBTTagCompound();
-        payload.setTag("data", NameCache.INSTANCE.writeToNBT(new NBTTagList(), idList));
-        payload.setBoolean("merge", idList != null);
+        payload.setTag(TAG_NAME_CACHE, NameCache.INSTANCE.writeToNBT(new NBTTagList(), idList));
+        payload.setBoolean(TAG_MERGE, idList != null);
 
         if (players == null) {
             PacketSender.INSTANCE.sendToAll(new QuestingPacket(ID_NAME, payload));
@@ -119,35 +127,33 @@ public class NetNameSync {
     }
 
     private static void onServer(Tuple2<NBTTagCompound, EntityPlayerMP> message) {
+        NBTTagCompound payload = message.getFirst();
         UUID[] uuids = null;
         String[] names = null;
 
-        if (message.getFirst()
-            .hasKey("uuids", 9)) {
-            NBTTagList uList = message.getFirst()
-                .getTagList("uuids", 8);
-            uuids = new UUID[uList.tagCount()];
+        if (payload.hasKey(TAG_UUIDS, Constants.NBT.TAG_LIST)) {
+            NBTTagList uuidTagList = payload.getTagList(TAG_UUIDS, Constants.NBT.TAG_STRING);
+            uuids = new UUID[uuidTagList.tagCount()];
             for (int i = 0; i < uuids.length; i++) {
                 try {
-                    uuids[i] = UUID.fromString(uList.getStringTagAt(i));
+                    uuids[i] = UUID.fromString(uuidTagList.getStringTagAt(i));
                 } catch (Exception ignored) {}
             }
         }
-        if (message.getFirst()
-            .hasKey("names", 9)) {
-            NBTTagList uList = message.getFirst()
-                .getTagList("names", 8);
-            names = new String[uList.tagCount()];
+        if (payload.hasKey(TAG_NAMES, Constants.NBT.TAG_LIST)) {
+            NBTTagList nameTagList = payload.getTagList(TAG_NAMES, Constants.NBT.TAG_STRING);
+            names = new String[nameTagList.tagCount()];
             for (int i = 0; i < names.length; i++) {
-                names[i] = uList.getStringTagAt(i);
+                names[i] = nameTagList.getStringTagAt(i);
             }
         }
         sendNames(new EntityPlayerMP[] { message.getSecond() }, uuids, names);
     }
 
     @SideOnly(Side.CLIENT)
-    private static void onClient(NBTTagCompound message) {
-        NameCache.INSTANCE.readFromNBT(message.getTagList("data", 10), message.getBoolean("merge"));
+    private static void onClient(NBTTagCompound payload) {
+        NameCache.INSTANCE
+            .readFromNBT(payload.getTagList(TAG_NAME_CACHE, Constants.NBT.TAG_COMPOUND), payload.getBoolean(TAG_MERGE));
         MinecraftForge.EVENT_BUS.post(new DatabaseEvent.Update(DBType.NAMES));
     }
 }

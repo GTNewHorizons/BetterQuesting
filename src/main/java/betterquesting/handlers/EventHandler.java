@@ -14,6 +14,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.event.ClickEvent;
 import net.minecraft.event.HoverEvent;
+import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.server.MinecraftServer;
@@ -21,7 +22,6 @@ import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraft.server.management.UserListBansEntry;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.ChatComponentTranslation;
-import net.minecraft.util.ChatStyle;
 import net.minecraft.util.IChatComponent;
 import net.minecraft.util.IIcon;
 import net.minecraftforge.client.event.ClientChatReceivedEvent;
@@ -49,7 +49,6 @@ import betterquesting.api.utils.BigItemStack;
 import betterquesting.api.utils.UuidConverter;
 import betterquesting.api2.cache.QuestCache;
 import betterquesting.api2.cache.QuestCache.QResetTime;
-import betterquesting.api2.client.gui.GuiScreenTest;
 import betterquesting.api2.client.gui.themes.gui_args.GArgsNone;
 import betterquesting.api2.client.gui.themes.presets.PresetGUIs;
 import betterquesting.api2.storage.DBEntry;
@@ -64,6 +63,7 @@ import betterquesting.network.handlers.NetBulkSync;
 import betterquesting.network.handlers.NetNameSync;
 import betterquesting.network.handlers.NetNotices;
 import betterquesting.network.handlers.NetQuestSync;
+import betterquesting.network.handlers.NoticeConfig;
 import betterquesting.questing.QuestDatabase;
 import betterquesting.questing.party.PartyInvitations;
 import betterquesting.questing.party.PartyManager;
@@ -89,87 +89,92 @@ public class EventHandler {
     @SubscribeEvent
     @SideOnly(Side.CLIENT)
     public void onKey(InputEvent.KeyInputEvent event) {
+        handleOnOpenQuests();
+    }
+
+    @SubscribeEvent
+    @SideOnly(Side.CLIENT)
+    public void onMouse(InputEvent.MouseInputEvent event) {
+        handleOnOpenQuests();
+    }
+
+    @SideOnly(Side.CLIENT)
+    private void handleOnOpenQuests() {
         if (BQ_Keybindings.openQuests.isPressed()) {
             Minecraft mc = Minecraft.getMinecraft();
-            if (mc.thePlayer.isSneaking() && mc.thePlayer.getCommandSenderName()
-                .equalsIgnoreCase("Funwayguy")) {
-                mc.displayGuiScreen(new GuiScreenTest(mc.currentScreen));
+            if (BQ_Settings.useBookmark && GuiHome.bookmark != null) {
+                mc.displayGuiScreen(GuiHome.bookmark);
             } else {
-                if (BQ_Settings.useBookmark && GuiHome.bookmark != null) {
-                    mc.displayGuiScreen(GuiHome.bookmark);
-                } else {
-                    GuiScreen guiToDisplay = ThemeRegistry.INSTANCE.getGui(PresetGUIs.HOME, GArgsNone.NONE);
-                    if (BQ_Settings.useBookmark && BQ_Settings.skipHome) guiToDisplay = new GuiQuestLines(guiToDisplay);
-                    mc.displayGuiScreen(guiToDisplay);
-                }
+                GuiScreen guiToDisplay = ThemeRegistry.INSTANCE.getGui(PresetGUIs.HOME, GArgsNone.NONE);
+                if (BQ_Settings.useBookmark && BQ_Settings.skipHome) guiToDisplay = new GuiQuestLines(guiToDisplay);
+                mc.displayGuiScreen(guiToDisplay);
             }
         }
     }
 
+    /**
+     * Handle quest share messages and prettify them
+     */
     @SideOnly(Side.CLIENT)
     @SubscribeEvent
     public void onClientChatReceived(ClientChatReceivedEvent event) {
-        if (event.message != null) {
-            String text = event.message.getFormattedText();
-            int index = text.indexOf("betterquesting.msg.sharequest:");
-            if (index != -1) {
-                int lastIndex = index + "betterquesting.msg.sharequest:".length();
-                String restOfText = text.substring(lastIndex);
+        if (event.message == null) return;
 
-                // UUIDs in base64-encoded string form are 24 characters in length.
-                if (restOfText.length() < 24) {
-                    event.message = new ChatComponentTranslation("betterquesting.msg.share_quest_invalid", restOfText);
-                    return;
-                }
-                String uuidString = restOfText.substring(0, 24);
-                UUID questId;
-                try {
-                    questId = UuidConverter.decodeUuid(uuidString);
-                } catch (ArrayIndexOutOfBoundsException | IllegalArgumentException e) {
-                    event.message = new ChatComponentTranslation("betterquesting.msg.share_quest_invalid", uuidString);
-                    return;
-                }
+        // Text is something like "<prefix>betterquesting.msg.sharequest:<questId><postfix>"
+        String text = event.message.getFormattedText();
+        int index = text.indexOf("betterquesting.msg.sharequest:");
+        if (index == -1) return;
 
-                IQuest quest = QuestDatabase.INSTANCE.get(questId);
-                if (quest == null) {
-                    event.message = new ChatComponentTranslation(
-                        "betterquesting.msg.share_quest_invalid",
-                        UuidConverter.encodeUuid(questId));
-                    return;
-                }
+        int questIdIndex = index + "betterquesting.msg.sharequest:".length();
 
-                String questName = quest.getProperty(NativeProps.NAME);
-                IChatComponent translated = new ChatComponentTranslation(
-                    "betterquesting.msg.share_quest",
-                    UuidConverter.encodeUuid(questId),
-                    questName);
-
-                String textAfter = restOfText.length() > 36 ? restOfText.substring(36) : "";
-                IChatComponent newMessage = new ChatComponentText(
-                    text.substring(0, index) + translated.getFormattedText() + textAfter);
-                ChatStyle newMessageStyle;
-                EntityPlayerSP player = Minecraft.getMinecraft().thePlayer;
-                if (QuestCache.isQuestShown(quest, QuestingAPI.getQuestingUUID(player), player)) {
-                    QuestCommandShow.sentViaClick = true;
-                    newMessageStyle = newMessage.getChatStyle()
-                        .setChatClickEvent(
-                            new ClickEvent(
-                                ClickEvent.Action.RUN_COMMAND,
-                                "/bq_client show " + UuidConverter.encodeUuid(questId)))
-                        .setChatHoverEvent(
-                            new HoverEvent(
-                                HoverEvent.Action.SHOW_TEXT,
-                                new ChatComponentTranslation("betterquesting.msg.share_quest_hover_text_success")));
-                } else {
-                    newMessageStyle = newMessage.getChatStyle()
-                        .setChatHoverEvent(
-                            new HoverEvent(
-                                HoverEvent.Action.SHOW_TEXT,
-                                new ChatComponentTranslation("betterquesting.msg.share_quest_hover_text_failure")));
-                }
-                event.message = newMessage.setChatStyle(newMessageStyle);
-            }
+        // UUIDs in base64-encoded string form are 24 characters in length.
+        if (text.length() - questIdIndex < 24) {
+            event.message = new ChatComponentTranslation(
+                "betterquesting.msg.share_quest_invalid",
+                text.substring(questIdIndex));
+            return;
         }
+
+        final String questIdString = text.substring(questIdIndex, questIdIndex + 24);
+        final UUID questId;
+        try {
+            questId = UuidConverter.decodeUuid(questIdString);
+        } catch (ArrayIndexOutOfBoundsException | IllegalArgumentException e) {
+            event.message = new ChatComponentTranslation("betterquesting.msg.share_quest_invalid", questIdString);
+            return;
+        }
+
+        IQuest quest = QuestDatabase.INSTANCE.get(questId);
+        if (quest == null) {
+            event.message = new ChatComponentTranslation("betterquesting.msg.share_quest_invalid", questIdString);
+            return;
+        }
+
+        String questName = quest.getProperty(NativeProps.NAME);
+        IChatComponent translated = new ChatComponentTranslation(
+            "betterquesting.msg.share_quest",
+            questIdString,
+            questName);
+
+        IChatComponent newMessage = new ChatComponentText(
+            text.substring(0, index) + translated.getFormattedText() + text.substring(questIdIndex + 24));
+        EntityPlayerSP player = Minecraft.getMinecraft().thePlayer;
+        if (QuestCache.isQuestShown(quest, QuestingAPI.getQuestingUUID(player), player)) {
+            QuestCommandShow.sentViaClick = true;
+            newMessage.getChatStyle()
+                .setChatClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/bq_client show " + questIdString))
+                .setChatHoverEvent(
+                    new HoverEvent(
+                        HoverEvent.Action.SHOW_TEXT,
+                        new ChatComponentTranslation("betterquesting.msg.share_quest_hover_text_success")));
+        } else {
+            newMessage.getChatStyle()
+                .setChatHoverEvent(
+                    new HoverEvent(
+                        HoverEvent.Action.SHOW_TEXT,
+                        new ChatComponentTranslation("betterquesting.msg.share_quest_hover_text_failure")));
+        }
+        event.message = newMessage;
     }
 
     @SideOnly(Side.CLIENT)
@@ -206,14 +211,11 @@ public class EventHandler {
         if (event.entityLiving.worldObj.isRemote) {
             return;
         }
-        if (!(event.entityLiving instanceof EntityPlayerMP)) {
-            return;
-        }
         if (event.entityLiving.ticksExisted % 20 != 0) {
             return; // Only triggers once per second
         }
 
-        EntityPlayerMP player = (EntityPlayerMP) event.entityLiving;
+        EntityPlayerMP player = event.entityLiving;
         QuestCache qc = (QuestCache) player.getExtendedProperties(QuestCache.LOC_QUEST_CACHE.toString());
         boolean editMode = QuestSettings.INSTANCE.getProperty(NativeProps.EDIT_MODE);
 
@@ -225,91 +227,85 @@ public class EventHandler {
         Map<UUID, IQuest> pendingAutoClaims = QuestDatabase.INSTANCE.filterKeys(qc.getPendingAutoClaims());
         QResetTime[] pendingResets = qc.getScheduledResets();
 
-        UUID uuid = QuestingAPI.getQuestingUUID(player);
+        UUID playerId = QuestingAPI.getQuestingUUID(player);
         boolean refreshCache = false;
 
-        if (!editMode && player.ticksExisted % 60 == 0) // Passive quest state check every 3 seconds
-        {
-            List<UUID> com = new ArrayList<>();
+        // Passive quest state check every 3 seconds
+        if (!editMode && player.ticksExisted % 60 == 0) {
+            List<UUID> completed = new ArrayList<>();
 
             for (Map.Entry<UUID, IQuest> entry : activeQuests.entrySet()) {
-                if (!entry.getValue()
-                    .isUnlocked(uuid)) {
+                final UUID questId = entry.getKey();
+                final IQuest quest = entry.getValue();
+
+                if (!quest.isUnlocked(playerId)) {
                     continue; // Although it IS active, it cannot be completed yet
                 }
 
-                if (entry.getValue()
-                    .canSubmit(player)) {
-                    entry.getValue()
-                        .update(player);
+                if (quest.canSubmit(player)) {
+                    quest.update(player);
                 }
 
-                if (entry.getValue()
-                    .isComplete(uuid)
-                    && !entry.getValue()
-                        .canSubmit(player)) {
+                if (quest.isComplete(playerId) && !quest.canSubmit(player)) {
                     refreshCache = true;
-                    qc.markQuestDirty(entry.getKey());
+                    qc.markQuestDirty(questId);
 
-                    com.add(entry.getKey());
-                    if (!entry.getValue()
-                        .getProperty(NativeProps.SILENT)) {
-                        postPresetNotice(entry.getValue(), player, 2);
+                    completed.add(questId);
+                    if (!quest.getProperty(NativeProps.SILENT)) {
+                        postPresetNotice(quest, player, 2);
                     }
                 }
             }
 
-            MinecraftForge.EVENT_BUS.post(new QuestEvent(Type.COMPLETED, uuid, com));
+            MinecraftForge.EVENT_BUS.post(new QuestEvent(Type.COMPLETED, playerId, completed));
         }
 
-        if (!editMode && MinecraftServer.getServer() != null) // Repeatable quest resets
-        {
-            List<UUID> res = new ArrayList<>();
-            long totalTime = System.currentTimeMillis();
+        // Repeatable quest resets
+        if (!editMode && MinecraftServer.getServer() != null) {
+            List<UUID> reset = new ArrayList<>();
+            long currentTime = System.currentTimeMillis();
 
-            for (QResetTime rTime : pendingResets) {
-                IQuest entry = QuestDatabase.INSTANCE.get(rTime.questID);
+            for (QResetTime pendingReset : pendingResets) {
+                IQuest quest = QuestDatabase.INSTANCE.get(pendingReset.questID);
 
-                if (totalTime >= rTime.time && !entry.canSubmit(player)) // REEEEEEEEEset
-                {
-                    if (entry.getProperty(NativeProps.GLOBAL)) {
-                        entry.resetUser(null, false);
+                if (currentTime >= pendingReset.time && !quest.canSubmit(player)) {
+                    if (quest.getProperty(NativeProps.GLOBAL)) {
+                        quest.resetUser(null, false);
                     } else {
-                        entry.resetUser(uuid, false);
+                        quest.resetUser(playerId, false);
                     }
 
                     refreshCache = true;
-                    qc.markQuestDirty(rTime.questID);
-                    res.add(rTime.questID);
-                    if (!entry.getProperty(NativeProps.SILENT)) {
-                        postPresetNotice(entry, player, 1);
+                    qc.markQuestDirty(pendingReset.questID);
+                    reset.add(pendingReset.questID);
+                    if (!quest.getProperty(NativeProps.SILENT)) {
+                        postPresetNotice(quest, player, 1);
                     }
                 } else {
                     break; // Entries are sorted by time so we fail fast and skip checking the others
                 }
             }
 
-            MinecraftForge.EVENT_BUS.post(new QuestEvent(Type.RESET, uuid, res));
+            MinecraftForge.EVENT_BUS.post(new QuestEvent(Type.RESET, playerId, reset));
         }
 
+        // Auto claims
         if (!editMode) {
-            for (Map.Entry<UUID, IQuest> entry : pendingAutoClaims.entrySet()) // Auto claims
-            {
+            for (Map.Entry<UUID, IQuest> entry : pendingAutoClaims.entrySet()) {
                 if (entry.getValue()
                     .canClaim(player)) {
                     entry.getValue()
                         .claimReward(player);
                     refreshCache = true;
                     qc.markQuestDirty(entry.getKey());
-                    // Not going to notify of auto-claims anymore. Kinda pointless if they're already being pinged for
-                    // completion
+                    // Not going to notify of auto-claims anymore.
+                    // Kinda pointless if they're already being pinged for completion
                 }
             }
         }
 
-        if (refreshCache || player.ticksExisted % 200 == 0) // Refresh the cache if something changed or every 10
-                                                            // seconds
-        {
+        // Refresh the cache if something changed or every 10 seconds
+        if (refreshCache || player.ticksExisted % 200 == 0) {
             qc.updateCache(player);
         }
 
@@ -352,13 +348,40 @@ public class EventHandler {
             }
         }
 
+        NoticeConfig cfg = new NoticeConfig();
+        cfg.particle = quest.getProperty(NativeProps.COMPLETION_PARTICLE);
+        cfg.animation = quest.getProperty(NativeProps.COMPLETION_ANIMATION);
+        BigItemStack confettiBig = quest.getProperty(NativeProps.CONFETTI_ICON);
+        ItemStack confettiStack = confettiBig != null ? confettiBig.getBaseStack() : null;
+        cfg.confettiIcon = (confettiStack != null && confettiStack.getItem() != Items.stick) ? confettiStack : null;
+        cfg.particleCount = quest.getProperty(NativeProps.PARTICLE_COUNT);
+        cfg.style = quest.getProperty(NativeProps.NOTIFICATION_STYLE);
+        cfg.showIcon = quest.getProperty(NativeProps.NOTIFICATION_SHOW_ICON);
+        cfg.subtitleText = quest.getProperty(NativeProps.NOTIFICATION_SUBTITLE);
+        cfg.duration = quest.getProperty(NativeProps.NOTIFICATION_DURATION);
+        cfg.fadeIn = quest.getProperty(NativeProps.NOTIFICATION_FADE_IN);
+        cfg.fadeOut = quest.getProperty(NativeProps.NOTIFICATION_FADE_OUT);
+        cfg.titleScale = quest.getProperty(NativeProps.NOTIFICATION_TITLE_SCALE);
+        cfg.subtitleScale = quest.getProperty(NativeProps.NOTIFICATION_SUBTITLE_SCALE);
+        cfg.iconScale = quest.getProperty(NativeProps.NOTIFICATION_ICON_SCALE);
+        cfg.iconOffsetY = quest.getProperty(NativeProps.NOTIFICATION_ICON_OFFSET_Y);
+        cfg.posX = quest.getProperty(NativeProps.NOTIFICATION_POS_X);
+        cfg.posY = quest.getProperty(NativeProps.NOTIFICATION_POS_Y);
+        cfg.effectTier = quest.getProperty(NativeProps.NOTIFICATION_EFFECT);
+
+        String customTitle = quest.getProperty(NativeProps.NOTIFICATION_TITLE);
+        if (customTitle != null && !customTitle.isEmpty()) {
+            mainText = customTitle;
+        }
+
         NetNotices.sendNotice(
             quest.getProperty(NativeProps.GLOBAL) ? null : new EntityPlayerMP[] { (EntityPlayerMP) player },
             icon,
             mainText,
             questName,
             questIdStr,
-            sound);
+            sound,
+            cfg);
     }
 
     @SubscribeEvent
@@ -528,8 +551,7 @@ public class EventHandler {
         if (server.getTickCounter() % 60 == 0) PartyInvitations.INSTANCE.cleanExpired();
 
         // === FIX FOR OnLivingUpdate FIRING MULTIPLE TIMES PER TICK ===
-        // noinspection unchecked
-        for (EntityPlayerMP player : (List<EntityPlayerMP>) server.getConfigurationManager().playerEntityList) {
+        for (EntityPlayerMP player : server.getConfigurationManager().playerEntityList) {
             MinecraftForge.EVENT_BUS.post(new BQLivingUpdateEvent(player));
         }
     }

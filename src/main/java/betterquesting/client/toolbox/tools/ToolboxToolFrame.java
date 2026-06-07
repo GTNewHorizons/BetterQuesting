@@ -1,16 +1,15 @@
 package betterquesting.client.toolbox.tools;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
-
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
+import java.util.UUID;
 
 import org.lwjgl.input.Keyboard;
 
 import betterquesting.api.client.toolbox.IToolboxTool;
 import betterquesting.api.properties.NativeProps;
-import betterquesting.api.utils.NBTConverter;
+import betterquesting.api.questing.IQuest;
 import betterquesting.api2.client.gui.controls.PanelButtonQuest;
 import betterquesting.api2.client.gui.panels.lists.CanvasQuestLine;
 import betterquesting.client.gui2.editors.designer.PanelToolController;
@@ -70,27 +69,19 @@ public class ToolboxToolFrame implements IToolboxTool {
             .getValue()
             .getProperty(NativeProps.MAIN);
 
-        NBTTagList dataList = new NBTTagList();
+        HashMap<UUID, IQuest> questsToEdit = new HashMap<>();
         for (PanelButtonQuest btn : btnList) {
             btn.getStoredValue()
                 .getValue()
                 .setProperty(NativeProps.MAIN, state);
 
-            NBTTagCompound entry = NBTConverter.UuidValueType.QUEST.writeId(
+            questsToEdit.put(
                 btn.getStoredValue()
-                    .getKey());
-            entry.setTag(
-                "config",
+                    .getKey(),
                 btn.getStoredValue()
-                    .getValue()
-                    .writeToNBT(new NBTTagCompound()));
-            dataList.appendTag(entry);
+                    .getValue());
         }
-
-        NBTTagCompound payload = new NBTTagCompound();
-        payload.setTag("data", dataList);
-        payload.setInteger("action", 0);
-        NetQuestEdit.sendEdit(payload);
+        NetQuestEdit.requestEdit(questsToEdit);
     }
 
     @Override

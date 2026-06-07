@@ -38,6 +38,7 @@ import betterquesting.api2.client.gui.GuiScreenCanvas;
 import betterquesting.api2.client.gui.themes.gui_args.GArgsNone;
 import betterquesting.api2.client.gui.themes.presets.PresetGUIs;
 import betterquesting.api2.storage.DBEntry;
+import betterquesting.api2.utils.ColorUtils;
 import betterquesting.api2.utils.QuestTranslation;
 import betterquesting.client.gui2.GuiHome;
 import betterquesting.client.gui2.GuiQuest;
@@ -324,8 +325,8 @@ public class QuestRecipeHandler extends TemplateRecipeHandler {
     }
 
     private void setTextColors() {
-        textColor = QuestTranslation.getColor("bq_standard.gui.neiQuestNameColor");
-        textColorHovered = QuestTranslation.getColor("bq_standard.gui.neiQuestNameHoveredColor");
+        textColor = ColorUtils.neiQuestNameColor.getColor();
+        textColorHovered = ColorUtils.neiQuestNameHoveredColor.getColor();
     }
 
     private class CachedQuestRecipe extends CachedRecipe {
