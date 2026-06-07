@@ -50,6 +50,8 @@ public abstract class PanelTaskItemBase<T extends TaskProgressableBase<int[]>> e
 
     protected abstract void initPanelExtras(int listW);
 
+    protected void itemExtraInfo(int i) {}
+
     @Override
     public void initPanel() {
         super.initPanel();
@@ -80,6 +82,8 @@ public abstract class PanelTaskItemBase<T extends TaskProgressableBase<int[]>> e
             textBox.setColor(PresetColor.TEXT_MAIN.getColor());
             this.addPanel(textBox);
             textBoxes[i] = textBox;
+
+            itemExtraInfo(i);
         }
 
         recalcSizes();

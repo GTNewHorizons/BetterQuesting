@@ -48,6 +48,7 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
     public boolean consume = false;
     public boolean groupDetect = false;
     public boolean autoConsume = false;
+    public boolean requireOnlyOneItem = false;
 
     @Override
     public NBTTagCompound writeToNBT(NBTTagCompound nbt) {
@@ -56,6 +57,7 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
         nbt.setBoolean("consume", consume);
         nbt.setBoolean("groupDetect", groupDetect);
         nbt.setBoolean("autoConsume", autoConsume);
+        nbt.setBoolean("requireOnlyOneItem", requireOnlyOneItem);
 
         NBTTagList itemArray = new NBTTagList();
         for (BigItemStack stack : this.requiredItems) {
@@ -73,6 +75,7 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
         consume = nbt.getBoolean("consume");
         groupDetect = nbt.getBoolean("groupDetect");
         autoConsume = nbt.getBoolean("autoConsume");
+        requireOnlyOneItem = nbt.getBoolean("requireOnlyOneItem");
 
         requiredItems.clear();
         NBTTagList iList = nbt.getTagList("requiredItems", Constants.NBT.TAG_COMPOUND);
@@ -169,15 +172,22 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
         boolean updated = resync;
 
         topLoop: for (Tuple2<UUID, int[]> value : progress) {
-            for (int j = 0; j < requiredItems.size(); j++) {
-                if (value.getSecond()[j] >= requiredItems.get(j).stackSize) continue;
-                continue topLoop;
+            boolean complete = !requireOnlyOneItem;
+
+            for (int i = 0; i < requiredItems.size(); i++) {
+                if (requireOnlyOneItem) {
+                    complete |= value.getSecond()[i] >= requiredItems.get(i).stackSize;
+                    if (complete) break;
+                } else {
+                    complete &= value.getSecond()[i] >= requiredItems.get(i).stackSize;
+                    if (!complete) continue topLoop;
+                }
             }
 
-            updated = true;
+            if (!complete) continue;
 
+            updated = true;
             progress.forEach((pair) -> setComplete(pair.getFirst()));
-            break;
         }
 
         if (updated) {
@@ -290,6 +300,7 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
         public final List<Tuple2<UUID, int[]>> progress;
 
         private final int[] remCounts;
+        private boolean satisfied = false;
 
         public Detector(TaskRetrieval task, @Nonnull List<UUID> uuids) {
             this.task = task;
@@ -319,7 +330,7 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
          *                 Args: (remaining)
          */
         public void run(ItemStack stack, IntFunction<ItemStack> consumer, UUID runner) {
-            if (stack == null || stack.stackSize <= 0) return;
+            if (satisfied || stack == null || stack.stackSize <= 0) return;
             // Allows the stack detection to split across multiple requirements. Counts may vary per person
             Arrays.fill(remCounts, stack.stackSize);
 
@@ -347,11 +358,21 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
                             ItemStack removed = consumer.apply(remaining);
                             int temp = i;
                             progress.forEach(p -> p.getSecond()[temp] += removed.stackSize);
+                            updated = true;
+                            if (task.requireOnlyOneItem && value.getSecond()[temp] >= rStack.stackSize) {
+                                satisfied = true;
+                                return;
+                            }
                         }
                     } else {
                         int temp = Math.min(remaining, remCounts[n]);
                         remCounts[n] -= temp;
                         value.getSecond()[i] += temp;
+                        updated = true;
+                        if (task.requireOnlyOneItem && value.getSecond()[i] >= rStack.stackSize) {
+                            satisfied = true;
+                            return;
+                        }
                     }
                     updated = true;
                 }
