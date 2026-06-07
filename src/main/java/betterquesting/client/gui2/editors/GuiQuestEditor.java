@@ -179,8 +179,14 @@ public class GuiQuestEditor extends GuiScreenCanvas implements IPEventListener, 
             QuestTranslation.translate("betterquesting.btn.logic") + ": " + quest.getProperty(NativeProps.LOGIC_QUEST));
         cvBackground.addPanel(btnLogic);
 
-        PanelButton btnAdv = new PanelButton(
+        PanelButton btnNotif = new PanelButton(
             new GuiTransform(GuiAlign.MID_CENTER, -100, 64, 200, 16, 0),
+            9,
+            QuestTranslation.translate("betterquesting.btn.notification"));
+        cvBackground.addPanel(btnNotif);
+
+        PanelButton btnAdv = new PanelButton(
+            new GuiTransform(GuiAlign.MID_CENTER, -100, 80, 200, 16, 0),
             4,
             QuestTranslation.translate("betterquesting.btn.advanced"));
         cvBackground.addPanel(btnAdv);
@@ -282,6 +288,12 @@ public class GuiQuestEditor extends GuiScreenCanvas implements IPEventListener, 
                     quest.setProperty(NativeProps.ICON, value);
                     SendChanges();
                 }));
+                break;
+            }
+            case 9: // Notifications
+            {
+                mc.displayGuiScreen(new GuiQuestNotificationSettings(this, questID, quest));
+                break;
             }
         }
     }

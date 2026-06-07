@@ -31,6 +31,10 @@ public class BQ_Settings {
     public static float notificationSubtitleScale = 0;
     public static String notificationIconAnimation = "none";
     public static String notificationParticle = "none";
+    public static int notificationTitleOffsetX = 0;
+    public static int notificationTitleOffsetY = 0;
+    public static int notificationEffectTier = 0;
+    public static boolean notificationHintSeen = false;
     public static boolean dirtyMode = true;
     public static float scrollMultiplier = 0.1F;
 
