@@ -35,24 +35,18 @@ public class NetNotices {
 
     public static void sendNotice(@Nullable EntityPlayerMP[] players, ItemStack icon, String mainText, String subText,
         String questId, String sound) {
-        sendNotice(players, icon, mainText, subText, questId, sound, "default", "default", null, -1);
+        sendNotice(players, icon, mainText, subText, questId, sound, new NoticeConfig());
     }
 
     public static void sendNotice(@Nullable EntityPlayerMP[] players, ItemStack icon, String mainText, String subText,
-        String questId, String sound, String particle, String animation, @Nullable ItemStack confettiIcon,
-        int particleCount) {
+        String questId, String sound, NoticeConfig config) {
         NBTTagCompound payload = new NBTTagCompound();
         payload.setTag("icon", icon == null ? new NBTTagCompound() : icon.writeToNBT(new NBTTagCompound()));
         if (mainText != null) payload.setString("mainText", mainText);
         if (subText != null) payload.setString("subText", subText);
         if (questId != null) payload.setString("questId", questId);
         if (sound != null) payload.setString("sound", sound);
-        if (particle != null) payload.setString("particle", particle);
-        if (animation != null) payload.setString("animation", animation);
-        if (confettiIcon != null) {
-            payload.setTag("confettiIcon", confettiIcon.writeToNBT(new NBTTagCompound()));
-        }
-        if (particleCount >= 0) payload.setInteger("particleCount", particleCount);
+        payload.setTag("cfg", config.writeToNBT(new NBTTagCompound()));
 
         if (players != null) {
             PacketSender.INSTANCE.sendToPlayers(new QuestingPacket(ID_NAME, payload), players);
@@ -68,12 +62,7 @@ public class NetNotices {
         String subTxt = message.getString("subText");
         String questIdStr = message.getString("questId");
         String sound = message.getString("sound");
-        String particle = message.hasKey("particle") ? message.getString("particle") : "default";
-        String animation = message.hasKey("animation") ? message.getString("animation") : "default";
-        ItemStack confettiIcon = message.hasKey("confettiIcon")
-            ? ItemStack.loadItemStackFromNBT(message.getCompoundTag("confettiIcon"))
-            : null;
-        int particleCount = message.hasKey("particleCount") ? message.getInteger("particleCount") : -1;
+        NoticeConfig config = NoticeConfig.readFromNBT(message.getCompoundTag("cfg"));
 
         if ((subTxt == null || subTxt.isEmpty()) && questIdStr != null && !questIdStr.isEmpty()) {
             subTxt = questIdStr;
@@ -97,19 +86,14 @@ public class NetNotices {
             subTxt,
             stack,
             sound,
-            particle,
-            animation,
-            confettiIcon);
+            config.particle,
+            config.animation,
+            config.confettiIcon);
         if (!MinecraftForge.EVENT_BUS.post(event)) {
-            QuestNotification.ScheduleNotice(
-                mainTxt,
-                subTxt,
-                stack,
-                sound,
-                event.getParticleEffect(),
-                event.getIconAnimation(),
-                event.getConfettiIcon(),
-                particleCount);
+            config.particle = event.getParticleEffect();
+            config.animation = event.getIconAnimation();
+            config.confettiIcon = event.getConfettiIcon();
+            QuestNotification.ScheduleNotice(mainTxt, subTxt, stack, sound, config);
         }
     }
 }

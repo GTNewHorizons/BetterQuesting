@@ -78,6 +78,20 @@ public class QuestInstance implements IQuest {
         setupValue(NativeProps.COMPLETION_ANIMATION);
         setupValue(NativeProps.PARTICLE_COUNT);
         setupValue(NativeProps.CONFETTI_ICON);
+        setupValue(NativeProps.NOTIFICATION_STYLE);
+        setupValue(NativeProps.NOTIFICATION_SHOW_ICON);
+        setupValue(NativeProps.NOTIFICATION_TITLE);
+        setupValue(NativeProps.NOTIFICATION_SUBTITLE);
+        setupValue(NativeProps.NOTIFICATION_DURATION);
+        setupValue(NativeProps.NOTIFICATION_FADE_IN);
+        setupValue(NativeProps.NOTIFICATION_FADE_OUT);
+        setupValue(NativeProps.NOTIFICATION_TITLE_SCALE);
+        setupValue(NativeProps.NOTIFICATION_SUBTITLE_SCALE);
+        setupValue(NativeProps.NOTIFICATION_ICON_SCALE);
+        setupValue(NativeProps.NOTIFICATION_ICON_OFFSET_Y);
+        setupValue(NativeProps.NOTIFICATION_POS_X);
+        setupValue(NativeProps.NOTIFICATION_POS_Y);
+        setupValue(NativeProps.NOTIFICATION_EFFECT);
 
         setupValue(NativeProps.LOGIC_QUEST, EnumLogic.AND);
         setupValue(NativeProps.LOGIC_TASK, EnumLogic.AND);

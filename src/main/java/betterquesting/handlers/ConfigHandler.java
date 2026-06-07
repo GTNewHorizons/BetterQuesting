@@ -99,6 +99,32 @@ public class ConfigHandler {
             Configuration.CATEGORY_GENERAL,
             "none",
             "Particle effect on quest completion: none, confetti, sparkle, firework, item_confetti");
+        BQ_Settings.notificationTitleOffsetX = config.getInt(
+            "Notification Title Offset X",
+            Configuration.CATEGORY_GENERAL,
+            0,
+            -1000,
+            1000,
+            "Horizontal offset of the notification from screen center, in pixels. Negative = left, positive = right.");
+        BQ_Settings.notificationTitleOffsetY = config.getInt(
+            "Notification Title Offset Y",
+            Configuration.CATEGORY_GENERAL,
+            0,
+            -1000,
+            1000,
+            "Vertical offset of the notification from screen center, in pixels. Negative = higher, positive = lower.");
+        BQ_Settings.notificationEffectTier = config.getInt(
+            "Notification Effect Tier",
+            Configuration.CATEGORY_GENERAL,
+            0,
+            0,
+            6,
+            "Cinematic completion effect: 0 = none, 3 = hyperspace, 4 = singularity, 5 = warp, 6 = lightspeed");
+        BQ_Settings.notificationHintSeen = config.getBoolean(
+            "Notification Hint Seen",
+            Configuration.CATEGORY_GENERAL,
+            false,
+            "Internal: set once the player opens the notification settings, hides the one-time hint.");
         BQ_Settings.curTheme = config
             .getString("Theme", Configuration.CATEGORY_GENERAL, "betterquesting:light", "The current questing theme");
         BQ_Settings.useBookmark = config.getBoolean(
