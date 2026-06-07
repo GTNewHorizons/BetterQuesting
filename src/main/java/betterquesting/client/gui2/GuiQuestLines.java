@@ -230,6 +230,19 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
             cvBackground.addPanel(btnDesign);
         }
 
+        // Notification settings entry. Tinted yellow as a "needs a look" hint until first opened.
+        int notifY = canEdit ? -88 : -72;
+        PanelButton btnNotif = new PanelButton(new GuiTransform(GuiAlign.BOTTOM_LEFT, 8, notifY, 32, 16, 0), -1, "");
+        if (BQ_Settings.notificationHintSeen) {
+            btnNotif.setIcon(PresetIcon.ICON_NOTICE.getTexture());
+        } else {
+            btnNotif.setIcon(PresetIcon.ICON_NOTICE.getTexture(), new GuiColorStatic(0xFFFFCC00), 0);
+        }
+        btnNotif.setClickAction((b) -> mc.displayGuiScreen(new GuiNotificationSettings(this)));
+        btnNotif
+            .setTooltip(Collections.singletonList(QuestTranslation.translate("betterquesting.notification.settings")));
+        cvBackground.addPanel(btnNotif);
+
         txTitle = new PanelTextBox(
             new GuiTransform(new Vector4f(0F, 0F, 0.5F, 0F), new GuiPadding(60, 12, 0, -24), 0),
             "");
