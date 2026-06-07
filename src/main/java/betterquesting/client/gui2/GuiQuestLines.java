@@ -3,14 +3,14 @@ package betterquesting.client.gui2;
 import static betterquesting.api.storage.BQ_Settings.alwaysDrawImplicit;
 import static betterquesting.api.storage.BQ_Settings.forceMonochromeText;
 
-import java.awt.Toolkit;
-import java.awt.datatransfer.StringSelection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import net.minecraft.client.Minecraft;
@@ -42,6 +42,8 @@ import betterquesting.api.utils.RenderUtils;
 import betterquesting.api.utils.UuidConverter;
 import betterquesting.api2.cache.QuestCache;
 import betterquesting.api2.client.gui.GuiScreenCanvas;
+import betterquesting.api2.client.gui.context.IQuestContextMenuEntry;
+import betterquesting.api2.client.gui.context.QuestContextMenuRegistry;
 import betterquesting.api2.client.gui.controls.IPanelButton;
 import betterquesting.api2.client.gui.controls.PanelButton;
 import betterquesting.api2.client.gui.controls.PanelButtonQuest;
@@ -126,6 +128,7 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
     private PanelTextBox txTitle;
     private PanelTextBox txDesc;
     private PanelTextBox completionText;
+    private PanelTextBox txGlobalCompletion;
 
     private PanelButton claimAll;
 
@@ -133,6 +136,8 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
     private static boolean viewMode;
     private int questsCompleted = 0;
     private int totalQuests = 0;
+    private int globalQuestsCompleted = 0;
+    private int globalTotalQuests = 0;
 
     private GuiQuestSearch searchGui;
     private GuiBookmarks bookmarksGui;
@@ -274,9 +279,16 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
         });
         cvBackground.addPanel(cvChapterTray);
 
-        cvLines = new CanvasScrolling(new GuiTransform(GuiAlign.FULL_BOX, new GuiPadding(8, 8, 16, 8), 0));
+        cvLines = new CanvasScrolling(new GuiTransform(GuiAlign.FULL_BOX, new GuiPadding(8, 20, 16, 8), 0));
         cvChapterTray.getCanvasOpen()
             .addPanel(cvLines);
+
+        txGlobalCompletion = new PanelTextBox(
+            new GuiTransform(new Vector4f(0F, 0F, 1F, 0F), new GuiPadding(8, 8, 16, -20), 0),
+            "");
+        txGlobalCompletion.setColor(PresetColor.TEXT_HEADER.getColor());
+        cvChapterTray.getCanvasOpen()
+            .addPanel(txGlobalCompletion);
 
         scLines = new PanelVScrollBar(new GuiTransform(GuiAlign.RIGHT_EDGE, new GuiPadding(-16, 8, 8, 8), 0));
         cvLines.setScrollDriverY(scLines);
@@ -581,7 +593,8 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
                             RenderUtils
                                 .getStringWidth(QuestTranslation.translate("betterquesting.btn.view_dependants"), fr));
 
-                        int menuItemCount = 5; // bookmark, share, copy, deps, dependants
+                        int menuItemCount = 5 + QuestContextMenuRegistry.getEntries()
+                            .size(); // bookmark, share, copy, deps, dependants + external
                         PopContextMenuHoverSub popup = new PopContextMenuHoverSub(
                             new GuiRectangle(mx, my, maxWidth + 20, menuItemCount * 16),
                             true);
@@ -609,22 +622,13 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
                             .addButton(QuestTranslation.translate("betterquesting.btn.share_quest"), null, questSharer);
 
                         Runnable copyQuestId = () -> {
-                            StringSelection stringToCopy = new StringSelection(UuidConverter.encodeUuid(questId));
-                            try {
-                                Toolkit.getDefaultToolkit()
-                                    .getSystemClipboard()
-                                    .setContents(stringToCopy, null);
-                                mc.thePlayer.addChatMessage(
-                                    new ChatComponentText(
-                                        QuestTranslation.translate("betterquesting.msg.copy_quest_copied")));
-                                mc.thePlayer.addChatMessage(
-                                    new ChatComponentText(
-                                        "  " + EnumChatFormatting.AQUA + UuidConverter.encodeUuid(questId)));
-                            } catch (IllegalStateException e) {
-                                mc.thePlayer.addChatMessage(
-                                    new ChatComponentText(
-                                        QuestTranslation.translate("betterquesting.msg.copy_quest_failed")));
-                            }
+                            String questIdString = UuidConverter.encodeUuid(questId);
+                            GuiScreen.setClipboardString(questIdString);
+                            mc.thePlayer.addChatMessage(
+                                new ChatComponentText(
+                                    QuestTranslation.translate("betterquesting.msg.copy_quest_copied")));
+                            mc.thePlayer
+                                .addChatMessage(new ChatComponentText("  " + EnumChatFormatting.AQUA + questIdString));
                             closePopup();
                         };
                         popup.addButton(QuestTranslation.translate("betterquesting.btn.copy_quest"), null, copyQuestId);
@@ -668,6 +672,17 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
                             popup.addSubMenu(
                                 QuestTranslation.translate("betterquesting.btn.view_dependants"),
                                 dependantEntries);
+                        }
+
+                        // External entries registered by other mods
+                        for (IQuestContextMenuEntry ext : QuestContextMenuRegistry.getEntries()) {
+                            final IQuest capturedQuest = theQuest;
+                            final UUID capturedId = questId;
+                            popup.addButton(ext.getLabel(capturedId, capturedQuest), null, () -> {
+                                ext.getAction(capturedId, capturedQuest)
+                                    .run();
+                                closePopup();
+                            });
                         }
 
                         openPopup(popup);
@@ -906,11 +921,16 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
         }
 
         if (cvChapterTray.isTrayOpen()) buildChapterList();
+
+        computeGlobalCompletion();
     }
 
     private boolean isQuestCompletedForQuestline(UUID playerID, IQuest q) {
         if (q.isComplete(playerID)) return true; // Completed quest
-        if (q.getProperty(NativeProps.VISIBILITY) == EnumQuestVisibility.HIDDEN) return true; // Always hidden quest
+        EnumQuestVisibility vis = q.getProperty(NativeProps.VISIBILITY);
+        if (vis == EnumQuestVisibility.HIDDEN) return true; // Always hidden quest
+        if (vis == EnumQuestVisibility.SECRET) return true; // Always secret quest
+        if (!q.getProperty(NativeProps.COUNT_AS_QUEST)) return true; // Excluded from completion count
         if (q.getProperty(NativeProps.LOGIC_QUEST) == EnumLogic.XOR) { // Quest with choice
             int reqCount = 0;
             for (UUID qRequirementId : q.getRequirements()) {
@@ -998,14 +1018,76 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
                 continue;
             }
 
+            EnumQuestVisibility vis = quest.getProperty(NativeProps.VISIBILITY);
+            if (vis == EnumQuestVisibility.HIDDEN || vis == EnumQuestVisibility.SECRET) {
+                continue;
+            }
+
+            if (!quest.getProperty(NativeProps.COUNT_AS_QUEST)) {
+                continue; // excluded from completion count
+            }
+
             totalQuests++;
 
             if (quest.isComplete(playerUUId) || !quest.isUnlockable(playerUUId)) {
                 questsCompleted++;
             }
         }
-        completionText
-            .setText(QuestTranslation.translate("betterquesting.title.completion", questsCompleted, totalQuests));
+        String completionPercent = totalQuests > 0 ? String.format("%.2f", questsCompleted * 100.0 / totalQuests)
+            : "0.00";
+        completionText.setText(
+            QuestTranslation
+                .translate("betterquesting.title.completion", questsCompleted, totalQuests, completionPercent));
+    }
+
+    private void computeGlobalCompletion() {
+        UUID playerUUId = QuestingAPI.getQuestingUUID(mc.thePlayer);
+
+        globalQuestsCompleted = 0;
+        globalTotalQuests = 0;
+
+        Set<UUID> seen = new HashSet<>();
+
+        for (Tuple2<Map.Entry<UUID, IQuestLine>, Integer> visChapter : visChapters) {
+            IQuestLine line = visChapter.getFirst()
+                .getValue();
+            for (Map.Entry<UUID, IQuestLineEntry> entry : line.entrySet()) {
+                UUID questId = entry.getKey();
+                if (!seen.add(questId)) continue; // already counted in another visible line
+
+                IQuest quest = QuestingAPI.getAPI(ApiReference.QUEST_DB)
+                    .get(questId);
+                if (quest == null) {
+                    continue;
+                }
+
+                EnumQuestVisibility vis = quest.getProperty(NativeProps.VISIBILITY);
+                if (vis == EnumQuestVisibility.HIDDEN || vis == EnumQuestVisibility.SECRET) {
+                    continue;
+                }
+
+                if (!quest.getProperty(NativeProps.COUNT_AS_QUEST)) {
+                    continue; // excluded from completion count
+                }
+
+                globalTotalQuests++;
+                if (quest.isComplete(playerUUId) || !quest.isUnlockable(playerUUId)) {
+                    globalQuestsCompleted++;
+                }
+            }
+        }
+
+        if (txGlobalCompletion != null) {
+            String percent = globalTotalQuests > 0
+                ? String.format("%.2f", globalQuestsCompleted * 100.0 / globalTotalQuests)
+                : "0.00";
+            txGlobalCompletion.setText(
+                QuestTranslation.translate(
+                    "betterquesting.title.completion_total",
+                    globalQuestsCompleted,
+                    globalTotalQuests,
+                    percent));
+        }
     }
 
     private void openQuestLine(Map.Entry<UUID, IQuestLine> q) {

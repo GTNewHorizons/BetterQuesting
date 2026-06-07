@@ -48,6 +48,9 @@ public class NativeProps {
     public static final IPropertyType<Boolean> SIMULTANEOUS = new PropertyTypeBoolean(
         new ResourceLocation("betterquesting:simultaneous"),
         false);
+    public static final IPropertyType<Boolean> COUNT_AS_QUEST = new PropertyTypeBoolean(
+        new ResourceLocation("betterquesting:countAsQuest"),
+        true);
 
     public static final IPropertyType<EnumQuestVisibility> VISIBILITY = new PropertyTypeEnum<>(
         new ResourceLocation("betterquesting:visibility"),
@@ -79,6 +82,19 @@ public class NativeProps {
     public static final IPropertyType<BigItemStack> ICON = new PropertyTypeItemStack(
         new ResourceLocation("betterquesting:icon"),
         new BigItemStack(Items.nether_star));
+
+    public static final IPropertyType<String> COMPLETION_PARTICLE = new PropertyTypeString(
+        new ResourceLocation("betterquesting:completion_particle"),
+        "default");
+    public static final IPropertyType<String> COMPLETION_ANIMATION = new PropertyTypeString(
+        new ResourceLocation("betterquesting:completion_animation"),
+        "default");
+    public static final IPropertyType<BigItemStack> CONFETTI_ICON = new PropertyTypeItemStack(
+        new ResourceLocation("betterquesting:confetti_icon"),
+        new BigItemStack(Items.stick, 0));
+    public static final IPropertyType<Integer> PARTICLE_COUNT = new PropertyTypeInteger(
+        new ResourceLocation("betterquesting:particle_count"),
+        -1);
     // public static final IPropertyType<String> FRAME = new PropertyTypeString(new
     // ResourceLocation("betterquesting:frame"), "");
 

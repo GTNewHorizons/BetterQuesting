@@ -24,6 +24,81 @@ public class ConfigHandler {
             Configuration.CATEGORY_GENERAL,
             true,
             "Enabled the popup notices when quests are completed or updated");
+
+        String style = config.getString(
+            "Notification Style",
+            Configuration.CATEGORY_GENERAL,
+            "title",
+            "How quest notifications display: 'title' (large centered text), 'classic' (small popup with icon), 'off' (disabled)");
+        if (!BQ_Settings.questNotices) {
+            BQ_Settings.notificationStyle = "off";
+        } else {
+            BQ_Settings.notificationStyle = style;
+        }
+        BQ_Settings.showNotificationIcon = config.getBoolean(
+            "Show Notification Icon",
+            Configuration.CATEGORY_GENERAL,
+            true,
+            "Show the quest item icon with notifications");
+        BQ_Settings.notificationDuration = config.getFloat(
+            "Notification Duration",
+            Configuration.CATEGORY_GENERAL,
+            4.5f,
+            1.0f,
+            15.0f,
+            "How long quest notifications stay on screen (seconds)");
+        BQ_Settings.notificationFadeIn = config.getFloat(
+            "Notification Fade In",
+            Configuration.CATEGORY_GENERAL,
+            0.5f,
+            0.0f,
+            5.0f,
+            "How quickly the notification appears (seconds). 0 = instant");
+        BQ_Settings.notificationFadeOut = config.getFloat(
+            "Notification Fade Out",
+            Configuration.CATEGORY_GENERAL,
+            1.0f,
+            0.0f,
+            5.0f,
+            "How quickly the notification disappears (seconds). 0 = instant");
+        BQ_Settings.notificationIconScale = config.getFloat(
+            "Notification Icon Scale",
+            Configuration.CATEGORY_GENERAL,
+            4.0f,
+            0.5f,
+            8.0f,
+            "Size of the quest icon in title notifications (default 4.0 = 64x64 pixels)");
+        BQ_Settings.notificationIconOffsetY = config.getInt(
+            "Notification Icon Offset Y",
+            Configuration.CATEGORY_GENERAL,
+            -25,
+            -100,
+            100,
+            "Vertical offset for the quest icon in pixels. Negative = higher, positive = lower.");
+        BQ_Settings.notificationTitleScale = config.getFloat(
+            "Notification Title Scale",
+            Configuration.CATEGORY_GENERAL,
+            0f,
+            0f,
+            8.0f,
+            "Size of the title text in notifications (0 = use global GTNHLib setting)");
+        BQ_Settings.notificationSubtitleScale = config.getFloat(
+            "Notification Subtitle Scale",
+            Configuration.CATEGORY_GENERAL,
+            0f,
+            0f,
+            8.0f,
+            "Size of the subtitle text in notifications (0 = use global GTNHLib setting)");
+        BQ_Settings.notificationIconAnimation = config.getString(
+            "Notification Icon Animation",
+            Configuration.CATEGORY_GENERAL,
+            "none",
+            "Icon animation style during fade-in: none, fly_in, spin");
+        BQ_Settings.notificationParticle = config.getString(
+            "Notification Particle",
+            Configuration.CATEGORY_GENERAL,
+            "none",
+            "Particle effect on quest completion: none, confetti, sparkle, firework, item_confetti");
         BQ_Settings.curTheme = config
             .getString("Theme", Configuration.CATEGORY_GENERAL, "betterquesting:light", "The current questing theme");
         BQ_Settings.useBookmark = config.getBoolean(
