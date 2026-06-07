@@ -10,5 +10,4 @@ dependencies {
 
     // For testing translations
     runtimeOnly 'com.github.GTNewHorizons:TX-Loader:1.8.10'
-    shadowImplementation("com.github.GTNewHorizons:GTNHLib:0.11.5")
 }
