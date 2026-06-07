@@ -3,8 +3,6 @@ package betterquesting.client.gui2;
 import static betterquesting.api.storage.BQ_Settings.alwaysDrawImplicit;
 import static betterquesting.api.storage.BQ_Settings.forceMonochromeText;
 
-import java.awt.Toolkit;
-import java.awt.datatransfer.StringSelection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -231,6 +229,19 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
             btnDesign.setTooltip(Collections.singletonList(QuestTranslation.translate("betterquesting.btn.designer")));
             cvBackground.addPanel(btnDesign);
         }
+
+        // Notification settings entry. Tinted yellow as a "needs a look" hint until first opened.
+        int notifY = canEdit ? -88 : -72;
+        PanelButton btnNotif = new PanelButton(new GuiTransform(GuiAlign.BOTTOM_LEFT, 8, notifY, 32, 16, 0), -1, "");
+        if (BQ_Settings.notificationHintSeen) {
+            btnNotif.setIcon(PresetIcon.ICON_NOTICE.getTexture());
+        } else {
+            btnNotif.setIcon(PresetIcon.ICON_NOTICE.getTexture(), new GuiColorStatic(0xFFFFCC00), 0);
+        }
+        btnNotif.setClickAction((b) -> mc.displayGuiScreen(new GuiNotificationSettings(this)));
+        btnNotif
+            .setTooltip(Collections.singletonList(QuestTranslation.translate("betterquesting.notification.settings")));
+        cvBackground.addPanel(btnNotif);
 
         txTitle = new PanelTextBox(
             new GuiTransform(new Vector4f(0F, 0F, 0.5F, 0F), new GuiPadding(60, 12, 0, -24), 0),
@@ -624,22 +635,13 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
                             .addButton(QuestTranslation.translate("betterquesting.btn.share_quest"), null, questSharer);
 
                         Runnable copyQuestId = () -> {
-                            StringSelection stringToCopy = new StringSelection(UuidConverter.encodeUuid(questId));
-                            try {
-                                Toolkit.getDefaultToolkit()
-                                    .getSystemClipboard()
-                                    .setContents(stringToCopy, null);
-                                mc.thePlayer.addChatMessage(
-                                    new ChatComponentText(
-                                        QuestTranslation.translate("betterquesting.msg.copy_quest_copied")));
-                                mc.thePlayer.addChatMessage(
-                                    new ChatComponentText(
-                                        "  " + EnumChatFormatting.AQUA + UuidConverter.encodeUuid(questId)));
-                            } catch (IllegalStateException e) {
-                                mc.thePlayer.addChatMessage(
-                                    new ChatComponentText(
-                                        QuestTranslation.translate("betterquesting.msg.copy_quest_failed")));
-                            }
+                            String questIdString = UuidConverter.encodeUuid(questId);
+                            GuiScreen.setClipboardString(questIdString);
+                            mc.thePlayer.addChatMessage(
+                                new ChatComponentText(
+                                    QuestTranslation.translate("betterquesting.msg.copy_quest_copied")));
+                            mc.thePlayer
+                                .addChatMessage(new ChatComponentText("  " + EnumChatFormatting.AQUA + questIdString));
                             closePopup();
                         };
                         popup.addButton(QuestTranslation.translate("betterquesting.btn.copy_quest"), null, copyQuestId);
