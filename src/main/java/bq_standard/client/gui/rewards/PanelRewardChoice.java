@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.util.EnumChatFormatting;
 
 import org.lwjgl.util.vector.Vector4f;
 
@@ -63,8 +64,9 @@ public class PanelRewardChoice extends CanvasMinimum {
                 new PanelTextBox(
                     new GuiRectangle(62, i * 18 + 4, listWidth - 22, 14, 0),
                     stack.stackSize + " "
-                        + stack.getBaseStack()
-                            .getDisplayName()).setColor(PresetColor.TEXT_MAIN.getColor()));
+                        + EnumChatFormatting.getTextWithoutFormattingCodes(
+                            stack.getBaseStack()
+                                .getDisplayName())).setColor(PresetColor.TEXT_MAIN.getColor()));
 
             final int sID = i;
             is.setCallback(value -> NetRewardChoice.requestChoice(qID, rID, sID));

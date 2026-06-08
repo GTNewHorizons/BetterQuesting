@@ -1,5 +1,7 @@
 package bq_standard.client.gui.rewards;
 
+import net.minecraft.util.EnumChatFormatting;
+
 import betterquesting.api.utils.BigItemStack;
 import betterquesting.api2.client.gui.misc.GuiRectangle;
 import betterquesting.api2.client.gui.misc.IGuiRect;
@@ -37,8 +39,9 @@ public class PanelRewardItem extends CanvasMinimum {
                 new PanelTextBox(
                     new GuiRectangle(22, i * 18 + 4, listWidth - 22, 14, 0),
                     stack.stackSize + " "
-                        + stack.getBaseStack()
-                            .getDisplayName()).setColor(PresetColor.TEXT_MAIN.getColor()));
+                        + EnumChatFormatting.getTextWithoutFormattingCodes(
+                            stack.getBaseStack()
+                                .getDisplayName())).setColor(PresetColor.TEXT_MAIN.getColor()));
         }
 
         recalcSizes();
