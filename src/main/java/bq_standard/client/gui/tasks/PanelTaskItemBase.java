@@ -107,8 +107,9 @@ public abstract class PanelTaskItemBase<T extends TaskProgressableBase<int[]>> e
         StringBuilder sb = new StringBuilder();
         BigItemStack stack = itemSlots[index].getStoredValue();
         sb.append(
-            stack.getBaseStack()
-                .getDisplayName());
+            EnumChatFormatting.getTextWithoutFormattingCodes(
+                stack.getBaseStack()
+                    .getDisplayName()));
 
         if (oreDictName[index] != null) sb.append(" (")
             .append(oreDictName[index])
