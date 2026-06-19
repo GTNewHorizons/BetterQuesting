@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
@@ -25,6 +26,7 @@ import com.google.common.collect.ImmutableSet;
 
 import betterquesting.api.storage.BQ_Settings;
 import betterquesting.api.utils.RenderUtils;
+import betterquesting.api.utils.UuidConverter;
 import betterquesting.api2.client.gui.misc.GuiAlign;
 import betterquesting.api2.client.gui.misc.GuiTransform;
 import betterquesting.api2.client.gui.misc.IGuiRect;
@@ -32,7 +34,10 @@ import betterquesting.api2.client.gui.misc.URIHandlers;
 import betterquesting.api2.client.gui.panels.IGuiPanel;
 import betterquesting.api2.client.gui.resources.colors.GuiColorStatic;
 import betterquesting.api2.client.gui.resources.colors.IGuiColor;
+import betterquesting.api2.utils.QuestTranslation;
+import betterquesting.client.gui2.GuiQuest;
 import betterquesting.core.BetterQuesting;
+import betterquesting.questing.QuestDatabase;
 
 public class PanelTextBox implements IGuiPanel {
 
@@ -51,10 +56,11 @@ public class PanelTextBox implements IGuiPanel {
     private static final String defaultUrlProtocol = "https";
     private static final Set<String> supportedUrlProtocol = ImmutableSet.of("http", "https");
     private final GuiRectText transform;
-    private final List<UrlRange> urlRanges = new ArrayList<>();
+    private final List<linkRange> linkRanges = new ArrayList<>();
     private final List<HotZone> hotZones = new ArrayList<>();
     private boolean enabled = true;
 
+    private GuiQuest questGUI;
     private String text = "";
     private boolean shadow = false;
     private IGuiColor color = new GuiColorStatic(255, 255, 255, 255);
@@ -93,14 +99,14 @@ public class PanelTextBox implements IGuiPanel {
     public PanelTextBox setText(String text) {
         if (hyperlinkAware) {
             StringBuilder textBuilder = new StringBuilder();
-            urlRanges.clear();
+            linkRanges.clear();
 
             // This variable should hold the start text position of the unique [url] tag currently
             // on the stack, or -1 if there is no [url] tag on the stack.
             // Behavior is undefined if there are multiple [url] tags on the stack; consumers of
             // this value should take care not to throw an exception even if this occurs.
             // Perhaps we will want to move this value into the [url] TagInstance itself, some day.
-            int currUrlStart = -1;
+            int currLinkStart = -1;
 
             Deque<FormattingTag.TagInstance> tags = new ArrayDeque<>();
             Scanner scanner = new Scanner(text).useDelimiter(TOKEN_DELIMITER);
@@ -147,8 +153,8 @@ public class PanelTextBox implements IGuiPanel {
                                 t.getTag()
                                     .getTextFormattingString()));
 
-                    if (openingTag.getTag() == FormattingTag.URL) {
-                        currUrlStart = textBuilder.length();
+                    if (openingTag.getTag() == FormattingTag.URL || openingTag.getTag() == FormattingTag.QUESTLINK) {
+                        currLinkStart = textBuilder.length();
                     }
 
                     continue;
@@ -161,11 +167,33 @@ public class PanelTextBox implements IGuiPanel {
                     if (!tags.isEmpty() && closingTag == tags.peek()
                         .getTag()) {
                         FormattingTag.TagInstance openingTag = tags.pop();
-                        if (closingTag == FormattingTag.URL && currUrlStart >= 0) {
+                        if (closingTag == FormattingTag.URL && currLinkStart >= 0) {
                             String url = openingTag.getParams()
-                                .getOrDefault("link", textBuilder.substring(currUrlStart));
-                            urlRanges.add(new UrlRange(currUrlStart, textBuilder.length(), url));
-                            currUrlStart = -1;
+                                .getOrDefault("link", textBuilder.substring(currLinkStart));
+                            linkRanges.add(new linkRange(currLinkStart, textBuilder.length(), url));
+                            currLinkStart = -1;
+                        } else if (closingTag == FormattingTag.QUESTLINK && currLinkStart >= 0) {
+                            String linkText = textBuilder.substring(currLinkStart);
+                            String[] questNameID = linkText.split(" ", 2);
+
+                            String displayText;
+                            UUID questUUID;
+                            try {
+                                questUUID = UuidConverter.decodeUuid(questNameID[0]);
+
+                                displayText = linkText.contains(" ") ? questNameID[1]
+                                    : QuestTranslation
+                                        .translateQuestName(questUUID, QuestDatabase.INSTANCE.get(questUUID));
+                                linkRanges
+                                    .add(new linkRange(currLinkStart, currLinkStart + displayText.length(), questUUID));
+
+                            } catch (Exception e) {
+                                displayText = "§4§lQuest Not Found§4§l";
+                            }
+
+                            textBuilder.replace(currLinkStart, textBuilder.length(), displayText);
+
+                            currLinkStart = -1;
                         }
 
                         // Reset the formatting, then reapply all active tags
@@ -216,6 +244,10 @@ public class PanelTextBox implements IGuiPanel {
         return this;
     }
 
+    public void setGUI(GuiQuest questGUI) {
+        this.questGUI = questGUI;
+    }
+
     private void bakeHotZones(List<String> lines) {
         hotZones.clear();
         if (!isHyperlinkAware()) return; // not enabled
@@ -230,8 +262,8 @@ public class PanelTextBox implements IGuiPanel {
                 fr);
         }
 
-        for (UrlRange urlRange : urlRanges) {
-            String url = urlRange.url;
+        for (linkRange urlRange : linkRanges) {
+            Object url = urlRange.link;
             int start = urlRange.start;
             int end = urlRange.end;
 
@@ -393,20 +425,25 @@ public class PanelTextBox implements IGuiPanel {
         int mxt = mx + getTransform().getX(), myt = my + getTransform().getY();
         for (HotZone hotZone : hotZones) {
             if (hotZone.location.contains(mxt, myt)) {
-                URI uri;
-                try {
-                    URI tmp;
-                    tmp = new URI(hotZone.url);
-                    if (tmp.getScheme() == null) tmp = new URI(defaultUrlProtocol + "://" + hotZone.url);
-                    uri = tmp;
-                } catch (URISyntaxException ex) {
-                    return false;
+                if (hotZone.link instanceof String) {
+                    URI uri;
+                    try {
+                        URI tmp;
+                        tmp = new URI((String) hotZone.link);
+                        if (tmp.getScheme() == null) tmp = new URI(defaultUrlProtocol + "://" + hotZone.link);
+                        uri = tmp;
+                    } catch (URISyntaxException ex) {
+                        return false;
+                    }
+                    Predicate<URI> handler = URIHandlers.get(uri.getScheme());
+                    if (handler == null) return false;
+                    return handler.test(uri);
+                } else if (hotZone.link instanceof UUID) {
+                    questGUI.navigateToQuest((UUID) hotZone.link);
                 }
-                Predicate<URI> handler = URIHandlers.get(uri.getScheme());
-                if (handler == null) return false;
-                return handler.test(uri);
             }
         }
+
         return false;
     }
 
@@ -511,27 +548,33 @@ public class PanelTextBox implements IGuiPanel {
         }
     }
 
-    private static class UrlRange {
+    private static class linkRange {
 
         final int start;
         final int end;
-        final String url;
+        final Object link;
 
-        public UrlRange(int start, int end, String url) {
+        public linkRange(int start, int end, String link) {
             this.start = start;
             this.end = end;
-            this.url = url;
+            this.link = link;
+        }
+
+        public linkRange(int start, int end, UUID link) {
+            this.start = start;
+            this.end = end;
+            this.link = link;
         }
     }
 
     private static class HotZone {
 
         final IGuiRect location;
-        final String url;
+        final Object link;
 
-        public HotZone(IGuiRect location, String url) {
+        public HotZone(IGuiRect location, Object link) {
             this.location = location;
-            this.url = url;
+            this.link = link;
         }
     }
 }
