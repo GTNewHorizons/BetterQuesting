@@ -15,6 +15,7 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.util.Constants;
 
+import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.events.DatabaseEvent;
 import betterquesting.api.events.DatabaseEvent.DBType;
 import betterquesting.api.network.QuestingPacket;
@@ -60,9 +61,7 @@ public class NetPartySync {
         ArrayList<EntityPlayerMP> onlineMembers = new ArrayList<>();
 
         for (EntityPlayerMP player : server.getConfigurationManager().playerEntityList) {
-            UUID playerId = player.getGameProfile()
-                .getId();
-            if (partyMemberIds.contains(playerId)) {
+            if (partyMemberIds.contains(QuestingAPI.getQuestingUUID(player))) {
                 onlineMembers.add(player);
                 if (onlineMembers.size() == partyMemberIds.size()) {
                     break;
