@@ -309,6 +309,21 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
         cvChapterTray.getCanvasOpen()
             .addPanel(scLines);
 
+        PanelButton btnTrayLock = new PanelButton(new GuiTransform(GuiAlign.TOP_RIGHT, -36, 3, 16, 16, -2), -1, "")
+            .setTextures(null, null, null)
+            .setIcon(trayLock ? PresetIcon.ICON_LOCKED.getTexture() : PresetIcon.ICON_UNLOCKED.getTexture());
+        btnTrayLock.setClickAction((b) -> {
+            trayLock = !trayLock;
+            b.setIcon(trayLock ? PresetIcon.ICON_LOCKED.getTexture() : PresetIcon.ICON_UNLOCKED.getTexture());
+            ConfigHandler.config.get(Configuration.CATEGORY_GENERAL, "Lock tray", false)
+                .set(trayLock);
+            ConfigHandler.config.save();
+            ConfigHandler.initConfigs();
+        });
+        btnTrayLock.setTooltip(Collections.singletonList(QuestTranslation.translate("betterquesting.btn.lock_tray")));
+        cvChapterTray.getCanvasOpen()
+            .addPanel(btnTrayLock);
+
         // === DESCRIPTION TRAY ===
 
         cvDescTray = new CanvasHoverTray(
@@ -443,21 +458,6 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
         fitView.setClickAction((b) -> { if (cvQuest.getQuestLine() != null) cvQuest.fitToWindow(); });
         fitView.setTooltip(Collections.singletonList(QuestTranslation.translate("betterquesting.btn.zoom_fit")));
         cvBackground.addPanel(fitView);
-        yOff += 16;
-
-        // The Jester1147 button
-        PanelButton btnTrayLock = new PanelButton(new GuiTransform(GuiAlign.TOP_LEFT, 8, yOff, 32, 16, -2), -1, "")
-            .setIcon(trayLock ? PresetIcon.ICON_LOCKED.getTexture() : PresetIcon.ICON_UNLOCKED.getTexture());
-        btnTrayLock.setClickAction((b) -> {
-            trayLock = !trayLock;
-            b.setIcon(trayLock ? PresetIcon.ICON_LOCKED.getTexture() : PresetIcon.ICON_UNLOCKED.getTexture());
-            ConfigHandler.config.get(Configuration.CATEGORY_GENERAL, "Lock tray", false)
-                .set(trayLock);
-            ConfigHandler.config.save();
-            ConfigHandler.initConfigs();
-        });
-        btnTrayLock.setTooltip(Collections.singletonList(QuestTranslation.translate("betterquesting.btn.lock_tray")));
-        cvBackground.addPanel(btnTrayLock);
         yOff += 16;
 
         final PanelButton btnHideLocked = new PanelButton(
