@@ -93,6 +93,9 @@ public enum PresetIcon {
     ICON_VIEW_MODE_OFF("icon_view_mode_off"),
     ICON_VIEW_MODE_ON("icon_view_mode_on"),
 
+    ICON_QUEST_LINES_SHOWN("icon_quest_lines_shown"),
+    ICON_QUEST_LINES_FILTERED("icon_quest_lines_filtered"),
+
     // == MISC ===
 
     ICON_BOX_FIT("icon_box_fit"),
@@ -316,10 +319,16 @@ public enum PresetIcon {
 
         reg.setDefaultTexture(
             ICON_VIEW_MODE_OFF.key,
-            new SimpleTexture(TX_ICONS, new GuiRectangle(96, 0, 16, 16)).maintainAspect(true));
+            new SimpleTexture(TX_ICONS, new GuiRectangle(240, 80, 16, 16)).maintainAspect(true));
         reg.setDefaultTexture(
             ICON_VIEW_MODE_ON.key,
             new SimpleTexture(TX_ICONS, new GuiRectangle(96, 0, 16, 16)).maintainAspect(true));
+        reg.setDefaultTexture(
+            ICON_QUEST_LINES_SHOWN.key,
+            new SimpleTexture(TX_ICONS, new GuiRectangle(0, 96, 16, 16)).maintainAspect(true));
+        reg.setDefaultTexture(
+            ICON_QUEST_LINES_FILTERED.key,
+            new SimpleTexture(TX_ICONS, new GuiRectangle(16, 96, 16, 16)).maintainAspect(true));
 
         // === MISC ===
         reg.setDefaultTexture(

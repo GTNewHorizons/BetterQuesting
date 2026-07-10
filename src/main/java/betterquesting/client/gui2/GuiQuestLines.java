@@ -466,8 +466,8 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
             "");
         final Runnable updateHideLockedButton = () -> {
             btnHideLocked.setIcon(
-                BQ_Settings.hideLockedQuestLines ? PresetIcon.ICON_VISIBILITY_HIDDEN.getTexture()
-                    : PresetIcon.ICON_VISIBILITY_NORMAL.getTexture());
+                BQ_Settings.hideLockedQuestLines ? PresetIcon.ICON_QUEST_LINES_FILTERED.getTexture()
+                    : PresetIcon.ICON_QUEST_LINES_SHOWN.getTexture());
             btnHideLocked.setTooltip(
                 Arrays.asList(
                     QuestTranslation.translate("betterquesting.btn.hide_locked_quest_lines"),
