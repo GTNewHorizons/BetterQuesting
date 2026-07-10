@@ -183,6 +183,12 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
             selectedLine = null;
         }
 
+        boolean firstQuestView = !hasCompletedQuest();
+        if (firstQuestView) {
+            trayLock = true;
+            selectFirstQuestLine();
+        }
+
         boolean canEdit = QuestingAPI.getAPI(ApiReference.SETTINGS)
             .canUserEdit(mc.thePlayer);
         boolean preOpen = trayLock;
@@ -774,6 +780,24 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
         return QuestTranslation.translate(key);
     }
 
+    private boolean hasCompletedQuest() {
+        UUID playerID = QuestingAPI.getQuestingUUID(mc.thePlayer);
+        for (Map.Entry<UUID, IQuest> entry : QuestDatabase.INSTANCE.entrySet()) {
+            IQuest quest = entry.getValue();
+            if (quest != null && quest.isComplete(playerID)) return true;
+        }
+        return false;
+    }
+
+    private void selectFirstQuestLine() {
+        List<Map.Entry<UUID, IQuestLine>> lineList = QuestLineDatabase.INSTANCE.getOrderedEntries();
+        if (lineList.isEmpty()) return;
+
+        Map.Entry<UUID, IQuestLine> entry = lineList.get(0);
+        selectedLineId = entry.getKey();
+        selectedLine = entry.getValue();
+    }
+
     private GuiBookmarks initBookmarksPanel() {
         GuiBookmarks pinsGui = new GuiBookmarks(this);
         pinsGui.setCallback(entry -> {
@@ -1042,9 +1066,19 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
         }
 
         cvLines.refreshScrollBounds();
-        scLines.setEnabled(
-            cvLines.getScrollBounds()
-                .getHeight() > 0);
+        updateQuestLineScrollbar(row);
+    }
+
+    private void updateQuestLineScrollbar(int rows) {
+        int viewHeight = cvLines.getTransform()
+            .getHeight();
+        int contentHeight = rows * 16;
+        boolean scrollable = contentHeight > viewHeight;
+
+        scLines.setEnabled(scrollable);
+        if (scrollable) {
+            scLines.setHandleSize(Math.max(16, viewHeight * viewHeight / contentHeight), 0);
+        }
     }
 
     private void refreshQuestCompletion() {
