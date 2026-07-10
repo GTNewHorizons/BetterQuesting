@@ -143,6 +143,7 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
     private GuiBookmarks bookmarksGui;
 
     private final List<PanelButtonStorage<Map.Entry<UUID, IQuestLine>>> btnListRef = new ArrayList<>();
+    private final List<Integer> btnVisibilityRef = new ArrayList<>();
 
     public GuiQuestLines(GuiScreen parent) {
         super(parent);
@@ -457,6 +458,36 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
         });
         btnTrayLock.setTooltip(Collections.singletonList(QuestTranslation.translate("betterquesting.btn.lock_tray")));
         cvBackground.addPanel(btnTrayLock);
+        yOff += 16;
+
+        final PanelButton btnHideLocked = new PanelButton(
+            new GuiTransform(GuiAlign.TOP_LEFT, 8, yOff, 32, 16, -2),
+            -1,
+            "");
+        final Runnable updateHideLockedButton = () -> {
+            btnHideLocked.setIcon(
+                BQ_Settings.hideLockedQuestLines ? PresetIcon.ICON_VISIBILITY_HIDDEN.getTexture()
+                    : PresetIcon.ICON_VISIBILITY_NORMAL.getTexture());
+            btnHideLocked.setTooltip(
+                Arrays.asList(
+                    QuestTranslation.translate("betterquesting.btn.hide_locked_quest_lines"),
+                    QuestTranslation.translate("betterquesting.tooltip.cycle." + BQ_Settings.hideLockedQuestLines)));
+        };
+        updateHideLockedButton.run();
+        btnHideLocked.setClickAction((b) -> {
+            BQ_Settings.hideLockedQuestLines = !BQ_Settings.hideLockedQuestLines;
+            ConfigHandler.config.get(
+                Configuration.CATEGORY_GENERAL,
+                "Hide locked quest lines",
+                false,
+                "If true, quest lines with no currently visible quests are hidden from the quest line list. This property can be changed by the GUI.")
+                .set(BQ_Settings.hideLockedQuestLines);
+            ConfigHandler.config.save();
+
+            updateHideLockedButton.run();
+            refreshGui();
+        });
+        cvBackground.addPanel(btnHideLocked);
         yOff += 16;
 
         // View Mode Button
@@ -959,19 +990,23 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
     private void buildChapterList() {
         cvLines.resetCanvas();
         btnListRef.clear();
+        btnVisibilityRef.clear();
 
         int listW = cvLines.getTransform()
             .getWidth();
 
+        int row = 0;
         for (int n = 0; n < visChapters.size(); n++) {
             Map.Entry<UUID, IQuestLine> entry = visChapters.get(n)
                 .getFirst();
             int vis = visChapters.get(n)
                 .getSecond();
 
+            if (BQ_Settings.hideLockedQuestLines && (vis & 4) > 0) continue;
+
             cvLines.addPanel(
                 new PanelGeneric(
-                    new GuiRectangle(0, n * 16, 16, 16, 0),
+                    new GuiRectangle(0, row * 16, 16, 16, 0),
                     new OreDictTexture(
                         1F,
                         entry.getValue()
@@ -982,16 +1017,16 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
             if ((vis & 1) > 0) {
                 cvLines.addPanel(
                     new PanelGeneric(
-                        new GuiRectangle(8, n * 16 + 8, 8, 8, -1),
+                        new GuiRectangle(8, row * 16 + 8, 8, 8, -1),
                         new GuiTextureColored(PresetIcon.ICON_NOTICE.getTexture(), new GuiColorStatic(0xFFFFFF00))));
             } else if ((vis & 2) > 0) {
                 cvLines.addPanel(
                     new PanelGeneric(
-                        new GuiRectangle(8, n * 16 + 8, 8, 8, -1),
+                        new GuiRectangle(8, row * 16 + 8, 8, 8, -1),
                         new GuiTextureColored(PresetIcon.ICON_TICK.getTexture(), new GuiColorStatic(0xFF00FF00))));
             }
             PanelButtonStorage<Map.Entry<UUID, IQuestLine>> btnLine = new PanelButtonStorage<>(
-                new GuiRectangle(16, n * 16, listW - 16, 16, 0),
+                new GuiRectangle(16, row * 16, listW - 16, 16, 0),
                 1,
                 QuestTranslation.translateQuestLineName(entry),
                 entry);
@@ -1002,6 +1037,8 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
             btnLine.setCallback(this::openQuestLine);
             cvLines.addPanel(btnLine);
             btnListRef.add(btnLine);
+            btnVisibilityRef.add(vis);
+            row++;
         }
 
         cvLines.refreshScrollBounds();
@@ -1109,11 +1146,10 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
         for (int i = 0; i < btnListRef.size(); i++) {
             btnListRef.get(i)
                 .setActive(
-                    (visChapters.get(i)
-                        .getSecond() & 4) == 0 && !btnListRef.get(i)
-                            .getStoredValue()
-                            .getKey()
-                            .equals(selectedLineId));
+                    (btnVisibilityRef.get(i) & 4) == 0 && !btnListRef.get(i)
+                        .getStoredValue()
+                        .getKey()
+                        .equals(selectedLineId));
         }
 
         cvQuest.setQuestLine(q.getValue());
