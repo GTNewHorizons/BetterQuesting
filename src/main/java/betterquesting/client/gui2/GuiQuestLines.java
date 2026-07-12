@@ -183,7 +183,7 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
             selectedLine = null;
         }
 
-        boolean firstQuestView = selectedLineId == null && selectFirstQuestLine();
+        boolean firstQuestView = selectedLineId == null && !hasCompletedQuest() && selectFirstQuestLine();
 
         boolean canEdit = QuestingAPI.getAPI(ApiReference.SETTINGS)
             .canUserEdit(mc.thePlayer);
@@ -792,6 +792,15 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
         String key = BQ_Settings.claimAllRandomChoice ? "betterquesting.gui.force_choice_yes"
             : "betterquesting.gui.force_choice_no";
         return QuestTranslation.translate(key);
+    }
+
+    private boolean hasCompletedQuest() {
+        UUID playerID = QuestingAPI.getQuestingUUID(mc.thePlayer);
+        for (Map.Entry<UUID, IQuest> entry : QuestDatabase.INSTANCE.entrySet()) {
+            IQuest quest = entry.getValue();
+            if (quest != null && quest.isComplete(playerID)) return true;
+        }
+        return false;
     }
 
     private boolean selectFirstQuestLine() {
