@@ -58,16 +58,23 @@ public class CommonProxy {
 
         SaveLoadHandler.INSTANCE.loadDatabases(server);
         if (BQ_Settings.loadDefaultsOnStartup) {
-            try {
-                manager.executeCommand(server, "/bq_admin default load");
-            } catch (Exception e) {
-                BetterQuesting.logger.error("Could not load the default quest database", e);
-            }
+            loadDefaultQuestDatabase(server, manager, "Could not load the default quest database");
+        } else if (SaveLoadHandler.INSTANCE.hasUpdate()) {
+            loadDefaultQuestDatabase(server, manager, "Could not update the default quest database");
         }
         this.taskScheduler = new ServerTaskScheduler(Thread.currentThread());
         FMLCommonHandler.instance()
             .bus()
             .register(this.taskScheduler);
+    }
+
+    private void loadDefaultQuestDatabase(MinecraftServer server, ServerCommandManager manager, String errorMessage) {
+        try {
+            manager.executeCommand(server, "/bq_admin default load");
+            SaveLoadHandler.INSTANCE.resetUpdate();
+        } catch (Exception e) {
+            BetterQuesting.logger.error(errorMessage, e);
+        }
     }
 
     public void serverStopped(FMLServerStoppedEvent event) {

@@ -8,7 +8,9 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.common.MinecraftForge;
 
+import betterquesting.api.events.QuestNotificationEvent;
 import betterquesting.api.network.QuestingPacket;
 import betterquesting.api.properties.NativeProps;
 import betterquesting.api.questing.IQuest;
@@ -23,7 +25,6 @@ import cpw.mods.fml.relauncher.SideOnly;
 
 public class NetNotices {
 
-    // TODO: Convert over to inbox system in future
     private static final ResourceLocation ID_NAME = new ResourceLocation("betterquesting:notification");
 
     public static void registerHandler() {
@@ -34,12 +35,18 @@ public class NetNotices {
 
     public static void sendNotice(@Nullable EntityPlayerMP[] players, ItemStack icon, String mainText, String subText,
         String questId, String sound) {
+        sendNotice(players, icon, mainText, subText, questId, sound, new NoticeConfig());
+    }
+
+    public static void sendNotice(@Nullable EntityPlayerMP[] players, ItemStack icon, String mainText, String subText,
+        String questId, String sound, NoticeConfig config) {
         NBTTagCompound payload = new NBTTagCompound();
         payload.setTag("icon", icon == null ? new NBTTagCompound() : icon.writeToNBT(new NBTTagCompound()));
         if (mainText != null) payload.setString("mainText", mainText);
         if (subText != null) payload.setString("subText", subText);
         if (questId != null) payload.setString("questId", questId);
         if (sound != null) payload.setString("sound", sound);
+        payload.setTag("cfg", config.writeToNBT(new NBTTagCompound()));
 
         if (players != null) {
             PacketSender.INSTANCE.sendToPlayers(new QuestingPacket(ID_NAME, payload), players);
@@ -55,6 +62,8 @@ public class NetNotices {
         String subTxt = message.getString("subText");
         String questIdStr = message.getString("questId");
         String sound = message.getString("sound");
+        NoticeConfig config = NoticeConfig.readFromNBT(message.getCompoundTag("cfg"));
+
         if ((subTxt == null || subTxt.isEmpty()) && questIdStr != null && !questIdStr.isEmpty()) {
             subTxt = questIdStr;
         }
@@ -73,6 +82,18 @@ public class NetNotices {
             } catch (IllegalArgumentException e) {}
         }
 
-        QuestNotification.ScheduleNotice(mainTxt, subTxt, stack, sound);
+        QuestNotificationEvent event = new QuestNotificationEvent(
+            subTxt,
+            stack,
+            sound,
+            config.particle,
+            config.animation,
+            config.confettiIcon);
+        if (!MinecraftForge.EVENT_BUS.post(event)) {
+            config.particle = event.getParticleEffect();
+            config.animation = event.getIconAnimation();
+            config.confettiIcon = event.getConfettiIcon();
+            QuestNotification.ScheduleNotice(mainTxt, subTxt, stack, sound, config);
+        }
     }
 }

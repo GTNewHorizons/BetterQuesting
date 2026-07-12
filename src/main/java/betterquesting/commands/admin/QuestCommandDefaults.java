@@ -661,6 +661,6 @@ public class QuestCommandDefaults extends QuestCommandBase {
     }
 
     private static String removeChatFormatting(String string) {
-        return string.replaceAll("§[0-9a-fk-or]", "");
+        return string.replaceAll("§[0-9a-fk-orxgqzv]", "");
     }
 }

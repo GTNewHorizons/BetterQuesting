@@ -48,6 +48,9 @@ public class NativeProps {
     public static final IPropertyType<Boolean> SIMULTANEOUS = new PropertyTypeBoolean(
         new ResourceLocation("betterquesting:simultaneous"),
         false);
+    public static final IPropertyType<Boolean> COUNT_AS_QUEST = new PropertyTypeBoolean(
+        new ResourceLocation("betterquesting:countAsQuest"),
+        true);
 
     public static final IPropertyType<EnumQuestVisibility> VISIBILITY = new PropertyTypeEnum<>(
         new ResourceLocation("betterquesting:visibility"),
@@ -79,6 +82,63 @@ public class NativeProps {
     public static final IPropertyType<BigItemStack> ICON = new PropertyTypeItemStack(
         new ResourceLocation("betterquesting:icon"),
         new BigItemStack(Items.nether_star));
+
+    public static final IPropertyType<String> COMPLETION_PARTICLE = new PropertyTypeString(
+        new ResourceLocation("betterquesting:completion_particle"),
+        "default");
+    public static final IPropertyType<String> COMPLETION_ANIMATION = new PropertyTypeString(
+        new ResourceLocation("betterquesting:completion_animation"),
+        "default");
+    public static final IPropertyType<BigItemStack> CONFETTI_ICON = new PropertyTypeItemStack(
+        new ResourceLocation("betterquesting:confetti_icon"),
+        new BigItemStack(Items.stick, 0));
+    public static final IPropertyType<Integer> PARTICLE_COUNT = new PropertyTypeInteger(
+        new ResourceLocation("betterquesting:particle_count"),
+        -1);
+
+    // Per-quest notification overrides. "default"/-1/MIN_VALUE means "fall back to the player setting".
+    public static final IPropertyType<String> NOTIFICATION_STYLE = new PropertyTypeString(
+        new ResourceLocation("betterquesting:notification_style"),
+        "default");
+    public static final IPropertyType<String> NOTIFICATION_SHOW_ICON = new PropertyTypeString(
+        new ResourceLocation("betterquesting:notification_show_icon"),
+        "default");
+    public static final IPropertyType<String> NOTIFICATION_TITLE = new PropertyTypeString(
+        new ResourceLocation("betterquesting:notification_title"),
+        "");
+    public static final IPropertyType<String> NOTIFICATION_SUBTITLE = new PropertyTypeString(
+        new ResourceLocation("betterquesting:notification_subtitle"),
+        "");
+    public static final IPropertyType<Float> NOTIFICATION_DURATION = new PropertyTypeFloat(
+        new ResourceLocation("betterquesting:notification_duration"),
+        -1f);
+    public static final IPropertyType<Float> NOTIFICATION_FADE_IN = new PropertyTypeFloat(
+        new ResourceLocation("betterquesting:notification_fade_in"),
+        -1f);
+    public static final IPropertyType<Float> NOTIFICATION_FADE_OUT = new PropertyTypeFloat(
+        new ResourceLocation("betterquesting:notification_fade_out"),
+        -1f);
+    public static final IPropertyType<Float> NOTIFICATION_TITLE_SCALE = new PropertyTypeFloat(
+        new ResourceLocation("betterquesting:notification_title_scale"),
+        -1f);
+    public static final IPropertyType<Float> NOTIFICATION_SUBTITLE_SCALE = new PropertyTypeFloat(
+        new ResourceLocation("betterquesting:notification_subtitle_scale"),
+        -1f);
+    public static final IPropertyType<Float> NOTIFICATION_ICON_SCALE = new PropertyTypeFloat(
+        new ResourceLocation("betterquesting:notification_icon_scale"),
+        -1f);
+    public static final IPropertyType<Integer> NOTIFICATION_ICON_OFFSET_Y = new PropertyTypeInteger(
+        new ResourceLocation("betterquesting:notification_icon_offset_y"),
+        Integer.MIN_VALUE);
+    public static final IPropertyType<Integer> NOTIFICATION_POS_X = new PropertyTypeInteger(
+        new ResourceLocation("betterquesting:notification_pos_x"),
+        Integer.MIN_VALUE);
+    public static final IPropertyType<Integer> NOTIFICATION_POS_Y = new PropertyTypeInteger(
+        new ResourceLocation("betterquesting:notification_pos_y"),
+        Integer.MIN_VALUE);
+    public static final IPropertyType<Integer> NOTIFICATION_EFFECT = new PropertyTypeInteger(
+        new ResourceLocation("betterquesting:notification_effect"),
+        -1);
     // public static final IPropertyType<String> FRAME = new PropertyTypeString(new
     // ResourceLocation("betterquesting:frame"), "");
 

@@ -38,7 +38,6 @@ import bq_standard.tasks.base.TaskProgressableBase;
 import bq_standard.tasks.factory.FactoryTaskRetrieval;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
-import drethic.questbook.config.QBConfig;
 
 public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskInventory, IItemTask, ITaskItemInput {
 
@@ -49,6 +48,7 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
     public boolean consume = false;
     public boolean groupDetect = false;
     public boolean autoConsume = false;
+    public boolean requireOnlyOneItem = false;
 
     @Override
     public NBTTagCompound writeToNBT(NBTTagCompound nbt) {
@@ -57,6 +57,7 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
         nbt.setBoolean("consume", consume);
         nbt.setBoolean("groupDetect", groupDetect);
         nbt.setBoolean("autoConsume", autoConsume);
+        nbt.setBoolean("requireOnlyOneItem", requireOnlyOneItem);
 
         NBTTagList itemArray = new NBTTagList();
         for (BigItemStack stack : this.requiredItems) {
@@ -74,6 +75,7 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
         consume = nbt.getBoolean("consume");
         groupDetect = nbt.getBoolean("groupDetect");
         autoConsume = nbt.getBoolean("autoConsume");
+        requireOnlyOneItem = nbt.getBoolean("requireOnlyOneItem");
 
         requiredItems.clear();
         NBTTagList iList = nbt.getTagList("requiredItems", Constants.NBT.TAG_COMPOUND);
@@ -143,9 +145,7 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
     public void detect(ParticipantInfo pInfo, Map.Entry<UUID, IQuest> quest) {
         if (isComplete(pInfo.UUID)) return;
 
-        Detector detector = new Detector(
-            this,
-            (consume && !QBConfig.fullySyncQuests) ? Collections.singletonList(pInfo.UUID) : pInfo.ALL_UUIDS);
+        Detector detector = new Detector(this, pInfo.ALL_UUIDS);
 
         final List<InventoryPlayer> invoList;
         if (consume) {
@@ -172,27 +172,26 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
         boolean updated = resync;
 
         topLoop: for (Tuple2<UUID, int[]> value : progress) {
-            for (int j = 0; j < requiredItems.size(); j++) {
-                if (value.getSecond()[j] >= requiredItems.get(j).stackSize) continue;
-                continue topLoop;
+            boolean complete = !requireOnlyOneItem;
+
+            for (int i = 0; i < requiredItems.size(); i++) {
+                if (requireOnlyOneItem) {
+                    complete |= value.getSecond()[i] >= requiredItems.get(i).stackSize;
+                    if (complete) break;
+                } else {
+                    complete &= value.getSecond()[i] >= requiredItems.get(i).stackSize;
+                    if (!complete) continue topLoop;
+                }
             }
+
+            if (!complete) continue;
 
             updated = true;
-
-            if (consume && !QBConfig.fullySyncQuests) {
-                setComplete(value.getFirst());
-            } else {
-                progress.forEach((pair) -> setComplete(pair.getFirst()));
-                break;
-            }
+            progress.forEach((pair) -> setComplete(pair.getFirst()));
         }
 
         if (updated) {
-            if (consume && !QBConfig.fullySyncQuests) {
-                pInfo.markDirty(quest.getKey());
-            } else {
-                pInfo.markDirtyParty(quest.getKey());
-            }
+            pInfo.markDirtyParty(quest.getKey());
         }
     }
 
@@ -233,9 +232,7 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
         if (owner == null || input == null || !consume || isComplete(owner)) return input;
 
         ParticipantInfo pInfo = new ParticipantInfo(QuestingAPI.getPlayer(owner));
-        Detector detector = new Detector(
-            this,
-            QBConfig.fullySyncQuests ? pInfo.ALL_UUIDS : Collections.singletonList(pInfo.UUID));
+        Detector detector = new Detector(this, pInfo.ALL_UUIDS);
 
         final ItemStack stack = input.copy();
 
@@ -303,6 +300,7 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
         public final List<Tuple2<UUID, int[]>> progress;
 
         private final int[] remCounts;
+        private boolean satisfied = false;
 
         public Detector(TaskRetrieval task, @Nonnull List<UUID> uuids) {
             this.task = task;
@@ -332,7 +330,7 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
          *                 Args: (remaining)
          */
         public void run(ItemStack stack, IntFunction<ItemStack> consumer, UUID runner) {
-            if (stack == null || stack.stackSize <= 0) return;
+            if (satisfied || stack == null || stack.stackSize <= 0) return;
             // Allows the stack detection to split across multiple requirements. Counts may vary per person
             Arrays.fill(remCounts, stack.stackSize);
 
@@ -356,18 +354,25 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
                     int remaining = rStack.stackSize - value.getSecond()[i];
 
                     if (task.consume) {
-                        if (QBConfig.fullySyncQuests && runner.equals(value.getFirst())) {
+                        if (runner.equals(value.getFirst())) {
                             ItemStack removed = consumer.apply(remaining);
                             int temp = i;
                             progress.forEach(p -> p.getSecond()[temp] += removed.stackSize);
-                        } else if (!QBConfig.fullySyncQuests) {
-                            ItemStack removed = consumer.apply(remaining);
-                            value.getSecond()[i] += removed.stackSize;
+                            updated = true;
+                            if (task.requireOnlyOneItem && value.getSecond()[temp] >= rStack.stackSize) {
+                                satisfied = true;
+                                return;
+                            }
                         }
                     } else {
                         int temp = Math.min(remaining, remCounts[n]);
                         remCounts[n] -= temp;
                         value.getSecond()[i] += temp;
+                        updated = true;
+                        if (task.requireOnlyOneItem && value.getSecond()[i] >= rStack.stackSize) {
+                            satisfied = true;
+                            return;
+                        }
                     }
                     updated = true;
                 }

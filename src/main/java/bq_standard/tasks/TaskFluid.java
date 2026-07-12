@@ -40,7 +40,6 @@ import bq_standard.tasks.base.TaskProgressableBase;
 import bq_standard.tasks.factory.FactoryTaskFluid;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
-import drethic.questbook.config.QBConfig;
 
 public class TaskFluid extends TaskProgressableBase<int[]> implements ITaskInventory, IFluidTask, IItemTask {
 
@@ -170,8 +169,7 @@ public class TaskFluid extends TaskProgressableBase<int[]> implements ITaskInven
     }
 
     private void checkAndComplete(ParticipantInfo pInfo, Map.Entry<UUID, IQuest> quest, boolean resync) {
-        final List<Tuple2<UUID, int[]>> progress = getBulkProgress(
-            (consume && !QBConfig.fullySyncQuests) ? Collections.singletonList(pInfo.UUID) : pInfo.ALL_UUIDS);
+        final List<Tuple2<UUID, int[]>> progress = getBulkProgress(pInfo.ALL_UUIDS);
         boolean updated = resync;
 
         topLoop: for (Tuple2<UUID, int[]> value : progress) {
@@ -182,20 +180,12 @@ public class TaskFluid extends TaskProgressableBase<int[]> implements ITaskInven
 
             updated = true;
 
-            if (consume && !QBConfig.fullySyncQuests) {
-                setComplete(value.getFirst());
-            } else {
-                progress.forEach((pair) -> setComplete(pair.getFirst()));
-                break;
-            }
+            progress.forEach((pair) -> setComplete(pair.getFirst()));
+            break;
         }
 
         if (updated) {
-            if (consume && !QBConfig.fullySyncQuests) {
-                pInfo.markDirty(quest.getKey());
-            } else {
-                pInfo.markDirtyParty(quest.getKey());
-            }
+            pInfo.markDirtyParty(quest.getKey());
         }
     }
 
@@ -288,9 +278,7 @@ public class TaskFluid extends TaskProgressableBase<int[]> implements ITaskInven
         }
 
         ParticipantInfo pInfo = new ParticipantInfo(QuestingAPI.getPlayer(owner));
-        Detector detector = new Detector(
-            this,
-            QBConfig.fullySyncQuests ? pInfo.ALL_UUIDS : Collections.singletonList(pInfo.UUID));
+        Detector detector = new Detector(this, pInfo.ALL_UUIDS);
 
         final FluidStack fluid = input.copy();
 
@@ -347,9 +335,7 @@ public class TaskFluid extends TaskProgressableBase<int[]> implements ITaskInven
         if (owner == null || input == null || input.stackSize != 1 || !consume || isComplete(owner)) return input;
 
         ParticipantInfo pInfo = new ParticipantInfo(QuestingAPI.getPlayer(owner));
-        Detector detector = new Detector(
-            this,
-            QBConfig.fullySyncQuests ? pInfo.ALL_UUIDS : Collections.singletonList(pInfo.UUID));
+        Detector detector = new Detector(this, pInfo.ALL_UUIDS);
 
         final ItemStack[] wrapper = new ItemStack[] { input.copy() };
 
@@ -503,13 +489,10 @@ public class TaskFluid extends TaskProgressableBase<int[]> implements ITaskInven
                     int remaining = rStack.amount - value.getSecond()[i];
 
                     if (task.consume) {
-                        if (QBConfig.fullySyncQuests && runner.equals(value.getFirst())) {
+                        if (runner.equals(value.getFirst())) {
                             FluidStack removed = consumer.apply(remaining);
                             int temp = i;
                             progress.forEach(p -> p.getSecond()[temp] += removed.amount);
-                        } else if (!QBConfig.fullySyncQuests) {
-                            FluidStack removed = consumer.apply(remaining);
-                            value.getSecond()[i] += removed.amount;
                         }
                     } else {
                         FluidStack drain = rStack.copy();

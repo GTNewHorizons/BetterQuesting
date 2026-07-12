@@ -14,6 +14,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.event.ClickEvent;
 import net.minecraft.event.HoverEvent;
+import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.server.MinecraftServer;
@@ -62,6 +63,7 @@ import betterquesting.network.handlers.NetBulkSync;
 import betterquesting.network.handlers.NetNameSync;
 import betterquesting.network.handlers.NetNotices;
 import betterquesting.network.handlers.NetQuestSync;
+import betterquesting.network.handlers.NoticeConfig;
 import betterquesting.questing.QuestDatabase;
 import betterquesting.questing.party.PartyInvitations;
 import betterquesting.questing.party.PartyManager;
@@ -346,13 +348,40 @@ public class EventHandler {
             }
         }
 
+        NoticeConfig cfg = new NoticeConfig();
+        cfg.particle = quest.getProperty(NativeProps.COMPLETION_PARTICLE);
+        cfg.animation = quest.getProperty(NativeProps.COMPLETION_ANIMATION);
+        BigItemStack confettiBig = quest.getProperty(NativeProps.CONFETTI_ICON);
+        ItemStack confettiStack = confettiBig != null ? confettiBig.getBaseStack() : null;
+        cfg.confettiIcon = (confettiStack != null && confettiStack.getItem() != Items.stick) ? confettiStack : null;
+        cfg.particleCount = quest.getProperty(NativeProps.PARTICLE_COUNT);
+        cfg.style = quest.getProperty(NativeProps.NOTIFICATION_STYLE);
+        cfg.showIcon = quest.getProperty(NativeProps.NOTIFICATION_SHOW_ICON);
+        cfg.subtitleText = quest.getProperty(NativeProps.NOTIFICATION_SUBTITLE);
+        cfg.duration = quest.getProperty(NativeProps.NOTIFICATION_DURATION);
+        cfg.fadeIn = quest.getProperty(NativeProps.NOTIFICATION_FADE_IN);
+        cfg.fadeOut = quest.getProperty(NativeProps.NOTIFICATION_FADE_OUT);
+        cfg.titleScale = quest.getProperty(NativeProps.NOTIFICATION_TITLE_SCALE);
+        cfg.subtitleScale = quest.getProperty(NativeProps.NOTIFICATION_SUBTITLE_SCALE);
+        cfg.iconScale = quest.getProperty(NativeProps.NOTIFICATION_ICON_SCALE);
+        cfg.iconOffsetY = quest.getProperty(NativeProps.NOTIFICATION_ICON_OFFSET_Y);
+        cfg.posX = quest.getProperty(NativeProps.NOTIFICATION_POS_X);
+        cfg.posY = quest.getProperty(NativeProps.NOTIFICATION_POS_Y);
+        cfg.effectTier = quest.getProperty(NativeProps.NOTIFICATION_EFFECT);
+
+        String customTitle = quest.getProperty(NativeProps.NOTIFICATION_TITLE);
+        if (customTitle != null && !customTitle.isEmpty()) {
+            mainText = customTitle;
+        }
+
         NetNotices.sendNotice(
             quest.getProperty(NativeProps.GLOBAL) ? null : new EntityPlayerMP[] { (EntityPlayerMP) player },
             icon,
             mainText,
             questName,
             questIdStr,
-            sound);
+            sound,
+            cfg);
     }
 
     @SubscribeEvent

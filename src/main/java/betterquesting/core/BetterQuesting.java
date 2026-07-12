@@ -46,7 +46,7 @@ import cpw.mods.fml.relauncher.Side;
     name = BetterQuesting.NAME,
     version = BetterQuesting.VERSION,
     guiFactory = "betterquesting.handlers.ConfigGuiFactory",
-    dependencies = "after:gtnhlib@[0.7.0,)")
+    dependencies = "after:gtnhlib@[0.10.7,)")
 public class BetterQuesting {
 
     public static final String MODID = "betterquesting";
