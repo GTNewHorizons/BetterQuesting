@@ -513,7 +513,7 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
             final Runnable updateViewModeButton = () -> {
                 btnViewMode.setIcon(
                     PresetIcon.ICON_VIEW_MODE_ON.getTexture(),
-                    viewMode ? new GuiColorStatic(0xFF444444) : new GuiColorStatic(0xFFFFFFFF),
+                    viewMode ? new GuiColorStatic(0xFFFFFFFF) : new GuiColorStatic(0xFF444444),
                     0);
                 btnViewMode.setTooltip(
                     Arrays.asList(
