@@ -183,10 +183,7 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
             selectedLine = null;
         }
 
-        boolean firstQuestView = !hasCompletedQuest();
-        if (firstQuestView) {
-            selectFirstQuestLine();
-        }
+        boolean firstQuestView = selectedLineId == null && selectFirstQuestLine();
 
         boolean canEdit = QuestingAPI.getAPI(ApiReference.SETTINGS)
             .canUserEdit(mc.thePlayer);
@@ -280,9 +277,8 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
 
         // === TRAY STATE ===
 
-        boolean chapterTrayOpened = false;
-        boolean descTrayOpened = trayLock && cvDescTray != null && cvDescTray.isTrayOpen();
-        if (preOpen && !descTrayOpened) chapterTrayOpened = true;
+        boolean descTrayOpened = !firstQuestView && trayLock && cvDescTray != null && cvDescTray.isTrayOpen();
+        boolean chapterTrayOpened = firstQuestView || (preOpen && !descTrayOpened);
 
         // === CHAPTER TRAY ===
 
@@ -798,22 +794,14 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
         return QuestTranslation.translate(key);
     }
 
-    private boolean hasCompletedQuest() {
-        UUID playerID = QuestingAPI.getQuestingUUID(mc.thePlayer);
-        for (Map.Entry<UUID, IQuest> entry : QuestDatabase.INSTANCE.entrySet()) {
-            IQuest quest = entry.getValue();
-            if (quest != null && quest.isComplete(playerID)) return true;
-        }
-        return false;
-    }
-
-    private void selectFirstQuestLine() {
+    private boolean selectFirstQuestLine() {
         List<Map.Entry<UUID, IQuestLine>> lineList = QuestLineDatabase.INSTANCE.getOrderedEntries();
-        if (lineList.isEmpty()) return;
+        if (lineList.isEmpty()) return false;
 
         Map.Entry<UUID, IQuestLine> entry = lineList.get(0);
         selectedLineId = entry.getKey();
         selectedLine = entry.getValue();
+        return true;
     }
 
     private GuiBookmarks initBookmarksPanel() {
