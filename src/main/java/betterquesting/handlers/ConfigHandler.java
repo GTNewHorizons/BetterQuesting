@@ -202,6 +202,11 @@ public class ConfigHandler {
             Configuration.CATEGORY_GENERAL,
             false,
             "Is quest chapters list locked and opened on start.");
+        BQ_Settings.hideLockedQuestLines = config.getBoolean(
+            "Hide locked quest lines",
+            Configuration.CATEGORY_GENERAL,
+            false,
+            "If true, quest lines with no currently visible quests are hidden from the quest line list. This property can be changed by the GUI.");
         BQ_Settings.viewMode = config.getBoolean(
             "View mode",
             Configuration.CATEGORY_GENERAL,
