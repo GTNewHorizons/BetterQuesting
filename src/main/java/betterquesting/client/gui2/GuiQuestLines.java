@@ -185,13 +185,12 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
 
         boolean firstQuestView = !hasCompletedQuest();
         if (firstQuestView) {
-            trayLock = true;
             selectFirstQuestLine();
         }
 
         boolean canEdit = QuestingAPI.getAPI(ApiReference.SETTINGS)
             .canUserEdit(mc.thePlayer);
-        boolean preOpen = trayLock;
+        boolean preOpen = trayLock || firstQuestView;
 
         PEventBroadcaster.INSTANCE.register(this, PEventButton.class);
 
@@ -315,18 +314,26 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
         cvChapterTray.getCanvasOpen()
             .addPanel(scLines);
 
-        PanelButton btnTrayLock = new PanelButton(new GuiTransform(GuiAlign.TOP_RIGHT, -36, 3, 16, 16, -2), -1, "")
-            .setTextures(null, null, null)
-            .setIcon(trayLock ? PresetIcon.ICON_LOCKED.getTexture() : PresetIcon.ICON_UNLOCKED.getTexture());
+        final PanelButton btnTrayLock = new PanelButton(
+            new GuiTransform(GuiAlign.TOP_RIGHT, -36, 3, 16, 16, -2),
+            -1,
+            "").setTextures(null, null, null);
+        final Runnable updateTrayLockButton = () -> {
+            btnTrayLock.setIcon(trayLock ? PresetIcon.ICON_LOCKED.getTexture() : PresetIcon.ICON_UNLOCKED.getTexture());
+            btnTrayLock.setTooltip(
+                Arrays.asList(
+                    QuestTranslation.translate("betterquesting.btn.lock_tray"),
+                    QuestTranslation.translate("betterquesting.tooltip.lock_tray." + trayLock)));
+        };
+        updateTrayLockButton.run();
         btnTrayLock.setClickAction((b) -> {
             trayLock = !trayLock;
-            b.setIcon(trayLock ? PresetIcon.ICON_LOCKED.getTexture() : PresetIcon.ICON_UNLOCKED.getTexture());
             ConfigHandler.config.get(Configuration.CATEGORY_GENERAL, "Lock tray", false)
                 .set(trayLock);
             ConfigHandler.config.save();
             ConfigHandler.initConfigs();
+            updateTrayLockButton.run();
         });
-        btnTrayLock.setTooltip(Collections.singletonList(QuestTranslation.translate("betterquesting.btn.lock_tray")));
         cvChapterTray.getCanvasOpen()
             .addPanel(btnTrayLock);
 
@@ -498,21 +505,28 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
 
         // View Mode Button
         if (BQ_Settings.viewModeBtn) {
-            PanelButton btnViewMode = new PanelButton(new GuiTransform(GuiAlign.TOP_LEFT, 8, yOff, 32, 16, -2), -1, "")
-                .setIcon(
+            final PanelButton btnViewMode = new PanelButton(
+                new GuiTransform(GuiAlign.TOP_LEFT, 8, yOff, 32, 16, -2),
+                -1,
+                "");
+            final Runnable updateViewModeButton = () -> {
+                btnViewMode.setIcon(
                     viewMode ? PresetIcon.ICON_VIEW_MODE_ON.getTexture() : PresetIcon.ICON_VIEW_MODE_OFF.getTexture());
+                btnViewMode.setTooltip(
+                    Arrays.asList(
+                        QuestTranslation.translate("betterquesting.btn.view_mode"),
+                        QuestTranslation.translate("betterquesting.tooltip.cycle." + viewMode)));
+            };
+            updateViewModeButton.run();
             btnViewMode.setClickAction((b) -> {
                 viewMode = !viewMode;
-                b.setIcon(
-                    viewMode ? PresetIcon.ICON_VIEW_MODE_ON.getTexture() : PresetIcon.ICON_VIEW_MODE_OFF.getTexture());
                 ConfigHandler.config.get(Configuration.CATEGORY_GENERAL, "View mode", false)
                     .set(viewMode);
                 ConfigHandler.config.save();
                 ConfigHandler.initConfigs();
+                updateViewModeButton.run();
                 refreshGui();
             });
-            btnViewMode
-                .setTooltip(Collections.singletonList(QuestTranslation.translate("betterquesting.btn.view_mode")));
             cvBackground.addPanel(btnViewMode);
             yOff += 16;
         }

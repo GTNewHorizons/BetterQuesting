@@ -104,6 +104,8 @@ betterquesting.tooltip.auto_claim=Авто-запрос: %s
 betterquesting.tooltip.repeat=Повторяется: %s
 betterquesting.tooltip.repeat_with_edit_mode=Включен режим редактирования, повторающиеся квесты не будут сбрасываться
 betterquesting.tooltip.update_quests=Update Available!%n§7A new quest line version is available.%nClick to install and migrate progress.
+betterquesting.tooltip.lock_tray.true=Нажмите, чтобы открепить панель
+betterquesting.tooltip.lock_tray.false=Нажмите, чтобы закрепить панель
 
 betterquesting.notice.complete=Квест завершён
 betterquesting.notice.update=Квест обновлён
