@@ -479,8 +479,9 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
             "");
         final Runnable updateHideLockedButton = () -> {
             btnHideLocked.setIcon(
-                BQ_Settings.hideLockedQuestLines ? PresetIcon.ICON_QUEST_LINES_FILTERED.getTexture()
-                    : PresetIcon.ICON_QUEST_LINES_SHOWN.getTexture());
+                PresetIcon.ICON_QUEST_LINES_SHOWN.getTexture(),
+                BQ_Settings.hideLockedQuestLines ? new GuiColorStatic(0xFF444444) : new GuiColorStatic(0xFFFFFFFF),
+                0);
             btnHideLocked.setTooltip(
                 Arrays.asList(
                     QuestTranslation.translate("betterquesting.btn.hide_locked_quest_lines"),
@@ -511,7 +512,9 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
                 "");
             final Runnable updateViewModeButton = () -> {
                 btnViewMode.setIcon(
-                    viewMode ? PresetIcon.ICON_VIEW_MODE_ON.getTexture() : PresetIcon.ICON_VIEW_MODE_OFF.getTexture());
+                    PresetIcon.ICON_VIEW_MODE_ON.getTexture(),
+                    viewMode ? new GuiColorStatic(0xFF444444) : new GuiColorStatic(0xFFFFFFFF),
+                    0);
                 btnViewMode.setTooltip(
                     Arrays.asList(
                         QuestTranslation.translate("betterquesting.btn.view_mode"),
@@ -532,15 +535,23 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
         }
 
         // Always Draw Implicit Dependency Button
-        PanelButton btnViewMode = new PanelButton(new GuiTransform(GuiAlign.TOP_LEFT, 8, yOff, 32, 16, -2), -1, "")
-            .setIcon(
-                alwaysDrawImplicit ? PresetIcon.ICON_VISIBILITY_IMPLICIT.getTexture()
-                    : PresetIcon.ICON_VISIBILITY_NORMAL.getTexture());
-        btnViewMode.setClickAction((b) -> {
+        final PanelButton btnImplicit = new PanelButton(
+            new GuiTransform(GuiAlign.TOP_LEFT, 8, yOff, 32, 16, -2),
+            -1,
+            "");
+        final Runnable updateImplicitButton = () -> {
+            btnImplicit.setIcon(
+                PresetIcon.ICON_VISIBILITY_NORMAL.getTexture(),
+                alwaysDrawImplicit ? new GuiColorStatic(0xFFFFFFFF) : new GuiColorStatic(0xFF444444),
+                0);
+            btnImplicit.setTooltip(
+                Arrays.asList(
+                    QuestTranslation.translate("betterquesting.btn.always_draw_implicit"),
+                    QuestTranslation.translate("betterquesting.tooltip.cycle." + alwaysDrawImplicit)));
+        };
+        updateImplicitButton.run();
+        btnImplicit.setClickAction((b) -> {
             alwaysDrawImplicit = !alwaysDrawImplicit;
-            b.setIcon(
-                alwaysDrawImplicit ? PresetIcon.ICON_VISIBILITY_IMPLICIT.getTexture()
-                    : PresetIcon.ICON_VISIBILITY_NORMAL.getTexture());
             ConfigHandler.config
                 .get(
                     Configuration.CATEGORY_GENERAL,
@@ -549,18 +560,11 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
                     "If true, always draw implicit dependency. This property can be changed by the GUI")
                 .set(alwaysDrawImplicit);
             ConfigHandler.config.save();
-            btnViewMode.setTooltip(
-                Arrays.asList(
-                    QuestTranslation.translate("betterquesting.btn.always_draw_implicit"),
-                    QuestTranslation.translate("betterquesting.tooltip.cycle." + alwaysDrawImplicit)));
             ConfigHandler.initConfigs();
+            updateImplicitButton.run();
             refreshGui();
         });
-        btnViewMode.setTooltip(
-            Arrays.asList(
-                QuestTranslation.translate("betterquesting.btn.always_draw_implicit"),
-                QuestTranslation.translate("betterquesting.tooltip.cycle." + alwaysDrawImplicit)));
-        cvBackground.addPanel(btnViewMode);
+        cvBackground.addPanel(btnImplicit);
         yOff += 16;
 
         // Dependency Arrow Button
