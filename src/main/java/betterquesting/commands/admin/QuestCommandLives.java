@@ -82,8 +82,7 @@ public class QuestCommandLives extends QuestCommandBase {
                 LifeDatabase.INSTANCE.setLives(playerID, value);
                 EntityPlayerMP target = null;
                 for (EntityPlayerMP p : (List<EntityPlayerMP>) server.getConfigurationManager().playerEntityList) {
-                    if (p.getGameProfile()
-                        .getId()
+                    if (QuestingAPI.getQuestingUUID(p)
                         .equals(playerID)) {
                         target = p;
                         break;
@@ -107,8 +106,7 @@ public class QuestCommandLives extends QuestCommandBase {
                 LifeDatabase.INSTANCE.setLives(playerID, lives);
                 EntityPlayerMP target = null;
                 for (EntityPlayerMP p : (List<EntityPlayerMP>) server.getConfigurationManager().playerEntityList) {
-                    if (p.getGameProfile()
-                        .getId()
+                    if (QuestingAPI.getQuestingUUID(p)
                         .equals(playerID)) {
                         target = p;
                         break;

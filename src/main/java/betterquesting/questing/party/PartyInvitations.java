@@ -139,8 +139,7 @@ public class PartyInvitations implements INBTPartial<NBTTagList, UUID> {
 
             EntityPlayerMP player = null;
             for (EntityPlayerMP playerMP : server.getConfigurationManager().playerEntityList) {
-                if (playerMP.getGameProfile()
-                    .getId()
+                if (QuestingAPI.getQuestingUUID(playerMP)
                     .equals(playerId)) {
                     player = playerMP;
                     break;

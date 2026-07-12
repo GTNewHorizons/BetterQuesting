@@ -25,6 +25,7 @@ import net.minecraftforge.fluids.IFluidHandler;
 
 import com.google.common.collect.Maps;
 
+import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.properties.NativeProps;
 import betterquesting.api.questing.IQuest;
 import betterquesting.api.questing.tasks.IFluidTask;
@@ -318,8 +319,7 @@ public class TileSubmitStation extends TileEntity implements IFluidHandler, ISid
         if (server == null) return null;
 
         for (EntityPlayerMP player : (List<EntityPlayerMP>) server.getConfigurationManager().playerEntityList) {
-            if (player.getGameProfile()
-                .getId()
+            if (QuestingAPI.getQuestingUUID(player)
                 .equals(uuid)) return player;
         }
 
