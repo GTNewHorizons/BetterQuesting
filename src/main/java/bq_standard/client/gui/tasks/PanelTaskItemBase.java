@@ -103,24 +103,38 @@ public abstract class PanelTaskItemBase<T extends TaskProgressableBase<int[]>> e
         super.drawPanel(mx, my, partialTick);
     }
 
-    private String getRequiredItemText(int index) {
+    protected String getRequiredItemText(int index) {
         StringBuilder sb = new StringBuilder();
         BigItemStack stack = itemSlots[index].getStoredValue();
+        addItemName(sb, stack, index);
+        addOreDict(sb, stack, index);
+        addProgress(sb, stack, index);
+        addCompleteOrIncomplete(sb, stack, index);
+        return sb.toString();
+    }
+
+    protected void addItemName(StringBuilder sb, BigItemStack stack, @SuppressWarnings("unused") int index) {
         sb.append(
             EnumChatFormatting.getTextWithoutFormattingCodes(
                 stack.getBaseStack()
                     .getDisplayName()));
+    }
 
+    protected void addOreDict(StringBuilder sb, @SuppressWarnings("unused") BigItemStack stack, int index) {
         if (oreDictName[index] != null) sb.append(" (")
             .append(oreDictName[index])
             .append(")");
+    }
 
+    protected void addProgress(StringBuilder sb, BigItemStack stack, int index) {
         sb.append("\n")
             .append(progress[index])
             .append("/")
             .append(stack.stackSize)
             .append("\n");
+    }
 
+    protected void addCompleteOrIncomplete(StringBuilder sb, BigItemStack stack, int index) {
         if (isComplete || progress[index] >= stack.stackSize) {
             sb.append(EnumChatFormatting.GREEN)
                 .append(QuestTranslation.translate("betterquesting.tooltip.complete"));
@@ -128,7 +142,6 @@ public abstract class PanelTaskItemBase<T extends TaskProgressableBase<int[]>> e
             sb.append(EnumChatFormatting.RED)
                 .append(QuestTranslation.translate("betterquesting.tooltip.incomplete"));
         }
-        return sb.toString();
     }
 
 }
