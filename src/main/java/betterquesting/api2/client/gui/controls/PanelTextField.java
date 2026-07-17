@@ -508,6 +508,7 @@ public class PanelTextField<T> implements IGuiPanel {
                     return true;
                 }
                 default: {
+                    typedChar = checkNumpad(typedChar, keyCode);
                     if (ChatAllowedCharacters.isAllowedCharacter(typedChar)) {
                         if (this.isActive) {
                             this.writeText(Character.toString(typedChar));
@@ -520,6 +521,31 @@ public class PanelTextField<T> implements IGuiPanel {
                 }
             }
         }
+    }
+
+    private char checkNumpad(char typedChar, int keyCode) {
+        if (typedChar != '\0') return typedChar;
+        return switch (keyCode) {
+            case Keyboard.KEY_NUMPAD0 -> '0';
+            case Keyboard.KEY_NUMPAD1 -> '1';
+            case Keyboard.KEY_NUMPAD2 -> '2';
+            case Keyboard.KEY_NUMPAD3 -> '3';
+            case Keyboard.KEY_NUMPAD4 -> '4';
+            case Keyboard.KEY_NUMPAD5 -> '5';
+            case Keyboard.KEY_NUMPAD6 -> '6';
+            case Keyboard.KEY_NUMPAD7 -> '7';
+            case Keyboard.KEY_NUMPAD8 -> '8';
+            case Keyboard.KEY_NUMPAD9 -> '9';
+            case Keyboard.KEY_DIVIDE -> '/';
+            case Keyboard.KEY_MULTIPLY -> '*';
+            case Keyboard.KEY_SUBTRACT -> '-';
+            case Keyboard.KEY_ADD -> '+';
+            case Keyboard.KEY_NUMPADEQUALS -> '=';
+            case Keyboard.KEY_NUMPADENTER -> '\n';
+            case Keyboard.KEY_DECIMAL -> '.';
+            case Keyboard.KEY_NUMPADCOMMA -> ',';
+            default -> typedChar;
+        };
     }
 
     private static boolean isKeyComboCtrl() {
