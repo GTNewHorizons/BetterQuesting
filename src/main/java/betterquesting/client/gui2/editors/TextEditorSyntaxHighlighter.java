@@ -65,11 +65,16 @@ public class TextEditorSyntaxHighlighter implements Function<String, PanelTextFi
         while (index < end) {
             String formatting = getAmpersandFormatting(text, index, end);
             if (formatting != null) {
-                renderedText.append(formatting);
-                int formattingLength = formatting.startsWith("\u00a7x") ? 8 : 2;
-                appendRaw(text, index, index + formattingLength, renderedText, sourceToDisplay);
+                int sourceFormattingLength = formatting.startsWith("\u00a7x") ? 8 : 2;
+                appendAmpersandFormatting(
+                    text,
+                    index,
+                    index + sourceFormattingLength,
+                    formatting,
+                    renderedText,
+                    sourceToDisplay);
                 activeFormatting = RenderUtils.getFormatFromString(activeFormatting + formatting);
-                index += formattingLength;
+                index += sourceFormattingLength;
                 continue;
             }
 
@@ -88,6 +93,14 @@ public class TextEditorSyntaxHighlighter implements Function<String, PanelTextFi
         }
         sourceToDisplay[end] = renderedText.length();
         return activeFormatting;
+    }
+
+    private static void appendAmpersandFormatting(String text, int start, int end, String formatting,
+        StringBuilder renderedText, int[] sourceToDisplay) {
+        renderedText.append(formatting);
+        appendRaw(text, start, start + 1, renderedText, sourceToDisplay);
+        renderedText.append(formatting);
+        appendRaw(text, start + 1, end, renderedText, sourceToDisplay);
     }
 
     private static void appendRaw(String text, int start, int end, StringBuilder renderedText, int[] sourceToDisplay) {
