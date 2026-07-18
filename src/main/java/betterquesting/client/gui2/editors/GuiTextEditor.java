@@ -104,6 +104,7 @@ public class GuiTextEditor extends GuiScreenCanvas implements IPEventListener, I
             new GuiTransform(GuiAlign.FULL_BOX, new GuiPadding(124, 32, 24, 32), 0),
             flText != null ? flText.getRawText() : textIn,
             FieldFilterString.INSTANCE);
+        flText.setDisplayFormatter(new TextEditorSyntaxHighlighter());
         cvBackground.addPanel(flText);
         flText.setMaxLength(Integer.MAX_VALUE);
         flText.enableWrapping(true);
