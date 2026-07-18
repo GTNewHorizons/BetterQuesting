@@ -26,6 +26,10 @@ import betterquesting.api2.client.gui.controls.PanelButton;
 import betterquesting.api2.client.gui.controls.PanelButtonStorage;
 import betterquesting.api2.client.gui.controls.PanelTextField;
 import betterquesting.api2.client.gui.controls.filters.FieldFilterString;
+import betterquesting.api2.client.gui.editors.TextEditorAction;
+import betterquesting.api2.client.gui.editors.TextEditorActionContext;
+import betterquesting.api2.client.gui.editors.TextEditorActionRegistry;
+import betterquesting.api2.client.gui.editors.TextEditorMacro;
 import betterquesting.api2.client.gui.events.IPEventListener;
 import betterquesting.api2.client.gui.events.PEventBroadcaster;
 import betterquesting.api2.client.gui.events.PanelEvent;
@@ -38,7 +42,6 @@ import betterquesting.api2.client.gui.panels.CanvasTextured;
 import betterquesting.api2.client.gui.panels.bars.PanelVScrollBar;
 import betterquesting.api2.client.gui.panels.content.PanelTextBox;
 import betterquesting.api2.client.gui.panels.lists.CanvasScrolling;
-import betterquesting.api2.client.gui.popups.PopColorInput;
 import betterquesting.api2.client.gui.popups.PopWaitExternalEvent;
 import betterquesting.api2.client.gui.themes.presets.PresetColor;
 import betterquesting.api2.client.gui.themes.presets.PresetTexture;
@@ -48,6 +51,11 @@ import betterquesting.misc.QuestResourcesFile;
 import betterquesting.misc.QuestResourcesFolder;
 
 public class GuiTextEditor extends GuiScreenCanvas implements IPEventListener, IVolatileScreen {
+
+    private static final TextEditorMacro IMAGE_MACRO = new TextEditorMacro(
+        "betterquesting.editor.macro.image",
+        "[img height=100]",
+        "[/img]");
 
     private final ICallback<String> callback;
     private final boolean imageSupport;
@@ -96,6 +104,7 @@ public class GuiTextEditor extends GuiScreenCanvas implements IPEventListener, I
             new GuiTransform(GuiAlign.FULL_BOX, new GuiPadding(124, 32, 24, 32), 0),
             flText != null ? flText.getRawText() : textIn,
             FieldFilterString.INSTANCE);
+        flText.setDisplayFormatter(new TextEditorSyntaxHighlighter());
         cvBackground.addPanel(flText);
         flText.setMaxLength(Integer.MAX_VALUE);
         flText.enableWrapping(true);
@@ -110,52 +119,16 @@ public class GuiTextEditor extends GuiScreenCanvas implements IPEventListener, I
         int macroCount = 0;
 
         if (imageSupport) {
-            cvFormatList
-                .addPanel(new PanelButton(new GuiRectangle(0, 16 * macroCount++, 100, 16), 3, "§2§nSelect Image§r"));
             cvFormatList.addPanel(
-                new PanelButtonStorage<>(
+                new PanelButton(
                     new GuiRectangle(0, 16 * macroCount++, 100, 16),
-                    2,
-                    "§2§n Image§r",
-                    "[img height=100] [/img]"));
+                    3,
+                    QuestTranslation.translate("betterquesting.editor.macro.select_image")));
+            cvFormatList.addPanel(createActionButton(macroCount++, IMAGE_MACRO));
         }
-        cvFormatList.addPanel(
-            new PanelButtonStorage<>(
-                new GuiRectangle(0, 16 * macroCount++, 100, 16),
-                2,
-                "§9§nHyperlink§r",
-                "[url] [/url]"));
-        cvFormatList.addPanel(
-            new PanelButtonStorage<>(
-                new GuiRectangle(0, 16 * macroCount++, 100, 16),
-                2,
-                "§4§lWarning§r",
-                "[warn] [/warn]"));
-        cvFormatList.addPanel(
-            new PanelButtonStorage<>(new GuiRectangle(0, 16 * macroCount++, 100, 16), 2, "§3Note§r", "[note] [/note]"));
-        cvFormatList.addPanel(
-            new PanelButtonStorage<>(
-                new GuiRectangle(0, 16 * macroCount++, 100, 16),
-                2,
-                "§2§nQuest Title§r",
-                "[quest] [/quest]"));
-
-        // RGB color buttons
-        cvFormatList
-            .addPanel(new PanelButton(new GuiRectangle(0, 16 * macroCount++, 100, 16), 4, "\u00a7cHex Color\u00a7r"));
-        cvFormatList.addPanel(
-            new PanelButtonStorage<>(
-                new GuiRectangle(0, 16 * macroCount++, 100, 16),
-                1,
-                "\u00a7qRainbow\u00a7r",
-                "&q"));
-        cvFormatList.addPanel(
-            new PanelButtonStorage<>(new GuiRectangle(0, 16 * macroCount++, 100, 16), 1, "\u00a76Wave\u00a7r", "&z"));
-        cvFormatList.addPanel(
-            new PanelButtonStorage<>(new GuiRectangle(0, 16 * macroCount++, 100, 16), 1, "\u00a75Flip\u00a7r", "&v"));
-        cvFormatList
-            .addPanel(new PanelButton(new GuiRectangle(0, 16 * macroCount++, 100, 16), 5, "\u00a7bGradient\u00a7r"));
-        cvFormatList.addPanel(new PanelButton(new GuiRectangle(0, 16 * macroCount++, 100, 16), 6, "Clear Format"));
+        for (TextEditorAction action : TextEditorActionRegistry.getAll()) {
+            cvFormatList.addPanel(createActionButton(macroCount++, action));
+        }
 
         for (int i = 0; i < tfValues.length; i++) {
             cvFormatList.addPanel(
@@ -200,10 +173,8 @@ public class GuiTextEditor extends GuiScreenCanvas implements IPEventListener, I
                 flText.writeText(format + selected + "\u00a7r");
             }
         } else if (btn.getButtonID() == 2 && btn instanceof PanelButtonStorage) {
-            String[] tagPair = ((PanelButtonStorage<String>) btn).getStoredValue()
-                .split(" ");
-            String format = tagPair[0] + flText.getSelectedText() + tagPair[1];
-            flText.writeText(format);
+            TextEditorAction action = ((PanelButtonStorage<TextEditorAction>) btn).getStoredValue();
+            action.execute(new TextEditorActionContext(this));
         } else if (btn.getButtonID() == 3) {
             PopWaitExternalEvent<String> popup = new PopWaitExternalEvent<String>(
                 I18n.format("betterquesting.title.choose_image_swing")) {
@@ -235,38 +206,26 @@ public class GuiTextEditor extends GuiScreenCanvas implements IPEventListener, I
                     popup.ensureDone();
                 }
             });
-        } else if (btn.getButtonID() == 4) {
-            // Hex Color picker
-            String selected = flText.getSelectedText();
-            this.openPopup(new PopColorInput("Hex Color", false, colorCode -> {
-                if (selected.isEmpty()) {
-                    flText.writeText(colorCode);
-                } else {
-                    flText.writeText(colorCode + selected + "\u00a7r");
-                }
-            }));
-        } else if (btn.getButtonID() == 5) {
-            // Gradient picker
-            String selected = flText.getSelectedText();
-            this.openPopup(new PopColorInput("Gradient", true, colorCode -> {
-                if (selected.isEmpty()) {
-                    flText.writeText(colorCode);
-                } else {
-                    flText.writeText(colorCode + selected + "\u00a7r");
-                }
-            }));
-        } else if (btn.getButtonID() == 6) {
-            // Clear Format
-            String selected = flText.getSelectedText();
-            if (selected.isEmpty()) {
-                flText.writeText("\u00a7r");
-            } else {
-                flText.writeText(stripFormatting(selected));
-            }
         }
     }
 
-    static boolean isHex6(String str, int start) {
+    private static PanelButtonStorage<TextEditorAction> createActionButton(int index, TextEditorAction action) {
+        return new PanelButtonStorage<>(
+            new GuiRectangle(0, 16 * index, 100, 16),
+            2,
+            QuestTranslation.translate(action.getTranslationKey()),
+            action);
+    }
+
+    public String getSelectedText() {
+        return flText.getSelectedText();
+    }
+
+    public void replaceSelectedText(String text) {
+        flText.writeText(text);
+    }
+
+    private static boolean isHex6(String str, int start) {
         if (start + 6 > str.length()) return false;
         for (int k = 0; k < 6; k++) {
             char c = str.charAt(start + k);
@@ -275,7 +234,7 @@ public class GuiTextEditor extends GuiScreenCanvas implements IPEventListener, I
         return true;
     }
 
-    static String stripFormatting(String text) {
+    public static String stripFormatting(String text) {
         StringBuilder sb = new StringBuilder();
         int len = text.length();
         for (int i = 0; i < len; i++) {
