@@ -21,6 +21,21 @@ betterquesting.title.submit_station=提交站
 betterquesting.title.completion=完成度: %d/%d (%s%%)
 betterquesting.title.completion_total=总计: %d/%d (%s%%)
 
+betterquesting.editor.macro.select_image=§2§n选择图片§r
+betterquesting.editor.macro.image=§2§n图片§r
+betterquesting.editor.macro.hyperlink=§9§n超链接§r
+betterquesting.editor.macro.warning=§4§l警告§r
+betterquesting.editor.macro.note=§3提示§r
+betterquesting.editor.macro.quest_title=§2§n任务标题§r
+betterquesting.editor.action.hex_color=§c十六进制颜色§r
+betterquesting.editor.action.rainbow=§q彩虹§r
+betterquesting.editor.action.wave=§6波浪§r
+betterquesting.editor.action.flip=§5翻转§r
+betterquesting.editor.action.gradient=§b渐变§r
+betterquesting.editor.action.clear_format=清除格式
+betterquesting.editor.color_picker.hex=十六进制颜色
+betterquesting.editor.color_picker.gradient=渐变
+
 betterquesting.btn.rewards=任务奖励
 betterquesting.btn.tasks=任务目标
 betterquesting.btn.advanced=全局设置
