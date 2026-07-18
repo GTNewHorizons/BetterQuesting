@@ -205,6 +205,7 @@ public class PanelTextField<T> implements IGuiPanel {
     public PanelTextField<T> setDisplayFormatter(Function<String, TextDisplayText> formatter) {
         this.displayFormatter = Objects.requireNonNull(formatter, "formatter");
         updateDisplayText();
+        updateScrollBounds();
         return this;
     }
 
@@ -557,7 +558,7 @@ public class PanelTextField<T> implements IGuiPanel {
     private List<String> getVisualLines(FontRenderer font) {
         int width = Math.max(1, getTransform().getWidth() - 8);
         if (visualLinesWidth != width) {
-            visualLines = RenderUtils.splitStringWithoutFormat(text, width, font);
+            visualLines = RenderUtils.splitStringWithoutFormat(displayText.getText(), width, font);
             visualLinesWidth = width;
         }
         return visualLines;
@@ -575,7 +576,7 @@ public class PanelTextField<T> implements IGuiPanel {
 
         FontRenderer font = Minecraft.getMinecraft().fontRenderer;
         List<String> lines = getVisualLines(font);
-        int currentPosition = selectEnd;
+        int currentPosition = displayText.getDisplayIndex(selectEnd);
         int currentLine = 0;
         int currentLineStart = 0;
         String activeFormatting = "";
@@ -615,7 +616,8 @@ public class PanelTextField<T> implements IGuiPanel {
         String targetLineText = lines.get(targetLine);
         int targetLineOffset = RenderUtils.getCursorPos(targetFormatting + targetLineText, targetColumn, font)
             - targetFormatting.length();
-        int targetPosition = targetLineStart + MathHelper.clamp_int(targetLineOffset, 0, targetLineText.length());
+        int targetPosition = displayText
+            .getSourceIndex(targetLineStart + MathHelper.clamp_int(targetLineOffset, 0, targetLineText.length()));
 
         if (extendSelection) {
             setSelectionPos(targetPosition);
@@ -647,6 +649,7 @@ public class PanelTextField<T> implements IGuiPanel {
 
             if (canWrap) {
                 List<String> lines = getVisualLines(font);
+                int displaySelectionEnd = displayText.getDisplayIndex(selectEnd);
                 String lastFormat = "";
                 int idx = 0;
                 int y = 0;
@@ -655,8 +658,9 @@ public class PanelTextField<T> implements IGuiPanel {
                 for (; y < lines.size(); y++) {
                     String s = lines.get(y);
 
-                    if (selectEnd >= idx && selectEnd < idx + s.length() + (y == lines.size() - 1 ? 1 : 0)) {
-                        x = RenderUtils.getStringWidth(lastFormat + s.substring(0, selectEnd - idx), font);
+                    if (displaySelectionEnd >= idx
+                        && displaySelectionEnd < idx + s.length() + (y == lines.size() - 1 ? 1 : 0)) {
+                        x = RenderUtils.getStringWidth(lastFormat + s.substring(0, displaySelectionEnd - idx), font);
                         break;
                     }
 
@@ -678,7 +682,11 @@ public class PanelTextField<T> implements IGuiPanel {
                 cursorLine.w = 1;
                 cursorLine.h = font.FONT_HEIGHT;
             } else {
-                int x = RenderUtils.getStringWidth(text.substring(0, selectEnd), font);
+                int displaySelectionEnd = displayText.getDisplayIndex(selectEnd);
+                int x = RenderUtils.getStringWidth(
+                    displayText.getText()
+                        .substring(0, displaySelectionEnd),
+                    font);
                 int sx = getScrollX();
 
                 if (x < sx) {
@@ -703,12 +711,13 @@ public class PanelTextField<T> implements IGuiPanel {
 
         if (!canWrap) {
             scrollHeight = 0;
-            scrollWidth = Math.max(0, RenderUtils.getStringWidth(text, font) - (transform.getWidth() - 8));
+            scrollWidth = Math
+                .max(0, RenderUtils.getStringWidth(displayText.getText(), font) - (transform.getWidth() - 8));
         } else {
             scrollWidth = 0;
             scrollHeight = Math.max(
                 0,
-                (RenderUtils.splitString(text, transform.getWidth() - 8, font)
+                (RenderUtils.splitString(displayText.getText(), transform.getWidth() - 8, font)
                     .size() * font.FONT_HEIGHT) - (transform.getHeight() - 8));
         }
 
@@ -743,15 +752,20 @@ public class PanelTextField<T> implements IGuiPanel {
         if (isActive && dragging && Mouse.isButtonDown(0)) {
             if (canWrap) {
                 setSelectionPos(
-                    RenderUtils.getCursorPos(
-                        text,
-                        mx - (transform.getX() + 4) + getScrollX(),
-                        my - (transform.getY() + 4) + getScrollY(),
-                        transform.getWidth() - 8,
-                        mc.fontRenderer));
+                    displayText.getSourceIndex(
+                        RenderUtils.getCursorPos(
+                            displayText.getText(),
+                            mx - (transform.getX() + 4) + getScrollX(),
+                            my - (transform.getY() + 4) + getScrollY(),
+                            transform.getWidth() - 8,
+                            mc.fontRenderer)));
             } else {
                 setSelectionPos(
-                    RenderUtils.getCursorPos(text, mx - (transform.getX() + 4) + getScrollX(), mc.fontRenderer));
+                    displayText.getSourceIndex(
+                        RenderUtils.getCursorPos(
+                            displayText.getText(),
+                            mx - (transform.getX() + 4) + getScrollX(),
+                            mc.fontRenderer)));
             }
         } else if (dragging) {
             dragging = false;
@@ -834,18 +848,20 @@ public class PanelTextField<T> implements IGuiPanel {
 
             if (canWrap) {
                 setCursorPosition(
-                    RenderUtils.getCursorPos(
-                        text,
-                        mx - (transform.getX() + 4) + getScrollX(),
-                        my - (transform.getY() + 4) + getScrollY(),
-                        transform.getWidth() - 8,
-                        Minecraft.getMinecraft().fontRenderer));
+                    displayText.getSourceIndex(
+                        RenderUtils.getCursorPos(
+                            displayText.getText(),
+                            mx - (transform.getX() + 4) + getScrollX(),
+                            my - (transform.getY() + 4) + getScrollY(),
+                            transform.getWidth() - 8,
+                            Minecraft.getMinecraft().fontRenderer)));
             } else {
                 setCursorPosition(
-                    RenderUtils.getCursorPos(
-                        text,
-                        mx - (transform.getX() + 4) + getScrollX(),
-                        Minecraft.getMinecraft().fontRenderer));
+                    displayText.getSourceIndex(
+                        RenderUtils.getCursorPos(
+                            displayText.getText(),
+                            mx - (transform.getX() + 4) + getScrollX(),
+                            Minecraft.getMinecraft().fontRenderer)));
             }
             dragging = true;
 
@@ -894,6 +910,7 @@ public class PanelTextField<T> implements IGuiPanel {
 
     private void updateDisplayText() {
         displayText = Objects.requireNonNull(displayFormatter.apply(text), "displayFormatter result");
+        invalidateVisualLines();
     }
 
     public static class TextDisplayText {
@@ -923,6 +940,26 @@ public class PanelTextField<T> implements IGuiPanel {
 
         public int getDisplayIndex(int sourceIndex) {
             return sourceToDisplay[MathHelper.clamp_int(sourceIndex, 0, sourceToDisplay.length - 1)];
+        }
+
+        public int getSourceIndex(int displayIndex) {
+            int low = 0;
+            int high = sourceToDisplay.length - 1;
+            int clampedIndex = MathHelper.clamp_int(displayIndex, sourceToDisplay[0], sourceToDisplay[high]);
+
+            while (low <= high) {
+                int middle = (low + high) >>> 1;
+                int mappedIndex = sourceToDisplay[middle];
+                if (mappedIndex < clampedIndex) {
+                    low = middle + 1;
+                } else if (mappedIndex > clampedIndex) {
+                    high = middle - 1;
+                } else {
+                    return middle;
+                }
+            }
+
+            return Math.max(0, high);
         }
     }
 }
