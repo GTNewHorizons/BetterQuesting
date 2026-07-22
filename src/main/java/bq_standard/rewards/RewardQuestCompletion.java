@@ -19,6 +19,7 @@ import betterquesting.api.utils.UuidConverter;
 import betterquesting.api2.cache.QuestCache;
 import betterquesting.api2.client.gui.misc.IGuiRect;
 import betterquesting.api2.client.gui.panels.IGuiPanel;
+import betterquesting.handlers.EventHandler;
 import betterquesting.questing.QuestDatabase;
 import bq_standard.client.gui.rewards.PanelRewardQuestCompletion;
 import bq_standard.rewards.factory.FactoryRewardQuestCompletion;
@@ -26,6 +27,7 @@ import bq_standard.rewards.factory.FactoryRewardQuestCompletion;
 public class RewardQuestCompletion extends AbstractReward implements IReward {
 
     public UUID questNum = null;
+    public boolean isSilent = false;
 
     @Override
     public ResourceLocation getFactoryID() {
@@ -73,12 +75,15 @@ public class RewardQuestCompletion extends AbstractReward implements IReward {
         if (!targetQuest.isComplete(uuid)) {
             targetQuest.setComplete(uuid, System.currentTimeMillis());
             qc.markQuestDirty(questId);
+            qc.updateCache(player);
+            if (!isSilent) EventHandler.postPresetNotice(targetQuest, player, 2);
         }
     }
 
     @Override
     public void readFromNBT(NBTTagCompound nbt) {
         super.readFromNBT(nbt);
+        isSilent = nbt.getBoolean("isSilent");
         Optional<UUID> uuid = NBTConverter.UuidValueType.QUEST.tryReadIdString(nbt);
         if (uuid.isPresent()) {
             questNum = uuid.get();
@@ -93,6 +98,7 @@ public class RewardQuestCompletion extends AbstractReward implements IReward {
     @Override
     public NBTTagCompound writeToNBT(NBTTagCompound nbt) {
         super.writeToNBT(nbt);
+        nbt.setBoolean("isSilent", isSilent);
         NBTConverter.UuidValueType.QUEST.writeIdString(questNum, nbt);
         return nbt;
     }
