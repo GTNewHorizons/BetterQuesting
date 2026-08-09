@@ -317,7 +317,7 @@ public class EventHandler {
     }
 
     // TODO: Create a new message inbox system for these things. On screen popups aren't ideal in combat
-    private static void postPresetNotice(IQuest quest, EntityPlayer player, int preset) {
+    public static void postPresetNotice(IQuest quest, EntityPlayer player, int preset) {
         if (!(player instanceof EntityPlayerMP)) return;
         final BigItemStack stack = quest.getProperty(NativeProps.ICON);
         if (stack == null) return;
