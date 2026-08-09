@@ -91,6 +91,11 @@ public enum FormattingTag {
         themeFormattingStringTableBuilder.put(URL, BQ_OVERWORLD_THEME, "§9");
         themeFormattingStringTableBuilder.put(URL, BQ_STRONGHOLD_THEME, "§9");
 
+        defaultFormattingStringMapBuilder.put(QUESTLINK, "§1");
+        themeFormattingStringTableBuilder.put(QUESTLINK, BQ_DARK_THEME, "§9");
+        themeFormattingStringTableBuilder.put(QUESTLINK, BQ_OVERWORLD_THEME, "§9");
+        themeFormattingStringTableBuilder.put(QUESTLINK, BQ_STRONGHOLD_THEME, "§9");
+
         textFormattingStringMapBuilder.put(BOLD, "§l");
         textFormattingStringMapBuilder.put(ITALIC, "§o");
         textFormattingStringMapBuilder.put(UNDERLINE, "§n");
@@ -99,6 +104,7 @@ public enum FormattingTag {
 
         textFormattingStringMapBuilder.put(QUEST, "§n");
         textFormattingStringMapBuilder.put(URL, "§n");
+        textFormattingStringMapBuilder.put(QUESTLINK, "§n");
 
         DEFAULT_FORMATTING_STRING_MAP = defaultFormattingStringMapBuilder.build();
         THEME_FORMATTING_STRING_TABLE = themeFormattingStringTableBuilder.build();
@@ -116,7 +122,7 @@ public enum FormattingTag {
     }
 
     public String getColourFormattingString() {
-        if (BQ_Settings.forceMonochromeText && this == URL) {
+        if (BQ_Settings.forceMonochromeText && (this == URL || this == QUESTLINK)) {
             return "";
         }
 

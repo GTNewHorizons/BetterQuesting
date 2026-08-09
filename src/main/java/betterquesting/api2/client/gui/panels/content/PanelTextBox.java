@@ -440,6 +440,7 @@ public class PanelTextBox implements IGuiPanel {
                     return handler.test(uri);
                 } else if (hotZone.link instanceof UUID) {
                     questGUI.navigateToQuest((UUID) hotZone.link);
+                    return true;
                 }
             }
         }

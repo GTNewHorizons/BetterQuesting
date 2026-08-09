@@ -80,8 +80,8 @@ public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeeds
             + "|&g&#[0-9a-fA-F]{6}&#[0-9a-fA-F]{6}" // &g gradient (18 chars)
             + "|&#[0-9a-fA-F]{6}" // &#RRGGBB (8 chars)
             + "|&[0-9a-fA-Fk-orqgzv]" // & single codes
-            + "|\\[(url|warn|note|quest)]" // opening tags
-            + "|\\[/(?:url|warn|note|quest|img)]" // closing tags
+            + "|\\[(?:url|warn|note|quest|questlink)]" // opening tags
+            + "|\\[/(?:url|warn|note|quest|questlink|img)]" // closing tags
             + "|\\[img.*?]"); // img tags
     private ScrollPosition scrollPosition;
 
