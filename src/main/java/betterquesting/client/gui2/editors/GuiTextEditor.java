@@ -139,6 +139,12 @@ public class GuiTextEditor extends GuiScreenCanvas implements IPEventListener, I
                 2,
                 "§2§nQuest Title§r",
                 "[quest] [/quest]"));
+        cvFormatList.addPanel(
+            new PanelButtonStorage<>(
+                new GuiRectangle(0, 16 * macroCount++, 100, 16),
+                2,
+                "Quest Link",
+                "[questlink] [/questlink]"));
 
         // RGB color buttons
         cvFormatList
