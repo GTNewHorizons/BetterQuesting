@@ -378,10 +378,11 @@ public class SlicedTexture implements IGuiTexture {
     }
 
     public enum SliceMode {
+
         STRETCH,
         SLICED_TILE,
         SLICED_STRETCH;
-        
+
         public static final SliceMode[] VALUES = values();
     }
 }
