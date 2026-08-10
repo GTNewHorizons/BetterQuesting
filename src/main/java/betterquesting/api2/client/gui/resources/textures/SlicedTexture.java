@@ -270,7 +270,7 @@ public class SlicedTexture implements IGuiTexture {
             .intValue();
 
         return new SlicedTexture(res, new GuiRectangle(ox, oy, ow, oh), new GuiPadding(il, it, ir, ib))
-            .setSliceMode(SliceMode.values()[slice % 3]);
+            .setSliceMode(SliceMode.VALUES[slice % 3]);
     }
 
     // Slightly modified version from GuiUtils.class
@@ -380,6 +380,8 @@ public class SlicedTexture implements IGuiTexture {
     public enum SliceMode {
         STRETCH,
         SLICED_TILE,
-        SLICED_STRETCH
+        SLICED_STRETCH;
+        
+        public static final SliceMode[] VALUES = values();
     }
 }
