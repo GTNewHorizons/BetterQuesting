@@ -29,7 +29,7 @@ public class FactorySlicedTexture implements IFactoryData<IGuiTexture, JsonObjec
             JsonHelper.GetNumber(data, "sliceMode", 0)
                 .intValue(),
             0,
-            SliceMode.values().length);
+            SliceMode.VALUES.length);
 
         int[] bounds = new int[] { 0, 0, 16, 16 };
         JsonArray jAry = JsonHelper.GetArray(data, "bounds");
@@ -56,7 +56,7 @@ public class FactorySlicedTexture implements IFactoryData<IGuiTexture, JsonObjec
         return new SlicedTexture(
             atlas,
             new GuiRectangle(bounds[0], bounds[1], bounds[2], bounds[3]),
-            new GuiPadding(padding[0], padding[1], padding[2], padding[3])).setSliceMode(SliceMode.values()[sliceMode]);
+            new GuiPadding(padding[0], padding[1], padding[2], padding[3])).setSliceMode(SliceMode.VALUES[sliceMode]);
     }
 
     @Override
