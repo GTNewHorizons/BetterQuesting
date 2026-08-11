@@ -4,19 +4,27 @@ import static betterquesting.api.storage.BQ_Settings.textWidthCorrection;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Deque;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.UUID;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.util.MathHelper;
+import net.minecraft.util.ResourceLocation;
 
 import org.apache.commons.lang3.StringUtils;
 import org.lwjgl.opengl.GL11;
@@ -25,6 +33,7 @@ import com.google.common.collect.ImmutableSet;
 
 import betterquesting.api.storage.BQ_Settings;
 import betterquesting.api.utils.RenderUtils;
+import betterquesting.api.utils.UuidConverter;
 import betterquesting.api2.client.gui.misc.GuiAlign;
 import betterquesting.api2.client.gui.misc.GuiTransform;
 import betterquesting.api2.client.gui.misc.IGuiRect;
@@ -32,7 +41,10 @@ import betterquesting.api2.client.gui.misc.URIHandlers;
 import betterquesting.api2.client.gui.panels.IGuiPanel;
 import betterquesting.api2.client.gui.resources.colors.GuiColorStatic;
 import betterquesting.api2.client.gui.resources.colors.IGuiColor;
+import betterquesting.api2.utils.QuestTranslation;
+import betterquesting.client.gui2.GuiQuest;
 import betterquesting.core.BetterQuesting;
+import betterquesting.questing.QuestDatabase;
 
 public class PanelTextBox implements IGuiPanel {
 
@@ -50,11 +62,15 @@ public class PanelTextBox implements IGuiPanel {
 
     private static final String defaultUrlProtocol = "https";
     private static final Set<String> supportedUrlProtocol = ImmutableSet.of("http", "https");
+    private static final String INTERACTION_SCHEME = "bqinteraction";
+    private static final Map<ResourceLocation, Function<String, String>> textProcessors = new LinkedHashMap<>();
+    private static final Map<ResourceLocation, TextInteraction> textInteractions = new LinkedHashMap<>();
     private final GuiRectText transform;
-    private final List<UrlRange> urlRanges = new ArrayList<>();
+    private final List<linkRange> linkRanges = new ArrayList<>();
     private final List<HotZone> hotZones = new ArrayList<>();
     private boolean enabled = true;
 
+    private GuiQuest questGUI;
     private String text = "";
     private boolean shadow = false;
     private IGuiColor color = new GuiColorStatic(255, 255, 255, 255);
@@ -91,16 +107,17 @@ public class PanelTextBox implements IGuiPanel {
     }
 
     public PanelTextBox setText(String text) {
+        text = processText(text);
         if (hyperlinkAware) {
             StringBuilder textBuilder = new StringBuilder();
-            urlRanges.clear();
+            linkRanges.clear();
 
             // This variable should hold the start text position of the unique [url] tag currently
             // on the stack, or -1 if there is no [url] tag on the stack.
             // Behavior is undefined if there are multiple [url] tags on the stack; consumers of
             // this value should take care not to throw an exception even if this occurs.
             // Perhaps we will want to move this value into the [url] TagInstance itself, some day.
-            int currUrlStart = -1;
+            int currLinkStart = -1;
 
             Deque<FormattingTag.TagInstance> tags = new ArrayDeque<>();
             Scanner scanner = new Scanner(text).useDelimiter(TOKEN_DELIMITER);
@@ -147,8 +164,8 @@ public class PanelTextBox implements IGuiPanel {
                                 t.getTag()
                                     .getTextFormattingString()));
 
-                    if (openingTag.getTag() == FormattingTag.URL) {
-                        currUrlStart = textBuilder.length();
+                    if (openingTag.getTag() == FormattingTag.URL || openingTag.getTag() == FormattingTag.QUESTLINK) {
+                        currLinkStart = textBuilder.length();
                     }
 
                     continue;
@@ -161,11 +178,33 @@ public class PanelTextBox implements IGuiPanel {
                     if (!tags.isEmpty() && closingTag == tags.peek()
                         .getTag()) {
                         FormattingTag.TagInstance openingTag = tags.pop();
-                        if (closingTag == FormattingTag.URL && currUrlStart >= 0) {
+                        if (closingTag == FormattingTag.URL && currLinkStart >= 0) {
                             String url = openingTag.getParams()
-                                .getOrDefault("link", textBuilder.substring(currUrlStart));
-                            urlRanges.add(new UrlRange(currUrlStart, textBuilder.length(), url));
-                            currUrlStart = -1;
+                                .getOrDefault("link", textBuilder.substring(currLinkStart));
+                            linkRanges.add(new linkRange(currLinkStart, textBuilder.length(), url));
+                            currLinkStart = -1;
+                        } else if (closingTag == FormattingTag.QUESTLINK && currLinkStart >= 0) {
+                            String linkText = textBuilder.substring(currLinkStart);
+                            String[] questNameID = linkText.split(" ", 2);
+
+                            String displayText;
+                            UUID questUUID;
+                            try {
+                                questUUID = UuidConverter.decodeUuid(questNameID[0]);
+
+                                displayText = linkText.contains(" ") ? questNameID[1]
+                                    : QuestTranslation
+                                        .translateQuestName(questUUID, QuestDatabase.INSTANCE.get(questUUID));
+                                linkRanges
+                                    .add(new linkRange(currLinkStart, currLinkStart + displayText.length(), questUUID));
+
+                            } catch (Exception e) {
+                                displayText = "§4§lQuest Not Found§4§l";
+                            }
+
+                            textBuilder.replace(currLinkStart, textBuilder.length(), displayText);
+
+                            currLinkStart = -1;
                         }
 
                         // Reset the formatting, then reapply all active tags
@@ -216,6 +255,43 @@ public class PanelTextBox implements IGuiPanel {
         return this;
     }
 
+    public void setGUI(GuiQuest questGUI) {
+        this.questGUI = questGUI;
+    }
+
+    public static synchronized void registerTextProcessor(ResourceLocation id, Function<String, String> textProcessor) {
+        Objects.requireNonNull(id, "id");
+        Objects.requireNonNull(textProcessor, "textProcessor");
+        if (textProcessors.containsKey(id)) throw new IllegalArgumentException("duplicate text processor");
+        textProcessors.put(id, textProcessor);
+    }
+
+    public static synchronized void registerTextInteraction(ResourceLocation id, TextInteraction textInteraction) {
+        Objects.requireNonNull(id, "id");
+        Objects.requireNonNull(textInteraction, "textInteraction");
+        if (textInteractions.containsKey(id)) throw new IllegalArgumentException("duplicate text interaction");
+        textInteractions.put(id, textInteraction);
+    }
+
+    public static String createInteractiveText(ResourceLocation interactionId, String target, String text) {
+        Objects.requireNonNull(interactionId, "interactionId");
+        Objects.requireNonNull(target, "target");
+        Objects.requireNonNull(text, "text");
+        String payload = interactionId + "\u0000" + target;
+        String encodedPayload = Base64.getUrlEncoder()
+            .withoutPadding()
+            .encodeToString(payload.getBytes(StandardCharsets.UTF_8));
+        return "[url link=" + INTERACTION_SCHEME + ":" + encodedPayload + "]" + text + "[/url]";
+    }
+
+    private static synchronized String processText(String text) {
+        String processedText = text;
+        for (Function<String, String> textProcessor : textProcessors.values()) {
+            processedText = Objects.requireNonNull(textProcessor.apply(processedText), "text processor result");
+        }
+        return processedText;
+    }
+
     private void bakeHotZones(List<String> lines) {
         hotZones.clear();
         if (!isHyperlinkAware()) return; // not enabled
@@ -230,8 +306,8 @@ public class PanelTextBox implements IGuiPanel {
                 fr);
         }
 
-        for (UrlRange urlRange : urlRanges) {
-            String url = urlRange.url;
+        for (linkRange urlRange : linkRanges) {
+            Object url = urlRange.link;
             int start = urlRange.start;
             int end = urlRange.end;
 
@@ -393,24 +469,25 @@ public class PanelTextBox implements IGuiPanel {
         int mxt = mx + getTransform().getX(), myt = my + getTransform().getY();
         for (HotZone hotZone : hotZones) {
             if (hotZone.location.contains(mxt, myt)) {
-                URI uri;
-                try {
-                    URI tmp;
-                    tmp = new URI(hotZone.url);
-                    if (tmp.getScheme() == null) tmp = new URI(defaultUrlProtocol + "://" + hotZone.url);
-                    uri = tmp;
-                } catch (URISyntaxException ex) {
-                    return false;
+                if (hotZone.link instanceof String) {
+                    URI uri = parseUri((String) hotZone.link);
+                    if (uri == null) return false;
+                    TextInteractionInvocation interaction = getTextInteraction(uri);
+                    if (interaction != null) return interaction.textInteraction.onClick(interaction.target);
+                    Predicate<URI> handler = URIHandlers.get(uri.getScheme());
+                    if (handler == null) return false;
+                    return handler.test(uri);
+                } else if (hotZone.link instanceof UUID && questGUI != null) {
+                    questGUI.navigateToQuest((UUID) hotZone.link);
+                    return true;
                 }
-                Predicate<URI> handler = URIHandlers.get(uri.getScheme());
-                if (handler == null) return false;
-                return handler.test(uri);
             }
         }
+
         return false;
     }
 
-    private static void openURL(URI p_146407_1_) {
+    public static void openURL(URI p_146407_1_) {
         try {
             Class<?> oclass = Class.forName("java.awt.Desktop");
             Object object = oclass.getMethod("getDesktop")
@@ -439,10 +516,70 @@ public class PanelTextBox implements IGuiPanel {
 
     @Override
     public List<String> getTooltip(int mx, int my) {
+        int mxt = mx + getTransform().getX(), myt = my + getTransform().getY();
+        for (HotZone hotZone : hotZones) {
+            if (hotZone.location.contains(mxt, myt)) {
+                if (!(hotZone.link instanceof String)) return null;
+                URI uri = parseUri((String) hotZone.link);
+                if (uri == null) return null;
+                TextInteractionInvocation interaction = getTextInteraction(uri);
+                if (interaction != null) return interaction.textInteraction.getTooltip(interaction.target);
+                List<String> tooltip = URIHandlers.getTooltip(uri);
+                if (tooltip != null && !tooltip.isEmpty()) return tooltip;
+            }
+        }
         return null;
     }
 
-    private static class GuiRectText implements IGuiRect {
+    public static URI parseUri(String url) {
+        try {
+            URI uri = new URI(url);
+            return uri.getScheme() != null ? uri : new URI(defaultUrlProtocol + "://" + url);
+        } catch (URISyntaxException ex) {
+            return null;
+        }
+    }
+
+    public static synchronized TextInteractionInvocation getTextInteraction(URI uri) {
+        if (!INTERACTION_SCHEME.equals(uri.getScheme())) return null;
+        String payload = uri.getRawSchemeSpecificPart();
+        if (payload == null || payload.isEmpty()) return null;
+        try {
+            String decodedPayload = new String(
+                Base64.getUrlDecoder()
+                    .decode(payload),
+                StandardCharsets.UTF_8);
+            int separatorIndex = decodedPayload.indexOf('\u0000');
+            if (separatorIndex <= 0) return null;
+            ResourceLocation id = new ResourceLocation(decodedPayload.substring(0, separatorIndex));
+            TextInteraction textInteraction = textInteractions.get(id);
+            return textInteraction != null
+                ? new TextInteractionInvocation(textInteraction, decodedPayload.substring(separatorIndex + 1))
+                : null;
+        } catch (IllegalArgumentException ex) {
+            return null;
+        }
+    }
+
+    public interface TextInteraction {
+
+        boolean onClick(String target);
+
+        List<String> getTooltip(String target);
+    }
+
+    public static class TextInteractionInvocation {
+
+        public final TextInteraction textInteraction;
+        public final String target;
+
+        public TextInteractionInvocation(TextInteraction textInteraction, String target) {
+            this.textInteraction = textInteraction;
+            this.target = target;
+        }
+    }
+
+    public static class GuiRectText implements IGuiRect {
 
         private final IGuiRect proxy;
         private final boolean useH;
@@ -511,27 +648,33 @@ public class PanelTextBox implements IGuiPanel {
         }
     }
 
-    private static class UrlRange {
+    public static class linkRange {
 
-        final int start;
-        final int end;
-        final String url;
+        public final int start;
+        public final int end;
+        public final Object link;
 
-        public UrlRange(int start, int end, String url) {
+        public linkRange(int start, int end, String link) {
             this.start = start;
             this.end = end;
-            this.url = url;
+            this.link = link;
+        }
+
+        public linkRange(int start, int end, UUID link) {
+            this.start = start;
+            this.end = end;
+            this.link = link;
         }
     }
 
-    private static class HotZone {
+    public static class HotZone {
 
-        final IGuiRect location;
-        final String url;
+        public final IGuiRect location;
+        public final Object link;
 
-        public HotZone(IGuiRect location, String url) {
+        public HotZone(IGuiRect location, Object link) {
             this.location = location;
-            this.url = url;
+            this.link = link;
         }
     }
 }
