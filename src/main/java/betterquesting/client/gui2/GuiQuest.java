@@ -207,8 +207,8 @@ public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeeds
 
         PanelButton copyButton = new PanelButton(new GuiTransform(GuiAlign.TOP_LEFT, 16, 10, 16, 16, 0), 8, "");
         copyButton.setIcon(PresetIcon.ICON_COPY.getTexture());
-        copyButton.setTooltip(
-            Collections.singletonList(QuestTranslation.translate("betterquesting.btn.copy_description")));
+        copyButton
+            .setTooltip(Collections.singletonList(QuestTranslation.translate("betterquesting.btn.copy_description")));
         cvBackground.addPanel(copyButton);
 
         int btnOffset = 34;
