@@ -487,7 +487,7 @@ public class PanelTextBox implements IGuiPanel {
         return false;
     }
 
-    private static void openURL(URI p_146407_1_) {
+    public static void openURL(URI p_146407_1_) {
         try {
             Class<?> oclass = Class.forName("java.awt.Desktop");
             Object object = oclass.getMethod("getDesktop")
@@ -531,7 +531,7 @@ public class PanelTextBox implements IGuiPanel {
         return null;
     }
 
-    private static URI parseUri(String url) {
+    public static URI parseUri(String url) {
         try {
             URI uri = new URI(url);
             return uri.getScheme() != null ? uri : new URI(defaultUrlProtocol + "://" + url);
@@ -540,7 +540,7 @@ public class PanelTextBox implements IGuiPanel {
         }
     }
 
-    private static synchronized TextInteractionInvocation getTextInteraction(URI uri) {
+    public static synchronized TextInteractionInvocation getTextInteraction(URI uri) {
         if (!INTERACTION_SCHEME.equals(uri.getScheme())) return null;
         String payload = uri.getRawSchemeSpecificPart();
         if (payload == null || payload.isEmpty()) return null;
@@ -568,18 +568,18 @@ public class PanelTextBox implements IGuiPanel {
         List<String> getTooltip(String target);
     }
 
-    private static class TextInteractionInvocation {
+    public static class TextInteractionInvocation {
 
-        private final TextInteraction textInteraction;
-        private final String target;
+        public final TextInteraction textInteraction;
+        public final String target;
 
-        private TextInteractionInvocation(TextInteraction textInteraction, String target) {
+        public TextInteractionInvocation(TextInteraction textInteraction, String target) {
             this.textInteraction = textInteraction;
             this.target = target;
         }
     }
 
-    private static class GuiRectText implements IGuiRect {
+    public static class GuiRectText implements IGuiRect {
 
         private final IGuiRect proxy;
         private final boolean useH;
@@ -648,11 +648,11 @@ public class PanelTextBox implements IGuiPanel {
         }
     }
 
-    private static class linkRange {
+    public static class linkRange {
 
-        final int start;
-        final int end;
-        final Object link;
+        public final int start;
+        public final int end;
+        public final Object link;
 
         public linkRange(int start, int end, String link) {
             this.start = start;
@@ -667,10 +667,10 @@ public class PanelTextBox implements IGuiPanel {
         }
     }
 
-    private static class HotZone {
+    public static class HotZone {
 
-        final IGuiRect location;
-        final Object link;
+        public final IGuiRect location;
+        public final Object link;
 
         public HotZone(IGuiRect location, Object link) {
             this.location = location;
