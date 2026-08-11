@@ -1,8 +1,10 @@
 package betterquesting.api2.client.gui.misc;
 
 import java.net.URI;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 import net.minecraft.client.Minecraft;
@@ -17,6 +19,7 @@ public class URIHandlers {
     private URIHandlers() {}
 
     private static final Map<String, Predicate<URI>> handlers = new ConcurrentHashMap<>();
+    private static final Map<String, Function<URI, List<String>>> tooltipHandlers = new ConcurrentHashMap<>();
 
     static {
         register("http", new HTTPHandler());
@@ -30,6 +33,16 @@ public class URIHandlers {
 
     public static Predicate<URI> get(String scheme) {
         return handlers.get(scheme);
+    }
+
+    public static synchronized void registerTooltip(String scheme, Function<URI, List<String>> tooltipHandler) {
+        if (tooltipHandlers.containsKey(scheme)) throw new IllegalArgumentException("duplicate tooltip handler");
+        tooltipHandlers.put(scheme, tooltipHandler);
+    }
+
+    public static List<String> getTooltip(URI uri) {
+        Function<URI, List<String>> tooltipHandler = tooltipHandlers.get(uri.getScheme());
+        return tooltipHandler != null ? tooltipHandler.apply(uri) : null;
     }
 
     private static class HTTPHandler implements Predicate<URI> {
