@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
+import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.ResourceLocation;
 
@@ -31,9 +32,11 @@ import org.lwjgl.opengl.GL11;
 
 import com.google.common.collect.ImmutableSet;
 
+import betterquesting.api.questing.IQuest;
 import betterquesting.api.storage.BQ_Settings;
 import betterquesting.api.utils.RenderUtils;
 import betterquesting.api.utils.UuidConverter;
+import betterquesting.api2.client.gui.context.QuestTooltipRegistry;
 import betterquesting.api2.client.gui.misc.GuiAlign;
 import betterquesting.api2.client.gui.misc.GuiTransform;
 import betterquesting.api2.client.gui.misc.IGuiRect;
@@ -63,8 +66,37 @@ public class PanelTextBox implements IGuiPanel {
     private static final String defaultUrlProtocol = "https";
     private static final Set<String> supportedUrlProtocol = ImmutableSet.of("http", "https");
     private static final String INTERACTION_SCHEME = "bqinteraction";
+    private static final int QUEST_DESCRIPTION_TOOLTIP_WIDTH = 180;
+    private static final int QUEST_DESCRIPTION_TOOLTIP_LINES = 2;
     private static final Map<ResourceLocation, Function<String, String>> textProcessors = new LinkedHashMap<>();
     private static final Map<ResourceLocation, TextInteraction> textInteractions = new LinkedHashMap<>();
+
+    static {
+        QuestTooltipRegistry.register((target, tooltip) -> {
+            if (!(target instanceof UUID questId)) return;
+
+            IQuest quest = QuestDatabase.INSTANCE.get(questId);
+            if (quest == null) return;
+
+            tooltip.add(QuestTranslation.translateQuestName(questId, quest));
+            String description = QuestTranslation.translateQuestDescription(questId, quest);
+            if (!StringUtils.isBlank(description)) {
+                FontRenderer fontRenderer = Minecraft.getMinecraft().fontRenderer;
+                List<String> descriptionLines = RenderUtils
+                    .splitString(description, QUEST_DESCRIPTION_TOOLTIP_WIDTH, fontRenderer);
+                int lineCount = Math.min(QUEST_DESCRIPTION_TOOLTIP_LINES, descriptionLines.size());
+                for (int i = 0; i < lineCount; i++) {
+                    tooltip.add(EnumChatFormatting.GRAY + descriptionLines.get(i));
+                }
+                if (descriptionLines.size() > QUEST_DESCRIPTION_TOOLTIP_LINES) {
+                    tooltip.add(EnumChatFormatting.GRAY + "...");
+                }
+            }
+            tooltip
+                .add(EnumChatFormatting.GRAY + QuestTranslation.translate("betterquesting.tooltip.quest_link.click"));
+        });
+    }
+
     private final GuiRectText transform;
     private final List<linkRange> linkRanges = new ArrayList<>();
     private final List<HotZone> hotZones = new ArrayList<>();
@@ -188,21 +220,27 @@ public class PanelTextBox implements IGuiPanel {
                             String[] questNameID = linkText.split(" ", 2);
 
                             String displayText;
-                            UUID questUUID;
+                            UUID questUUID = null;
                             try {
                                 questUUID = UuidConverter.decodeUuid(questNameID[0]);
 
                                 displayText = linkText.contains(" ") ? questNameID[1]
                                     : QuestTranslation
                                         .translateQuestName(questUUID, QuestDatabase.INSTANCE.get(questUUID));
-                                linkRanges
-                                    .add(new linkRange(currLinkStart, currLinkStart + displayText.length(), questUUID));
 
                             } catch (Exception e) {
                                 displayText = "§4§lQuest Not Found§4§l";
                             }
 
-                            textBuilder.replace(currLinkStart, textBuilder.length(), displayText);
+                            String formattedDisplayText = applyQuestLinkUnderline(displayText);
+                            if (questUUID != null) {
+                                linkRanges.add(
+                                    new linkRange(
+                                        currLinkStart,
+                                        currLinkStart + formattedDisplayText.length(),
+                                        questUUID));
+                            }
+                            textBuilder.replace(currLinkStart, textBuilder.length(), formattedDisplayText);
 
                             currLinkStart = -1;
                         }
@@ -290,6 +328,34 @@ public class PanelTextBox implements IGuiPanel {
             processedText = Objects.requireNonNull(textProcessor.apply(processedText), "text processor result");
         }
         return processedText;
+    }
+
+    private static String applyQuestLinkUnderline(String text) {
+        String underline = FormattingTag.QUESTLINK.getTextFormattingString();
+        StringBuilder formattedText = new StringBuilder(text.length() + underline.length());
+        formattedText.append(underline);
+
+        for (int i = 0; i < text.length(); i++) {
+            char character = text.charAt(i);
+            formattedText.append(character);
+            if (character == '\u00a7' && i + 1 < text.length()) {
+                char formattingCode = text.charAt(++i);
+                formattedText.append(formattingCode);
+                if (resetsTextFormatting(formattingCode)) {
+                    formattedText.append(underline);
+                }
+            }
+        }
+
+        return formattedText.toString();
+    }
+
+    private static boolean resetsTextFormatting(char formattingCode) {
+        return formattingCode == 'r' || (formattingCode >= '0' && formattingCode <= '9')
+            || (formattingCode >= 'a' && formattingCode <= 'f')
+            || formattingCode == 'x'
+            || formattingCode == 'g'
+            || formattingCode == 'q';
     }
 
     private void bakeHotZones(List<String> lines) {
@@ -519,6 +585,9 @@ public class PanelTextBox implements IGuiPanel {
         int mxt = mx + getTransform().getX(), myt = my + getTransform().getY();
         for (HotZone hotZone : hotZones) {
             if (hotZone.location.contains(mxt, myt)) {
+                List<String> descriptionTooltip = new ArrayList<>();
+                QuestTooltipRegistry.appendTooltip(hotZone.link, descriptionTooltip);
+                if (!descriptionTooltip.isEmpty()) return descriptionTooltip;
                 if (!(hotZone.link instanceof String)) return null;
                 URI uri = parseUri((String) hotZone.link);
                 if (uri == null) return null;

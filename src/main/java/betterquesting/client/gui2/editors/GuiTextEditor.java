@@ -110,6 +110,15 @@ public class GuiTextEditor extends GuiScreenCanvas implements IPEventListener, I
         flText.enableWrapping(true);
         flText.lockFocus(true);
 
+        PanelVScrollBar scTextScroll = new PanelVScrollBar(
+            new GuiTransform(GuiAlign.RIGHT_EDGE, new GuiPadding(0, 0, -8, 0), 0));
+        cvBackground.addPanel(scTextScroll);
+        scTextScroll.getTransform()
+            .setParent(flText.getTransform());
+        flText.setScrollDriverY(scTextScroll);
+        scTextScroll.setActive(flText.hasVerticalScroll());
+        flText.setCallback(value -> scTextScroll.setActive(flText.hasVerticalScroll()));
+
         CanvasScrolling cvFormatList = new CanvasScrolling(
             new GuiTransform(GuiAlign.LEFT_EDGE, new GuiPadding(16, 32, -116, 32), 0));
         cvBackground.addPanel(cvFormatList);
