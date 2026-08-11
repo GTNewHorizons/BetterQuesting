@@ -27,6 +27,9 @@ public class TextEditorActionRegistry {
             new ResourceLocation("betterquesting:quest_title"),
             new TextEditorMacro("betterquesting.editor.macro.quest_title", "[quest]", "[/quest]"));
         register(
+            new ResourceLocation("betterquesting:quest_link"),
+            new TextEditorMacro("betterquesting.editor.macro.quest_link", "[questlink]", "[/questlink]"));
+        register(
             new ResourceLocation("betterquesting:hex_color"),
             new TextEditorAction(
                 "betterquesting.editor.action.hex_color",

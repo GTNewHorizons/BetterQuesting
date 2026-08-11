@@ -129,7 +129,6 @@ public class GuiTextEditor extends GuiScreenCanvas implements IPEventListener, I
         for (TextEditorAction action : TextEditorActionRegistry.getAll()) {
             cvFormatList.addPanel(createActionButton(macroCount++, action));
         }
-
         for (int i = 0; i < tfValues.length; i++) {
             cvFormatList.addPanel(
                 new PanelButtonStorage<>(

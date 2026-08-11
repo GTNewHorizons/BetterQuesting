@@ -27,6 +27,7 @@ betterquesting.editor.macro.hyperlink=§9§n超链接§r
 betterquesting.editor.macro.warning=§4§l警告§r
 betterquesting.editor.macro.note=§3提示§r
 betterquesting.editor.macro.quest_title=§2§n任务标题§r
+betterquesting.editor.macro.quest_link=任务链接
 betterquesting.editor.action.hex_color=§c十六进制颜色§r
 betterquesting.editor.action.rainbow=§q彩虹§r
 betterquesting.editor.action.wave=§6波浪§r
