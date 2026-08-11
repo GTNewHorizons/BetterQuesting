@@ -410,7 +410,7 @@ public class PanelTextField<T> implements IGuiPanel {
             return false;
         }
 
-        if (keyCode != 200 && keyCode != 208) {
+        if (keyCode != 200 && keyCode != 208) { // Up and down arrows
             preferredCursorX = -1;
         }
 
@@ -552,7 +552,7 @@ public class PanelTextField<T> implements IGuiPanel {
 
     private static boolean isKeyComboCtrl() {
         return GuiScreen.isCtrlKeyDown() && !GuiScreen.isShiftKeyDown()
-            && !(Keyboard.isKeyDown(56) || Keyboard.isKeyDown(184));
+            && !(Keyboard.isKeyDown(56) || Keyboard.isKeyDown(184)); // Left or right Alt
     }
 
     private List<String> getVisualLines(FontRenderer font) {
