@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 
 import org.lwjgl.opengl.GL11;
@@ -377,7 +378,7 @@ public class QuestRecipeHandler extends TemplateRecipeHandler {
                     int x = xOffset + (index % GRID_X_COUNT) * SLOT_SIZE;
                     int y = yOffset + (index / GRID_Y_COUNT) * SLOT_SIZE;
                     if (reward instanceof RewardChoice) {
-                        inputs.add(
+                        outputs.add(
                             new CustomPositionedStack(
                                 extractStacks(stack),
                                 x,
@@ -385,10 +386,15 @@ public class QuestRecipeHandler extends TemplateRecipeHandler {
                                 DARK_GRAY.toString() + ITALIC
                                     + QuestTranslation.translate("bq_standard.reward.choice")));
                     } else {
-                        inputs.add(new PositionedStack(extractStacks(stack), x, y));
+                        outputs.add(new PositionedStack(extractStacks(stack), x, y));
                     }
                     index++;
                 }
+            }
+            if (index == 0) {
+                ItemStack paper = new ItemStack(Items.paper);
+                paper.setStackDisplayName(questName);
+                outputs.add(new PositionedStack(paper, xOffset, yOffset));
             }
         }
 
