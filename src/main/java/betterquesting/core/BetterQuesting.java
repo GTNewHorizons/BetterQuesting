@@ -100,7 +100,7 @@ public class BetterQuesting {
         GameRegistry.registerItem(ItemPlaceholder.placeholder, "placeholder");
         GameRegistry.registerItem(extraLife, "extra_life");
         GameRegistry.registerItem(guideBook, "guide_book");
-        GameRegistry.registerItem(patternPlaceholder, "fake_pattern");
+        GameRegistry.registerItem(patternPlaceholder, "pattern_placeholder");
 
         GameRegistry.registerBlock(submitStation, "submit_station");
 
