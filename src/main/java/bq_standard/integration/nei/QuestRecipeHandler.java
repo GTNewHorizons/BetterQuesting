@@ -371,6 +371,12 @@ public class QuestRecipeHandler extends TemplateRecipeHandler {
         private void loadRewards(IQuest quest) {
             int xOffset = 93, yOffset = 29;
             int index = 0;
+
+            // Add Fake Pattern to every quest. (NEI Only)
+            ItemStack pattern = new ItemStack(BetterQuesting.fakePattern);
+            pattern.setStackDisplayName(questName);
+            outputs.add(new PositionedStack(pattern, xOffset, yOffset));
+            index++;
             for (IReward reward : getRewards(quest)) {
                 for (BigItemStack stack : getRewardItemOutputs(reward)) {
                     if (index >= GRID_COUNT) break;
@@ -389,11 +395,6 @@ public class QuestRecipeHandler extends TemplateRecipeHandler {
                     }
                     index++;
                 }
-            }
-            if (index == 0) {
-                ItemStack pattern = new ItemStack(BetterQuesting.fakePattern);
-                pattern.setStackDisplayName(questName);
-                outputs.add(new PositionedStack(pattern, xOffset, yOffset));
             }
         }
 
