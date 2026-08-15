@@ -22,8 +22,8 @@ import betterquesting.client.CreativeTabQuesting;
 import betterquesting.core.proxies.CommonProxy;
 import betterquesting.handlers.ConfigHandler;
 import betterquesting.items.ItemExtraLife;
-import betterquesting.items.ItemFakePattern;
 import betterquesting.items.ItemGuideBook;
+import betterquesting.items.ItemPatternPlaceholder;
 import betterquesting.network.PacketQuesting;
 import betterquesting.network.PacketTypeRegistry;
 import cpw.mods.fml.common.Loader;
@@ -69,7 +69,7 @@ public class BetterQuesting {
 
     public static Item extraLife = new ItemExtraLife();
     public static Item guideBook = new ItemGuideBook();
-    public static Item fakePattern = new ItemFakePattern();
+    public static Item patternPlaceholder = new ItemPatternPlaceholder();
 
     public static Block submitStation = new BlockSubmitStation();
     public static Block observationStation = new BlockObservationStation();
@@ -100,7 +100,7 @@ public class BetterQuesting {
         GameRegistry.registerItem(ItemPlaceholder.placeholder, "placeholder");
         GameRegistry.registerItem(extraLife, "extra_life");
         GameRegistry.registerItem(guideBook, "guide_book");
-        GameRegistry.registerItem(fakePattern, "fake_pattern");
+        GameRegistry.registerItem(patternPlaceholder, "fake_pattern");
 
         GameRegistry.registerBlock(submitStation, "submit_station");
 

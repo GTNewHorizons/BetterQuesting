@@ -372,8 +372,8 @@ public class QuestRecipeHandler extends TemplateRecipeHandler {
             int xOffset = 93, yOffset = 29;
             int index = 0;
 
-            // Add Fake Pattern to every quest. (NEI Only)
-            ItemStack pattern = new ItemStack(BetterQuesting.fakePattern);
+            // Add Pattern Placeholder to every quest. (NEI Only)
+            ItemStack pattern = new ItemStack(BetterQuesting.patternPlaceholder);
             pattern.setStackDisplayName(questName);
             outputs.add(new PositionedStack(pattern, xOffset, yOffset));
             index++;
