@@ -392,9 +392,9 @@ public class QuestRecipeHandler extends TemplateRecipeHandler {
                 }
             }
             if (index == 0) {
-                ItemStack paper = new ItemStack(Items.paper);
-                paper.setStackDisplayName(questName);
-                outputs.add(new PositionedStack(paper, xOffset, yOffset));
+                ItemStack pattern = new ItemStack(BetterQuesting.fakePattern);
+                pattern.setStackDisplayName(questName);
+                outputs.add(new PositionedStack(pattern, xOffset, yOffset));
             }
         }
 
