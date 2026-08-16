@@ -22,7 +22,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
 
 import org.lwjgl.opengl.GL11;
 
@@ -238,12 +237,17 @@ public class QuestRecipeHandler extends TemplateRecipeHandler {
     /** Reads the quest UUID stored in a pattern placeholder stack's NBT, or {@code null} if not one. */
     private static UUID getPatternQuestID(ItemStack stack) {
 
-        if (stack == null || stack.getItem() != BetterQuesting.patternPlaceholder || !stack.hasTagCompound() || !stack.getTagCompound().hasKey(NBT_QUEST_ID)) {
+        if (stack == null || stack.getItem() != BetterQuesting.patternPlaceholder
+            || !stack.hasTagCompound()
+            || !stack.getTagCompound()
+                .hasKey(NBT_QUEST_ID)) {
             return null;
         }
 
         try {
-            return UUID.fromString(stack.getTagCompound().getString(NBT_QUEST_ID));
+            return UUID.fromString(
+                stack.getTagCompound()
+                    .getString(NBT_QUEST_ID));
         } catch (IllegalArgumentException e) {
             return null;
         }
