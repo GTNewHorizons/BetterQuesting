@@ -49,6 +49,7 @@ import betterquesting.api.utils.JsonHelper;
 import betterquesting.api.utils.NBTConverter;
 import betterquesting.api.utils.UuidConverter;
 import betterquesting.api2.utils.QuestTranslation;
+import betterquesting.api2.utils.TextFormattingUtils;
 import betterquesting.commands.QuestCommandBase;
 import betterquesting.core.BetterQuesting;
 import betterquesting.handlers.SaveLoadHandler;
@@ -661,6 +662,6 @@ public class QuestCommandDefaults extends QuestCommandBase {
     }
 
     private static String removeChatFormatting(String string) {
-        return string.replaceAll("§[0-9a-fk-orxgqzv]", "");
+        return TextFormattingUtils.stripFormatting(string);
     }
 }
