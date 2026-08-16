@@ -22,6 +22,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
 
 import org.lwjgl.opengl.GL11;
 
@@ -68,6 +69,7 @@ public class QuestRecipeHandler extends TemplateRecipeHandler {
     private static final int GRID_COUNT = GRID_X_COUNT * GRID_Y_COUNT;
     private static final int GUI_WIDTH = 166;
     private static final int LINE_SPACE = GuiDraw.fontRenderer.FONT_HEIGHT + 1;
+    private static final String NBT_QUEST_ID = "BQ_QuestID";
 
     private Stopwatch stopwatch;
     private int textColor;
@@ -88,7 +90,7 @@ public class QuestRecipeHandler extends TemplateRecipeHandler {
                     && getRewardItemOutputs(getRewards(entry.getValue())).isEmpty()) {
                     continue;
                 }
-                this.arecipes.add(new CachedQuestRecipe(entry));
+                this.arecipes.add(new CachedQuestRecipe(entry.getKey(), entry.getValue()));
             }
             if (debug) {
                 BQ_Standard.logger
@@ -103,14 +105,22 @@ public class QuestRecipeHandler extends TemplateRecipeHandler {
     public void loadCraftingRecipes(ItemStack result) {
         if (debug) stopwatch = Stopwatch.createStarted();
         setTextColors();
-        for (Map.Entry<UUID, IQuest> entry : getVisibleQuests().entrySet()) {
-            for (BigItemStack compareTo : getRewardItemOutputs(getRewards(entry.getValue()))) {
-                if (matchStack(result, compareTo)) {
-                    this.arecipes.add(new CachedQuestRecipe(entry));
-                    break;
+
+        UUID patternQuestID = getPatternQuestID(result);
+        if (patternQuestID != null) {
+            IQuest quest = getVisibleQuest(patternQuestID);
+            if (quest != null) this.arecipes.add(new CachedQuestRecipe(patternQuestID, quest));
+        } else {
+            for (Map.Entry<UUID, IQuest> entry : getVisibleQuests().entrySet()) {
+                for (BigItemStack compareTo : getRewardItemOutputs(getRewards(entry.getValue()))) {
+                    if (matchStack(result, compareTo)) {
+                        this.arecipes.add(new CachedQuestRecipe(entry.getKey(), entry.getValue()));
+                        break;
+                    }
                 }
             }
         }
+
         if (debug) {
             BQ_Standard.logger.debug(String.format("took %s: loadCraftingRecipes(ItemStack)", stopwatch.stop()));
         }
@@ -123,7 +133,7 @@ public class QuestRecipeHandler extends TemplateRecipeHandler {
         for (Map.Entry<UUID, IQuest> entry : getVisibleQuests().entrySet()) {
             for (BigItemStack compareTo : getTaskItemInputs(getTasks(entry.getValue()))) {
                 if (matchStack(ingredient, compareTo)) {
-                    this.arecipes.add(new CachedQuestRecipe(entry));
+                    this.arecipes.add(new CachedQuestRecipe(entry.getKey(), entry.getValue()));
                     break;
                 }
             }
@@ -172,17 +182,6 @@ public class QuestRecipeHandler extends TemplateRecipeHandler {
     }
 
     @Override
-    public List<String> handleItemTooltip(GuiRecipe<?> gui, ItemStack stack, List<String> currenttip, int recipeIndex) {
-        CachedQuestRecipe recipe = (CachedQuestRecipe) this.arecipes.get(recipeIndex);
-        for (PositionedStack pStack : recipe.inputs) {
-            if (stack == pStack.item && pStack instanceof CustomPositionedStack) {
-                currenttip.addAll(((CustomPositionedStack) pStack).getTooltips());
-            }
-        }
-        return currenttip;
-    }
-
-    @Override
     public boolean mouseClicked(GuiRecipe<?> gui, int button, int recipeIndex) {
         if (super.mouseClicked(gui, button, recipeIndex)) return true;
 
@@ -227,6 +226,27 @@ public class QuestRecipeHandler extends TemplateRecipeHandler {
         EntityPlayer player = Minecraft.getMinecraft().thePlayer;
         return QuestDatabase.INSTANCE
             .filterEntries((id, quest) -> QuestCache.isQuestShown(quest, QuestingAPI.getQuestingUUID(player), player));
+    }
+
+    private static IQuest getVisibleQuest(UUID id) {
+        IQuest quest = QuestDatabase.INSTANCE.get(id);
+        if (quest == null) return null;
+        EntityPlayer player = Minecraft.getMinecraft().thePlayer;
+        return QuestCache.isQuestShown(quest, QuestingAPI.getQuestingUUID(player), player) ? quest : null;
+    }
+
+    /** Reads the quest UUID stored in a pattern placeholder stack's NBT, or {@code null} if not one. */
+    private static UUID getPatternQuestID(ItemStack stack) {
+
+        if (stack == null || stack.getItem() != BetterQuesting.patternPlaceholder || !stack.hasTagCompound() || !stack.getTagCompound().hasKey(NBT_QUEST_ID)) {
+            return null;
+        }
+
+        try {
+            return UUID.fromString(stack.getTagCompound().getString(NBT_QUEST_ID));
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     private static List<ITask> getTasks(IQuest quest) {
@@ -335,13 +355,14 @@ public class QuestRecipeHandler extends TemplateRecipeHandler {
         private final List<PositionedStack> outputs = new ArrayList<>();
         private final String questName;
         private final UUID questID;
+        private PositionedStack result;
 
-        private CachedQuestRecipe(Map.Entry<UUID, IQuest> entry) {
-            this.questName = QuestTranslation.translateQuestName(entry);
-            this.questID = entry.getKey();
+        private CachedQuestRecipe(UUID questID, IQuest quest) {
+            this.questName = QuestTranslation.translateQuestName(questID, quest);
+            this.questID = questID;
 
-            loadTasks(entry.getValue());
-            loadRewards(entry.getValue());
+            loadTasks(quest);
+            loadRewards(quest);
         }
 
         private void loadTasks(IQuest quest) {
@@ -353,13 +374,12 @@ public class QuestRecipeHandler extends TemplateRecipeHandler {
                     int x = xOffset + (index % GRID_X_COUNT) * SLOT_SIZE;
                     int y = yOffset + (index / GRID_Y_COUNT) * SLOT_SIZE;
                     if (task instanceof TaskOptionalRetrieval) {
-                        inputs.add(
-                            new CustomPositionedStack(
-                                extractStacks(stack),
-                                x,
-                                y,
+                        PositionedStack pStack = new PositionedStack(extractStacks(stack), x, y);
+                        pStack.setTooltip(
+                            Collections.singletonList(
                                 DARK_GRAY.toString() + ITALIC
                                     + QuestTranslation.translate("bq_standard.task.optional_retrieval")));
+                        inputs.add(pStack);
                     } else {
                         inputs.add(new PositionedStack(extractStacks(stack), x, y));
                     }
@@ -375,23 +395,25 @@ public class QuestRecipeHandler extends TemplateRecipeHandler {
             // Add Pattern Placeholder to every quest. (NEI Only)
             ItemStack pattern = new ItemStack(BetterQuesting.patternPlaceholder);
             pattern.setStackDisplayName(questName);
-            outputs.add(new PositionedStack(pattern, xOffset, yOffset));
+            pattern.getTagCompound()
+                .setString(NBT_QUEST_ID, questID.toString());
+            result = new PositionedStack(pattern, xOffset, yOffset, false);
             index++;
+
             for (IReward reward : getRewards(quest)) {
                 for (BigItemStack stack : getRewardItemOutputs(reward)) {
                     if (index >= GRID_COUNT) break;
                     int x = xOffset + (index % GRID_X_COUNT) * SLOT_SIZE;
                     int y = yOffset + (index / GRID_Y_COUNT) * SLOT_SIZE;
                     if (reward instanceof RewardChoice) {
-                        outputs.add(
-                            new CustomPositionedStack(
-                                extractStacks(stack),
-                                x,
-                                y,
+                        PositionedStack pStack = new PositionedStack(extractStacks(stack), x, y, false);
+                        pStack.setTooltip(
+                            Collections.singletonList(
                                 DARK_GRAY.toString() + ITALIC
                                     + QuestTranslation.translate("bq_standard.reward.choice")));
+                        outputs.add(pStack);
                     } else {
-                        outputs.add(new PositionedStack(extractStacks(stack), x, y));
+                        outputs.add(new PositionedStack(extractStacks(stack), x, y, false));
                     }
                     index++;
                 }
@@ -400,12 +422,12 @@ public class QuestRecipeHandler extends TemplateRecipeHandler {
 
         @Override
         public List<PositionedStack> getIngredients() {
-            return getCycledIngredients(cycleticks / 20, inputs);
+            return inputs;
         }
 
         @Override
         public PositionedStack getResult() {
-            return null;
+            return result;
         }
 
         @Override
