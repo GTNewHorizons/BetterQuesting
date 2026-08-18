@@ -43,6 +43,8 @@ import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.placeholders.ItemPlaceholder;
 import betterquesting.api.placeholders.PlaceholderConverter;
 import betterquesting.api2.utils.BQThreadedIO;
+import betterquesting.integration.MaterialLibStacks;
+import cpw.mods.fml.common.Loader;
 
 /**
  * Used to read JSON data with pre-made checks for null entries and casting.
@@ -54,6 +56,8 @@ public class JsonHelper {
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting()
         .create();
+
+    private static final String ML_ID_PREFIX = "ml:";
 
     public static JsonArray GetArray(JsonObject json, String id) {
         if (json == null) {
@@ -362,11 +366,22 @@ public class JsonHelper {
 
     /**
      * Converts a JsonObject to an ItemStack. May return a placeholder if the correct mods are not installed</br>
-     * This should be the standard way to load items into quests in order to retain all potential data
+     * This should be the standard way to load items into quests in order to retain all potential data</br>
+     * An id of the form <code>ml:&lt;Material&gt;:&lt;shape&gt;</code> is resolved through MaterialLib, which supplies
+     * the metadata in place of the stored Damage
      */
     @Nullable
     public static BigItemStack JsonToItemStack(@Nonnull NBTTagCompound nbt) {
         String idName = nbt.hasKey("id", 99) ? "" + nbt.getShort("id") : nbt.getString("id");
+        if (idName.startsWith(ML_ID_PREFIX)) {
+            if (Loader.isModLoaded("materiallib")) {
+                BigItemStack mlStack = MaterialLibStacks.resolve(idName, nbt);
+                if (mlStack != null) return mlStack;
+            } else {
+                QuestingAPI.getLogger()
+                    .warn("Cannot resolve item id \"{}\": MaterialLib is not installed", idName);
+            }
+        }
         Item preCheck = nbt.hasKey("id", 99) ? Item.getItemById(nbt.getShort("id"))
             : (Item) Item.itemRegistry.getObject(idName);
         if (preCheck == null && nbt.hasKey("id", 8)) {
