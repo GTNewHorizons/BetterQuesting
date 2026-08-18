@@ -4,6 +4,7 @@ dependencies {
     compileOnly("org.jetbrains:annotations:26.0.2-1")
     compileOnly 'com.github.GTNewHorizons:DuraDisplay:1.4.2:dev'
     compileOnly 'com.cubefury.vendingmachine:VendingMachine:0.4.1:dev'
+    compileOnly 'com.ruling_0:MaterialLib:0.9.0-mu:dev'
 
     implementation 'com.github.GTNewHorizons:NotEnoughItems:2.8.103-GTNH:dev'
     compileOnly 'com.github.GTNewHorizons:GTNHLib:0.11.16:dev'
