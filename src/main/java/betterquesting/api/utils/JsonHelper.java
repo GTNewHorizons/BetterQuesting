@@ -367,8 +367,7 @@ public class JsonHelper {
     /**
      * Converts a JsonObject to an ItemStack. May return a placeholder if the correct mods are not installed</br>
      * This should be the standard way to load items into quests in order to retain all potential data</br>
-     * An id of the form <code>ml:&lt;Material&gt;:&lt;shape&gt;</code> is resolved through MaterialLib, which supplies
-     * the metadata in place of the stored Damage
+     * An id of the form <code>ml:&lt;Material&gt;:&lt;shape&gt;</code> is resolved through {@link MaterialLibStacks}
      */
     @Nullable
     public static BigItemStack JsonToItemStack(@Nonnull NBTTagCompound nbt) {

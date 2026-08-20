@@ -16,13 +16,13 @@ import betterquesting.api.utils.BigItemStack;
 /// metadata.
 ///
 /// This is the only class holding MaterialLib types, so the rest of BetterQuesting loads without MaterialLib
-/// installed. Every caller checks `Loader.isModLoaded("materiallib")` before naming it.
+/// installed. Reference it only when `Loader.isModLoaded("materiallib")` passes.
 public final class MaterialLibStacks {
 
     private MaterialLibStacks() {}
 
-    /// The stack the id names, keeping `nbt`'s Count, OreDict and tag, or null when the id is malformed or names
-    /// nothing MaterialLib registers. The resolved metadata replaces the one stored alongside the id.
+    /// Returns the stack the id names, keeping `nbt`'s Count, OreDict and tag and replacing its id and Damage.
+    /// Returns null when the id is malformed or names nothing MaterialLib registers.
     @Nullable
     public static BigItemStack resolve(String idName, NBTTagCompound nbt) {
         String[] parts = idName.split(":");
