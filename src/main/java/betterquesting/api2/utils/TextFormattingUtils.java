@@ -14,7 +14,10 @@ public final class TextFormattingUtils {
         int len = text.length();
         for (int i = 0; i < len; i++) {
             char ch = text.charAt(i);
-            if (ch == '&' && i + 1 < len) {
+            if (ch == '\\' && i + 1 < len && text.charAt(i + 1) == '&') {
+                sb.append('&');
+                i += 1;
+            } else if (ch == '&' && i + 1 < len) {
                 char next = text.charAt(i + 1);
                 char nextL = Character.toLowerCase(next);
                 // &g&#RRGGBB&#RRGGBB (18 chars)
@@ -41,6 +44,7 @@ public final class TextFormattingUtils {
                     || nextL == 'q'
                     || nextL == 'z'
                     || nextL == 'v'
+                    || nextL == 'u'
                     || nextL == 'g') {
                     i += 1;
                     continue;
@@ -70,6 +74,7 @@ public final class TextFormattingUtils {
                     || nextL == 'q'
                     || nextL == 'z'
                     || nextL == 'v'
+                    || nextL == 'u'
                     || nextL == 'g') {
                     i += 1;
                     continue;
