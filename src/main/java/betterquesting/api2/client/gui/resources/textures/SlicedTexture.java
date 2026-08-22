@@ -12,6 +12,7 @@ import betterquesting.api.utils.JsonHelper;
 import betterquesting.api2.client.gui.misc.GuiPadding;
 import betterquesting.api2.client.gui.misc.GuiRectangle;
 import betterquesting.api2.client.gui.misc.IGuiRect;
+import betterquesting.api2.client.gui.misc.TexturedModalRectRenderer;
 import betterquesting.api2.client.gui.resources.colors.GuiColorStatic;
 import betterquesting.api2.client.gui.resources.colors.IGuiColor;
 import cpw.mods.fml.client.config.GuiUtils;
@@ -293,19 +294,15 @@ public class SlicedTexture implements IGuiTexture {
         int remainderHeight = canvasHeight % fillerHeight;
 
         // Draw Border
+        TexturedModalRectRenderer textureRenderer = new TexturedModalRectRenderer();
+
         // Top Left
-        GuiUtils.drawTexturedModalRect(x, y, u, v, leftBorder, topBorder, zLevel);
+        textureRenderer.addQuad(x, y, u, v, leftBorder, topBorder, zLevel);
         // Top Right
-        GuiUtils.drawTexturedModalRect(
-            x + leftBorder + canvasWidth,
-            y,
-            u + leftBorder + fillerWidth,
-            v,
-            rightBorder,
-            topBorder,
-            zLevel);
+        textureRenderer
+            .addQuad(x + leftBorder + canvasWidth, y, u + leftBorder + fillerWidth, v, rightBorder, topBorder, zLevel);
         // Bottom Left
-        GuiUtils.drawTexturedModalRect(
+        textureRenderer.addQuad(
             x,
             y + topBorder + canvasHeight,
             u,
@@ -314,7 +311,7 @@ public class SlicedTexture implements IGuiTexture {
             bottomBorder,
             zLevel);
         // Bottom Right
-        GuiUtils.drawTexturedModalRect(
+        textureRenderer.addQuad(
             x + leftBorder + canvasWidth,
             y + topBorder + canvasHeight,
             u + leftBorder + fillerWidth,
@@ -325,7 +322,7 @@ public class SlicedTexture implements IGuiTexture {
 
         for (int i = 0; i < xPasses + (remainderWidth > 0 ? 1 : 0); i++) {
             // Top Border
-            GuiUtils.drawTexturedModalRect(
+            textureRenderer.addQuad(
                 x + leftBorder + (i * fillerWidth),
                 y,
                 u + leftBorder,
@@ -334,7 +331,7 @@ public class SlicedTexture implements IGuiTexture {
                 topBorder,
                 zLevel);
             // Bottom Border
-            GuiUtils.drawTexturedModalRect(
+            textureRenderer.addQuad(
                 x + leftBorder + (i * fillerWidth),
                 y + topBorder + canvasHeight,
                 u + leftBorder,
@@ -344,7 +341,7 @@ public class SlicedTexture implements IGuiTexture {
                 zLevel);
 
             // Throw in some filler for good measure
-            for (int j = 0; j < yPasses + (remainderHeight > 0 ? 1 : 0); j++) GuiUtils.drawTexturedModalRect(
+            for (int j = 0; j < yPasses + (remainderHeight > 0 ? 1 : 0); j++) textureRenderer.addQuad(
                 x + leftBorder + (i * fillerWidth),
                 y + topBorder + (j * fillerHeight),
                 u + leftBorder,
@@ -353,6 +350,8 @@ public class SlicedTexture implements IGuiTexture {
                 (j == yPasses ? remainderHeight : fillerHeight),
                 zLevel);
         }
+
+        textureRenderer.draw();
 
         // Side Borders
         for (int j = 0; j < yPasses + (remainderHeight > 0 ? 1 : 0); j++) {
