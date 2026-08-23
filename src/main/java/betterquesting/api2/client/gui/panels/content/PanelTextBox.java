@@ -38,6 +38,7 @@ import betterquesting.api.utils.RenderUtils;
 import betterquesting.api.utils.UuidConverter;
 import betterquesting.api2.client.gui.context.QuestTooltipRegistry;
 import betterquesting.api2.client.gui.misc.GuiAlign;
+import betterquesting.api2.client.gui.misc.GuiRectangle;
 import betterquesting.api2.client.gui.misc.GuiTransform;
 import betterquesting.api2.client.gui.misc.IGuiRect;
 import betterquesting.api2.client.gui.misc.URIHandlers;
@@ -46,6 +47,7 @@ import betterquesting.api2.client.gui.resources.colors.GuiColorStatic;
 import betterquesting.api2.client.gui.resources.colors.IGuiColor;
 import betterquesting.api2.utils.QuestTranslation;
 import betterquesting.client.gui2.GuiQuest;
+import betterquesting.client.util.GuiTextToggles;
 import betterquesting.core.BetterQuesting;
 import betterquesting.questing.QuestDatabase;
 
@@ -61,6 +63,7 @@ public class PanelTextBox implements IGuiPanel {
      */
     private static final Pattern TOKEN_DELIMITER = Pattern.compile("(?=\\[)|(?=§.)|(?<=])|(?<=§.)");
     private static final Pattern COLOUR_FORMATTING_CODE_PATTERN = Pattern.compile("§[0-9a-fxgq]");
+    private static final Pattern IMAGE_TAG_PATTERN = Pattern.compile("\\[img height=[1-9]\\d*] *.*?:.*? *\\[/img]");
     private static final String FORMATTING_CODE_RESET = "§r";
 
     private static final String defaultUrlProtocol = "https";
@@ -78,8 +81,8 @@ public class PanelTextBox implements IGuiPanel {
             IQuest quest = QuestDatabase.INSTANCE.get(questId);
             if (quest == null) return;
 
-            tooltip.add(QuestTranslation.translateQuestName(questId, quest));
-            String description = QuestTranslation.translateQuestDescription(questId, quest);
+            tooltip.add(formatTooltipText(QuestTranslation.translateQuestName(questId, quest)));
+            String description = formatTooltipText(QuestTranslation.translateQuestDescription(questId, quest));
             if (!StringUtils.isBlank(description)) {
                 FontRenderer fontRenderer = Minecraft.getMinecraft().fontRenderer;
                 List<String> descriptionLines = RenderUtils
@@ -223,12 +226,14 @@ public class PanelTextBox implements IGuiPanel {
                             UUID questUUID = null;
                             try {
                                 questUUID = UuidConverter.decodeUuid(questNameID[0]);
+                                IQuest linkedQuest = QuestDatabase.INSTANCE.get(questUUID);
+                                if (linkedQuest == null) throw new IllegalArgumentException("quest not found");
 
                                 displayText = linkText.contains(" ") ? questNameID[1]
-                                    : QuestTranslation
-                                        .translateQuestName(questUUID, QuestDatabase.INSTANCE.get(questUUID));
+                                    : QuestTranslation.translateQuestName(questUUID, linkedQuest);
 
                             } catch (Exception e) {
+                                questUUID = null;
                                 displayText = "§4§lQuest Not Found§4§l";
                             }
 
@@ -341,6 +346,11 @@ public class PanelTextBox implements IGuiPanel {
             if (character == '\u00a7' && i + 1 < text.length()) {
                 char formattingCode = text.charAt(++i);
                 formattedText.append(formattingCode);
+                int sequenceLength = getSectionColorSequenceLength(text, i - 1, formattingCode);
+                if (sequenceLength > 2) {
+                    formattedText.append(text, i + 1, i - 1 + sequenceLength);
+                    i += sequenceLength - 2;
+                }
                 if (resetsTextFormatting(formattingCode)) {
                     formattedText.append(underline);
                 }
@@ -348,6 +358,20 @@ public class PanelTextBox implements IGuiPanel {
         }
 
         return formattedText.toString();
+    }
+
+    private static String formatTooltipText(String text) {
+        String displayedText = GuiTextToggles.applyMonochromeIfEnabled(
+            IMAGE_TAG_PATTERN.matcher(text)
+                .replaceAll(""));
+        return new PanelTextBox(new GuiRectangle(0, 0, 0, 0), displayedText, false, true).text;
+    }
+
+    private static int getSectionColorSequenceLength(String text, int start, char formattingCode) {
+        char lowerCode = Character.toLowerCase(formattingCode);
+        if (lowerCode == 'x' && RenderUtils.isValidSectionX(text, start)) return 14;
+        if (lowerCode != 'g' || start + 30 > text.length()) return 2;
+        return RenderUtils.isValidSectionX(text, start + 2) && RenderUtils.isValidSectionX(text, start + 16) ? 30 : 2;
     }
 
     private static boolean resetsTextFormatting(char formattingCode) {
@@ -585,16 +609,22 @@ public class PanelTextBox implements IGuiPanel {
         int mxt = mx + getTransform().getX(), myt = my + getTransform().getY();
         for (HotZone hotZone : hotZones) {
             if (hotZone.location.contains(mxt, myt)) {
-                List<String> descriptionTooltip = new ArrayList<>();
-                QuestTooltipRegistry.appendTooltip(hotZone.link, descriptionTooltip);
-                if (!descriptionTooltip.isEmpty()) return descriptionTooltip;
-                if (!(hotZone.link instanceof String)) return null;
-                URI uri = parseUri((String) hotZone.link);
-                if (uri == null) return null;
-                TextInteractionInvocation interaction = getTextInteraction(uri);
-                if (interaction != null) return interaction.textInteraction.getTooltip(interaction.target);
-                List<String> tooltip = URIHandlers.getTooltip(uri);
-                if (tooltip != null && !tooltip.isEmpty()) return tooltip;
+                List<String> tooltip = new ArrayList<>();
+                if (hotZone.link instanceof String) {
+                    URI uri = parseUri((String) hotZone.link);
+                    if (uri != null) {
+                        TextInteractionInvocation interaction = getTextInteraction(uri);
+                        if (interaction != null) {
+                            List<String> nativeTooltip = interaction.textInteraction.getTooltip(interaction.target);
+                            if (nativeTooltip != null) tooltip.addAll(nativeTooltip);
+                        } else {
+                            List<String> nativeTooltip = URIHandlers.getTooltip(uri);
+                            if (nativeTooltip != null) tooltip.addAll(nativeTooltip);
+                        }
+                    }
+                }
+                QuestTooltipRegistry.appendTooltip(hotZone.link, tooltip);
+                if (!tooltip.isEmpty()) return tooltip;
             }
         }
         return null;
