@@ -153,6 +153,7 @@ item.betterquesting.extra_life.full.name=1颗心
 item.betterquesting.extra_life.half.name=1/2颗心
 item.betterquesting.extra_life.quarter.name=1/4颗心
 item.betterquesting.guide.name=入门指南
+item.betterquesting.pattern_placeholder.name=样板占位符
 
 tile.betterquesting.submit_station.name=提交站(OSS)
 tile.betterquesting.observation_station.name=观测站(OOS)

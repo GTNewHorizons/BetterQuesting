@@ -371,13 +371,19 @@ public class QuestRecipeHandler extends TemplateRecipeHandler {
         private void loadRewards(IQuest quest) {
             int xOffset = 93, yOffset = 29;
             int index = 0;
+
+            // Add Pattern Placeholder to every quest. (NEI Only)
+            ItemStack pattern = new ItemStack(BetterQuesting.patternPlaceholder);
+            pattern.setStackDisplayName(questName);
+            outputs.add(new PositionedStack(pattern, xOffset, yOffset));
+            index++;
             for (IReward reward : getRewards(quest)) {
                 for (BigItemStack stack : getRewardItemOutputs(reward)) {
                     if (index >= GRID_COUNT) break;
                     int x = xOffset + (index % GRID_X_COUNT) * SLOT_SIZE;
                     int y = yOffset + (index / GRID_Y_COUNT) * SLOT_SIZE;
                     if (reward instanceof RewardChoice) {
-                        inputs.add(
+                        outputs.add(
                             new CustomPositionedStack(
                                 extractStacks(stack),
                                 x,
@@ -385,7 +391,7 @@ public class QuestRecipeHandler extends TemplateRecipeHandler {
                                 DARK_GRAY.toString() + ITALIC
                                     + QuestTranslation.translate("bq_standard.reward.choice")));
                     } else {
-                        inputs.add(new PositionedStack(extractStacks(stack), x, y));
+                        outputs.add(new PositionedStack(extractStacks(stack), x, y));
                     }
                     index++;
                 }
