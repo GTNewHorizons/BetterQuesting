@@ -10,6 +10,8 @@ public class QuestHoverRegistry {
 
     private static final CopyOnWriteArrayList<IQuestHoverListener> listeners = new CopyOnWriteArrayList<>();
     private static volatile Object currentTarget;
+    private static boolean frameActive;
+    private static boolean frameHasTarget;
 
     private QuestHoverRegistry() {}
 
@@ -18,9 +20,20 @@ public class QuestHoverRegistry {
         listeners.addIfAbsent(Objects.requireNonNull(listener, "listener"));
     }
 
+    public static void beginFrame() {
+        frameActive = true;
+        frameHasTarget = false;
+    }
+
+    public static void endFrame() {
+        if (frameActive && !frameHasTarget) clearCurrentTarget();
+        frameActive = false;
+    }
+
     /** Publishes a raw target as currently hovered by the quest UI. */
     public static void setCurrentTarget(Object target) {
         Objects.requireNonNull(target, "target");
+        frameHasTarget |= frameActive;
 
         Object previousTarget = currentTarget;
         if (target == previousTarget) return;
@@ -41,6 +54,12 @@ public class QuestHoverRegistry {
         if (target != previousTarget) return;
         currentTarget = null;
 
+        notifyListeners(null);
+    }
+
+    public static void clearCurrentTarget() {
+        if (currentTarget == null) return;
+        currentTarget = null;
         notifyListeners(null);
     }
 

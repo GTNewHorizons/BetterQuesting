@@ -22,6 +22,7 @@ import com.caedis.duradisplay.render.DurabilityRenderer;
 import betterquesting.api.client.gui.misc.IVolatileScreen;
 import betterquesting.api.storage.BQ_Settings;
 import betterquesting.api.utils.RenderUtils;
+import betterquesting.api2.client.gui.context.QuestHoverRegistry;
 import betterquesting.api2.client.gui.misc.ComparatorGuiDepth;
 import betterquesting.api2.client.gui.misc.GuiAlign;
 import betterquesting.api2.client.gui.misc.GuiPadding;
@@ -134,6 +135,7 @@ public class GuiScreenCanvas extends GuiScreen implements IScene {
     @Override
     public void onGuiClosed() {
         super.onGuiClosed();
+        QuestHoverRegistry.clearCurrentTarget();
 
         Keyboard.enableRepeatEvents(false);
     }
@@ -187,17 +189,27 @@ public class GuiScreenCanvas extends GuiScreen implements IScene {
         GL11.glColor4f(1F, 1F, 1F, 1F);
         GL11.glDisable(GL11.GL_DEPTH_TEST);
 
-        this.drawPanel(mx, my, partialTick);
+        QuestHoverRegistry.beginFrame();
+        try {
+            this.drawPanel(mx, my, partialTick);
 
-        List<String> tt = this.getTooltip(mx, my);
+            if (popup != null && popup.isEnabled()
+                && popup.getTransform()
+                    .contains(mx, my)) {
+                QuestHoverRegistry.clearCurrentTarget();
+            }
 
-        if (tt != null && !tt.isEmpty()) {
-            this.drawHoveringText(tt, mx, my, mc.fontRenderer);
+            List<String> tt = this.getTooltip(mx, my);
+
+            if (tt != null && !tt.isEmpty()) {
+                this.drawHoveringText(tt, mx, my, mc.fontRenderer);
+            }
+        } finally {
+            QuestHoverRegistry.endFrame();
+            if (BetterQuesting.isDuraDisplayLoaded) DurabilityRenderer.Execute = true;
+            GL11.glEnable(GL11.GL_DEPTH_TEST);
+            GL11.glPopMatrix();
         }
-        if (BetterQuesting.isDuraDisplayLoaded) DurabilityRenderer.Execute = true;
-
-        GL11.glEnable(GL11.GL_DEPTH_TEST);
-        GL11.glPopMatrix();
     }
 
     /**

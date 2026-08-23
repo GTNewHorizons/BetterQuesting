@@ -123,8 +123,6 @@ public class PanelButtonQuest extends PanelButtonStorage<Map.Entry<UUID, IQuest>
             if (this.getTransform()
                 .contains(mx, my)) {
                 QuestHoverRegistry.setCurrentTarget(value);
-            } else {
-                QuestHoverRegistry.clearCurrentTarget(value);
             }
         }
         if (isBookmarked) {
