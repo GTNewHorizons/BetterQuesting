@@ -122,13 +122,13 @@ public class CanvasScrolling implements IGuiCanvas {
     public void setScrollX(int sx) {
         if (scrollBounds.getWidth() <= 0) return;
         scrollX.writeValueRaw((sx - scrollBounds.getX()) / (float) scrollBounds.getWidth());
-        lsx = this.getScrollX();
+        updatePanelScroll();
     }
 
     public void setScrollY(int sy) {
         if (scrollBounds.getHeight() <= 0) return;
         scrollY.writeValueRaw((sy - scrollBounds.getY()) / (float) scrollBounds.getHeight());
-        lsy = this.getScrollY();
+        updatePanelScroll();
     }
 
     public void setZoom(float z) {
@@ -245,8 +245,7 @@ public class CanvasScrolling implements IGuiCanvas {
 
             }
 
-            lsx = getScrollX();
-            lsy = getScrollY();
+            this.updatePanelScroll();
             lsz = zs;
 
         } else if (lsx != getScrollX() || lsy != getScrollY()) // We can skip this if the above case ran
