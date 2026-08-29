@@ -2,6 +2,7 @@ package betterquesting.api2.client.gui.resources.textures;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.OpenGlHelper;
+import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.util.ResourceLocation;
 
 import org.lwjgl.opengl.GL11;
@@ -18,6 +19,9 @@ import cpw.mods.fml.client.config.GuiUtils;
 
 public class SlicedTexture implements IGuiTexture {
 
+    // The 4096th textured quad forces Tessellator past its retained 0x20000-int buffer.
+    private static final int MAX_BATCH_QUADS = 4095;
+    private static final float TEXEL = 1F / 256F;
     private static final IGuiColor defColor = new GuiColorStatic(255, 255, 255, 255);
 
     private final ResourceLocation texture;
@@ -79,126 +83,144 @@ public class SlicedTexture implements IGuiTexture {
             int iv = texBounds.getY() + texBorder.getTop();
             int iw = texBounds.getWidth() - texBorder.getLeft() - texBorder.getRight();
             int ih = texBounds.getHeight() - texBorder.getTop() - texBorder.getBottom();
-
-            float sx = (float) (w - (texBounds.getWidth() - iw)) / (float) iw;
-            float sy = (float) (h - (texBounds.getHeight() - ih)) / (float) ih;
+            if (iw < 0 || ih < 0) {
+                GL11.glPopMatrix();
+                return;
+            }
+            int sw = w - texBorder.getLeft() - texBorder.getRight();
+            int sh = h - texBorder.getTop() - texBorder.getBottom();
 
             Minecraft.getMinecraft().renderEngine.bindTexture(texture);
+            Tessellator tessellator = Tessellator.instance;
+            tessellator.startDrawingQuads();
+            int batchSize = 0;
 
             // TOP LEFT
-            GL11.glPushMatrix();
-            GL11.glTranslatef(dx, dy, 0F);
-            GuiUtils.drawTexturedModalRect(
-                0,
-                0,
+            batchSize = addTexturedQuad(
+                tessellator,
+                batchSize,
+                dx,
+                dy,
+                texBorder.getLeft(),
+                texBorder.getTop(),
                 texBounds.getX(),
                 texBounds.getY(),
                 texBorder.getLeft(),
                 texBorder.getTop(),
                 zLevel);
-            GL11.glPopMatrix();
 
             // TOP SIDE
-            GL11.glPushMatrix();
-            GL11.glTranslatef(dx + texBorder.getLeft(), dy, 0F);
-            GL11.glScalef(sx, 1F, 1F);
-            GuiUtils.drawTexturedModalRect(
-                0,
-                0,
+            batchSize = addTexturedQuad(
+                tessellator,
+                batchSize,
+                dx + texBorder.getLeft(),
+                dy,
+                sw,
+                texBorder.getTop(),
                 texBounds.getX() + texBorder.getLeft(),
                 texBounds.getY(),
                 iw,
                 texBorder.getTop(),
                 zLevel);
-            GL11.glPopMatrix();
 
             // TOP RIGHT
-            GL11.glPushMatrix();
-            GL11.glTranslatef(dx + w - texBorder.getRight(), dy, 0F);
-            GuiUtils.drawTexturedModalRect(
-                0,
-                0,
+            batchSize = addTexturedQuad(
+                tessellator,
+                batchSize,
+                dx + w - texBorder.getRight(),
+                dy,
+                texBorder.getRight(),
+                texBorder.getTop(),
                 texBounds.getX() + texBorder.getLeft() + iw,
                 texBounds.getY(),
                 texBorder.getRight(),
                 texBorder.getTop(),
                 zLevel);
-            GL11.glPopMatrix();
 
             // LEFT SIDE
-            GL11.glPushMatrix();
-            GL11.glTranslatef(dx, dy + texBorder.getTop(), 0F);
-            GL11.glScalef(1F, sy, 1F);
-            GuiUtils.drawTexturedModalRect(
-                0,
-                0,
+            batchSize = addTexturedQuad(
+                tessellator,
+                batchSize,
+                dx,
+                dy + texBorder.getTop(),
+                texBorder.getLeft(),
+                sh,
                 texBounds.getX(),
                 texBounds.getY() + texBorder.getTop(),
                 texBorder.getLeft(),
                 ih,
                 zLevel);
-            GL11.glPopMatrix();
 
             // MIDDLE
-            GL11.glPushMatrix();
-            GL11.glTranslatef(dx + texBorder.getLeft(), dy + texBorder.getTop(), 0F);
-            GL11.glScalef(sx, sy, 1F);
-            GuiUtils.drawTexturedModalRect(0, 0, iu, iv, iw, ih, zLevel);
-            GL11.glPopMatrix();
+            batchSize = addTexturedQuad(
+                tessellator,
+                batchSize,
+                dx + texBorder.getLeft(),
+                dy + texBorder.getTop(),
+                sw,
+                sh,
+                iu,
+                iv,
+                iw,
+                ih,
+                zLevel);
 
             // RIGHT SIDE
-            GL11.glPushMatrix();
-            GL11.glTranslatef(dx + w - texBorder.getRight(), dy + texBorder.getTop(), 0F);
-            GL11.glScalef(1F, sy, 1F);
-            GuiUtils.drawTexturedModalRect(
-                0,
-                0,
+            batchSize = addTexturedQuad(
+                tessellator,
+                batchSize,
+                dx + w - texBorder.getRight(),
+                dy + texBorder.getTop(),
+                texBorder.getRight(),
+                sh,
                 texBounds.getX() + texBorder.getLeft() + iw,
                 texBounds.getY() + texBorder.getTop(),
                 texBorder.getRight(),
                 ih,
                 zLevel);
-            GL11.glPopMatrix();
 
             // BOTTOM LEFT
-            GL11.glPushMatrix();
-            GL11.glTranslatef(dx, dy + h - texBorder.getBottom(), 0F);
-            GuiUtils.drawTexturedModalRect(
-                0,
-                0,
+            batchSize = addTexturedQuad(
+                tessellator,
+                batchSize,
+                dx,
+                dy + h - texBorder.getBottom(),
+                texBorder.getLeft(),
+                texBorder.getBottom(),
                 texBounds.getX(),
                 texBounds.getY() + texBorder.getTop() + ih,
                 texBorder.getLeft(),
                 texBorder.getBottom(),
                 zLevel);
-            GL11.glPopMatrix();
 
             // BOTTOM SIDE
-            GL11.glPushMatrix();
-            GL11.glTranslatef(dx + texBorder.getLeft(), dy + h - texBorder.getBottom(), 0F);
-            GL11.glScalef(sx, 1F, 1F);
-            GuiUtils.drawTexturedModalRect(
-                0,
-                0,
+            batchSize = addTexturedQuad(
+                tessellator,
+                batchSize,
+                dx + texBorder.getLeft(),
+                dy + h - texBorder.getBottom(),
+                sw,
+                texBorder.getBottom(),
                 texBounds.getX() + texBorder.getLeft(),
                 texBounds.getY() + texBorder.getTop() + ih,
                 iw,
                 texBorder.getBottom(),
                 zLevel);
-            GL11.glPopMatrix();
 
             // BOTTOM RIGHT
-            GL11.glPushMatrix();
-            GL11.glTranslatef(dx + w - texBorder.getRight(), dy + h - texBorder.getBottom(), 0F);
-            GuiUtils.drawTexturedModalRect(
-                0,
-                0,
+            addTexturedQuad(
+                tessellator,
+                batchSize,
+                dx + w - texBorder.getRight(),
+                dy + h - texBorder.getBottom(),
+                texBorder.getRight(),
+                texBorder.getBottom(),
                 texBounds.getX() + texBorder.getLeft() + iw,
                 texBounds.getY() + texBorder.getTop() + ih,
                 texBorder.getRight(),
                 texBorder.getBottom(),
                 zLevel);
-            GL11.glPopMatrix();
+            tessellator.draw();
         } else {
             float sx = (float) w / (float) texBounds.getWidth();
             float sy = (float) h / (float) texBounds.getHeight();
@@ -234,6 +256,10 @@ public class SlicedTexture implements IGuiTexture {
 
     public GuiPadding getBorder() {
         return this.texBorder;
+    }
+
+    public SliceMode getSliceMode() {
+        return sliceMode;
     }
 
     /**
@@ -291,12 +317,17 @@ public class SlicedTexture implements IGuiTexture {
         int remainderWidth = canvasWidth % fillerWidth;
         int yPasses = canvasHeight / fillerHeight;
         int remainderHeight = canvasHeight % fillerHeight;
+        Tessellator tessellator = Tessellator.instance;
+        tessellator.startDrawingQuads();
+        int batchSize = 0;
 
         // Draw Border
         // Top Left
-        GuiUtils.drawTexturedModalRect(x, y, u, v, leftBorder, topBorder, zLevel);
+        batchSize = addTexturedTile(tessellator, batchSize, x, y, u, v, leftBorder, topBorder, zLevel);
         // Top Right
-        GuiUtils.drawTexturedModalRect(
+        batchSize = addTexturedTile(
+            tessellator,
+            batchSize,
             x + leftBorder + canvasWidth,
             y,
             u + leftBorder + fillerWidth,
@@ -305,7 +336,9 @@ public class SlicedTexture implements IGuiTexture {
             topBorder,
             zLevel);
         // Bottom Left
-        GuiUtils.drawTexturedModalRect(
+        batchSize = addTexturedTile(
+            tessellator,
+            batchSize,
             x,
             y + topBorder + canvasHeight,
             u,
@@ -314,7 +347,9 @@ public class SlicedTexture implements IGuiTexture {
             bottomBorder,
             zLevel);
         // Bottom Right
-        GuiUtils.drawTexturedModalRect(
+        batchSize = addTexturedTile(
+            tessellator,
+            batchSize,
             x + leftBorder + canvasWidth,
             y + topBorder + canvasHeight,
             u + leftBorder + fillerWidth,
@@ -324,57 +359,98 @@ public class SlicedTexture implements IGuiTexture {
             zLevel);
 
         for (int i = 0; i < xPasses + (remainderWidth > 0 ? 1 : 0); i++) {
+            int drawWidth = i == xPasses ? remainderWidth : fillerWidth;
             // Top Border
-            GuiUtils.drawTexturedModalRect(
+            batchSize = addTexturedTile(
+                tessellator,
+                batchSize,
                 x + leftBorder + (i * fillerWidth),
                 y,
                 u + leftBorder,
                 v,
-                (i == xPasses ? remainderWidth : fillerWidth),
+                drawWidth,
                 topBorder,
                 zLevel);
             // Bottom Border
-            GuiUtils.drawTexturedModalRect(
+            batchSize = addTexturedTile(
+                tessellator,
+                batchSize,
                 x + leftBorder + (i * fillerWidth),
                 y + topBorder + canvasHeight,
                 u + leftBorder,
                 v + topBorder + fillerHeight,
-                (i == xPasses ? remainderWidth : fillerWidth),
+                drawWidth,
                 bottomBorder,
                 zLevel);
 
             // Throw in some filler for good measure
-            for (int j = 0; j < yPasses + (remainderHeight > 0 ? 1 : 0); j++) GuiUtils.drawTexturedModalRect(
-                x + leftBorder + (i * fillerWidth),
-                y + topBorder + (j * fillerHeight),
-                u + leftBorder,
-                v + topBorder,
-                (i == xPasses ? remainderWidth : fillerWidth),
-                (j == yPasses ? remainderHeight : fillerHeight),
-                zLevel);
+            for (int j = 0; j < yPasses + (remainderHeight > 0 ? 1 : 0); j++) {
+                int drawHeight = j == yPasses ? remainderHeight : fillerHeight;
+                batchSize = addTexturedTile(
+                    tessellator,
+                    batchSize,
+                    x + leftBorder + (i * fillerWidth),
+                    y + topBorder + (j * fillerHeight),
+                    u + leftBorder,
+                    v + topBorder,
+                    drawWidth,
+                    drawHeight,
+                    zLevel);
+            }
         }
 
         // Side Borders
         for (int j = 0; j < yPasses + (remainderHeight > 0 ? 1 : 0); j++) {
+            int drawHeight = j == yPasses ? remainderHeight : fillerHeight;
             // Left Border
-            GuiUtils.drawTexturedModalRect(
+            batchSize = addTexturedTile(
+                tessellator,
+                batchSize,
                 x,
                 y + topBorder + (j * fillerHeight),
                 u,
                 v + topBorder,
                 leftBorder,
-                (j == yPasses ? remainderHeight : fillerHeight),
+                drawHeight,
                 zLevel);
             // Right Border
-            GuiUtils.drawTexturedModalRect(
+            batchSize = addTexturedTile(
+                tessellator,
+                batchSize,
                 x + leftBorder + canvasWidth,
                 y + topBorder + (j * fillerHeight),
                 u + leftBorder + fillerWidth,
                 v + topBorder,
                 rightBorder,
-                (j == yPasses ? remainderHeight : fillerHeight),
+                drawHeight,
                 zLevel);
         }
+        tessellator.draw();
+    }
+
+    private static int addTexturedTile(Tessellator tessellator, int batchSize, int x, int y, int u, int v, int width,
+        int height, float zLevel) {
+        return addTexturedQuad(tessellator, batchSize, x, y, width, height, u, v, width, height, zLevel);
+    }
+
+    private static int addTexturedQuad(Tessellator tessellator, int batchSize, int x, int y, int width, int height,
+        int u, int v, int textureWidth, int textureHeight, float zLevel) {
+        if (width <= 0 || height <= 0 || textureWidth <= 0 || textureHeight <= 0) return batchSize;
+        if (batchSize >= MAX_BATCH_QUADS) {
+            tessellator.draw();
+            tessellator.startDrawingQuads();
+            batchSize = 0;
+        }
+
+        float minU = u * TEXEL;
+        float minV = v * TEXEL;
+        float maxU = (u + textureWidth) * TEXEL;
+        float maxV = (v + textureHeight) * TEXEL;
+        tessellator.addVertexWithUV(x, y + height, zLevel, minU, maxV);
+        tessellator.addVertexWithUV(x + width, y + height, zLevel, maxU, maxV);
+        tessellator.addVertexWithUV(x + width, y, zLevel, maxU, minV);
+        tessellator.addVertexWithUV(x, y, zLevel, minU, minV);
+        return batchSize + 1;
     }
 
     public enum SliceMode {

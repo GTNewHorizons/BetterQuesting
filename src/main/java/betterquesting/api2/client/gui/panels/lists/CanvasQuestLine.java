@@ -54,7 +54,6 @@ public class CanvasQuestLine extends CanvasScrolling {
     public CanvasQuestLine(IGuiRect rect, int buttonId) {
         super(rect);
         this.setupAdvanceScroll(true, true, 3000);
-        this.enableBlocking(false);
         this.buttonId = buttonId;
     }
 
@@ -106,10 +105,11 @@ public class CanvasQuestLine extends CanvasScrolling {
 
         if (!StringUtils.isNullOrEmpty(bgString)) {
             int bgSize = line.getProperty(NativeProps.BG_SIZE);
-            this.addPanel(
+            this.addCulledPanel(
                 new PanelGeneric(
                     new GuiRectangle(0, 0, bgSize, bgSize, 1),
-                    new SimpleTexture(new ResourceLocation(bgString), new GuiRectangle(0, 0, 256, 256))));
+                    new SimpleTexture(new ResourceLocation(bgString), new GuiRectangle(0, 0, 256, 256))),
+                false);
         }
 
         HashMap<UUID, PanelButtonQuest> questBtns = new HashMap<>();
@@ -131,7 +131,6 @@ public class CanvasQuestLine extends CanvasScrolling {
                     .getSizeY());
             PanelButtonQuest paBtn = new PanelButtonQuest(rect, buttonId, "", Maps.immutableEntry(qle.getKey(), quest));
 
-            this.addPanel(paBtn);
             this.btnList.add(paBtn);
             questBtns.put(qle.getKey(), paBtn);
         }
@@ -217,7 +216,7 @@ public class CanvasQuestLine extends CanvasScrolling {
                             continue;
                     }
 
-                    this.addPanel(
+                    this.addCulledPanel(
                         new PanelLine(
                             parBtn.getTransform(),
                             entry.getValue()
@@ -227,9 +226,14 @@ public class CanvasQuestLine extends CanvasScrolling {
                             txLineCol,
                             1,
                             predicate,
-                            animatePredicate));
+                            animatePredicate),
+                        false);
                 }
             }
+        }
+
+        for (PanelButtonQuest button : btnList) {
+            this.addPanel(button);
         }
 
         fitToWindow();
