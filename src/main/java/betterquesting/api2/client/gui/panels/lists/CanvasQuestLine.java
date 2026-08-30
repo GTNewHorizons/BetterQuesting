@@ -63,6 +63,7 @@ public class CanvasQuestLine extends CanvasScrolling {
     private IQuestLine lastQL;
     private int zoomToFitMargin = 24;
     private boolean suppressButtonRendering;
+    private boolean suppressLineRendering;
 
     public CanvasQuestLine(IGuiRect rect, int buttonId) {
         super(rect);
@@ -108,12 +109,21 @@ public class CanvasQuestLine extends CanvasScrolling {
 
     @Override
     public void drawPanel(int mx, int my, float partialTick) {
+        boolean batchLines = isBlockingEnabled() && areLinesBatchable();
         boolean cacheButtons = isBlockingEnabled() && BUTTON_CACHE.isEnabled() && areButtonsTopLayer();
-        suppressButtonRendering = cacheButtons;
+        suppressButtonRendering = cacheButtons || batchLines;
+        suppressLineRendering = batchLines;
         try {
             super.drawPanel(mx, my, partialTick);
         } finally {
             suppressButtonRendering = false;
+            suppressLineRendering = false;
+        }
+
+        float zoom = lsz;
+        if (batchLines) {
+            drawQuestLines(mx, my, partialTick, zoom);
+            if (!cacheButtons) drawQuestButtons(mx, my, partialTick, zoom, true);
         }
 
         if (cacheButtons) {
@@ -123,20 +133,38 @@ public class CanvasQuestLine extends CanvasScrolling {
                     getTransform(),
                     lsx,
                     lsy,
-                    getZoom(),
+                    zoom,
                     getButtonStateHash(),
-                    () -> drawQuestButtons(mx, my, partialTick, true),
-                    () -> drawQuestButtons(mx, my, partialTick, false));
+                    () -> drawQuestButtons(mx, my, partialTick, zoom, true),
+                    () -> drawQuestButtons(mx, my, partialTick, zoom, false));
             } catch (RuntimeException e) {
                 BUTTON_CACHE.fail(e);
-                drawQuestButtons(mx, my, partialTick, true);
+                drawQuestButtons(mx, my, partialTick, zoom, true);
             }
         }
     }
 
     @Override
     protected boolean shouldDrawPanel(IGuiPanel panel) {
-        return !suppressButtonRendering || !(panel instanceof PanelButtonQuest);
+        return (!suppressButtonRendering || !(panel instanceof PanelButtonQuest))
+            && (!suppressLineRendering || !(panel instanceof PanelLine));
+    }
+
+    private boolean areLinesBatchable() {
+        boolean foundLine = false;
+        boolean foundButton = false;
+        for (IGuiPanel panel : getChildren()) {
+            if (!panel.isEnabled()) continue;
+            if (panel instanceof PanelLine) {
+                if (foundButton || !((PanelLine) panel).isBatchable()) return false;
+                foundLine = true;
+            } else if (panel instanceof PanelButtonQuest) {
+                foundButton = true;
+            } else if (foundLine) {
+                return false;
+            }
+        }
+        return foundLine;
     }
 
     private boolean areButtonsTopLayer() {
@@ -166,8 +194,40 @@ public class CanvasQuestLine extends CanvasScrolling {
         return hash;
     }
 
-    private void drawQuestButtons(int mx, int my, float partialTick, boolean clip) {
-        float zs = getZoom();
+    private void drawQuestLines(int mx, int my, float partialTick, float zs) {
+        IGuiRect bounds = getTransform();
+        int tx = bounds.getX();
+        int ty = bounds.getY();
+        int smx = (int) ((mx - tx) / zs) + lsx;
+        int smy = (int) ((my - ty) / zs) + lsy;
+
+        GL11.glPushMatrix();
+        RenderUtils.startScissor(bounds);
+        try {
+            GL11.glTranslatef(tx - lsx * zs, ty - lsy * zs, 0F);
+            GL11.glScalef(zs, zs, zs);
+            GL11.glDisable(GL11.GL_TEXTURE_2D);
+
+            Tessellator tessellator = Tessellator.instance;
+            tessellator.startDrawingQuads();
+            try {
+                for (IGuiPanel panel : getVisiblePanels()) {
+                    if (panel instanceof PanelLine && panel.isEnabled()) {
+                        ((PanelLine) panel).addToBatch(tessellator, smx, smy, partialTick);
+                    }
+                }
+            } finally {
+                tessellator.draw();
+            }
+        } finally {
+            GL11.glEnable(GL11.GL_TEXTURE_2D);
+            GL11.glColor4f(1F, 1F, 1F, 1F);
+            RenderUtils.endScissor();
+            GL11.glPopMatrix();
+        }
+    }
+
+    private void drawQuestButtons(int mx, int my, float partialTick, float zs, boolean clip) {
         IGuiRect bounds = getTransform();
         int tx = bounds.getX();
         int ty = bounds.getY();

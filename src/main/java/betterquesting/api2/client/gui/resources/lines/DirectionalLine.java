@@ -35,25 +35,33 @@ public class DirectionalLine implements IGuiLine {
     @Override
     public void drawLine(IGuiRect startRect, IGuiRect endRect, int width, IGuiColor color, float partialTick,
         boolean animate) {
-        float scaledWidth = width * widthScale;
         GL11.glPushMatrix();
         GL11.glDisable(GL11.GL_TEXTURE_2D);
+        Tessellator tessellator = Tessellator.instance;
+        tessellator.startDrawingQuads();
+        addLine(tessellator, startRect, endRect, width, color, animate);
+        tessellator.draw();
+        GL11.glEnable(GL11.GL_TEXTURE_2D);
+        GL11.glColor4f(1F, 1F, 1F, 1F);
+        GL11.glPopMatrix();
+    }
+
+    public void addLine(Tessellator tessellator, IGuiRect startRect, IGuiRect endRect, int width, IGuiColor color,
+        boolean animate) {
+        float scaledWidth = width * widthScale;
         float startX = startRect.getX() + startRect.getWidth() / 2f;
         float startY = startRect.getY() + startRect.getHeight() / 2f;
         float diffX = endRect.getX() + endRect.getWidth() / 2f - startX;
         float diffY = endRect.getY() + endRect.getHeight() / 2f - startY;
         float length = (float) Math.sqrt(diffX * diffX + diffY * diffY);
-        float angle = (float) Math.atan2(diffY, diffX);
+        float cos = length > 0F ? diffX / length : 1F;
+        float sin = length > 0F ? diffY / length : 0F;
         int argb = color.getRGB();
-        GL11.glTranslatef(startX, startY, 1);
-        GL11.glRotated(Math.toDegrees(angle), 0, 0, 1);
-        Tessellator tessellator = Tessellator.instance;
-        tessellator.startDrawingQuads();
         tessellator.setColorRGBA(argb >> 16 & 255, argb >> 8 & 255, argb & 255, argb >> 24 & 255);
-        tessellator.addVertex(0, scaledWidth / 2f, 0);
-        tessellator.addVertex(length, scaledWidth / 2f, 0);
-        tessellator.addVertex(length, -scaledWidth / 2f, 0);
-        tessellator.addVertex(0, -scaledWidth / 2f, 0);
+        addVertex(tessellator, startX, startY, cos, sin, 0F, scaledWidth / 2F);
+        addVertex(tessellator, startX, startY, cos, sin, length, scaledWidth / 2F);
+        addVertex(tessellator, startX, startY, cos, sin, length, -scaledWidth / 2F);
+        addVertex(tessellator, startX, startY, cos, sin, 0F, -scaledWidth / 2F);
 
         // Arrow
         if (BQ_Settings.showDependencyArrows && length > 0F) {
@@ -72,24 +80,26 @@ public class DirectionalLine implements IGuiLine {
                     progress %= 1;
                 }
                 float arrowX = length * progress;
+                float arrowLeft = arrowX - arrowWidth / 2F;
+                float arrowRight = arrowX + arrowWidth / 2F;
+                float tipLeft = arrowX + arrowSize - arrowWidth / 2F;
+                float tipRight = arrowX + arrowSize + arrowWidth / 2F;
+                addVertex(tessellator, startX, startY, cos, sin, arrowLeft, scaledWidth / 2F);
+                addVertex(tessellator, startX, startY, cos, sin, arrowRight, scaledWidth / 2F);
+                addVertex(tessellator, startX, startY, cos, sin, tipRight, 0F);
+                addVertex(tessellator, startX, startY, cos, sin, tipLeft, 0F);
 
-                tessellator.addVertex(arrowX - arrowWidth / 2f, scaledWidth / 2f, 0);
-                tessellator.addVertex(arrowX + arrowWidth / 2f, scaledWidth / 2f, 0);
-                tessellator.addVertex(arrowX + arrowSize + arrowWidth / 2f, 0, 0);
-                tessellator.addVertex(arrowX + arrowSize - arrowWidth / 2f, 0, 0);
-
-                tessellator.addVertex(arrowX - arrowWidth / 2f, -scaledWidth / 2f, 0);
-                tessellator.addVertex(arrowX + arrowSize - arrowWidth / 2f, 0, 0);
-                tessellator.addVertex(arrowX + arrowSize + arrowWidth / 2f, 0, 0);
-                tessellator.addVertex(arrowX + arrowWidth / 2f, -scaledWidth / 2f, 0);
+                addVertex(tessellator, startX, startY, cos, sin, arrowLeft, -scaledWidth / 2F);
+                addVertex(tessellator, startX, startY, cos, sin, tipLeft, 0F);
+                addVertex(tessellator, startX, startY, cos, sin, tipRight, 0F);
+                addVertex(tessellator, startX, startY, cos, sin, arrowRight, -scaledWidth / 2F);
             }
         }
+    }
 
-        tessellator.draw();
-        GL11.glEnable(GL11.GL_TEXTURE_2D);
-        GL11.glColor4f(1F, 1F, 1F, 1F);
-
-        GL11.glPopMatrix();
+    private static void addVertex(Tessellator tessellator, float startX, float startY, float cos, float sin, float x,
+        float y) {
+        tessellator.addVertex(startX + x * cos - y * sin, startY + x * sin + y * cos, 1D);
     }
 
     @Override
