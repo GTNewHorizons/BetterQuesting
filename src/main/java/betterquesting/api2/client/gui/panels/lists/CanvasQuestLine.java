@@ -544,8 +544,11 @@ public class CanvasQuestLine extends CanvasScrolling {
         }
 
         private void fail(RuntimeException e) {
-            invalidate();
-            retryAt = System.currentTimeMillis() + 5000L;
+            release();
+            Minecraft.getMinecraft()
+                .getFramebuffer()
+                .bindFramebuffer(false);
+            retryAt = Long.MAX_VALUE;
             BetterQuesting.logger.warn("Unable to cache quest icons", e);
         }
 
