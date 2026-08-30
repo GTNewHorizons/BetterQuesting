@@ -122,13 +122,13 @@ public class CanvasScrolling implements IGuiCanvas {
     public void setScrollX(int sx) {
         if (scrollBounds.getWidth() <= 0) return;
         scrollX.writeValueRaw((sx - scrollBounds.getX()) / (float) scrollBounds.getWidth());
-        lsx = this.getScrollX();
+        updatePanelScroll();
     }
 
     public void setScrollY(int sy) {
         if (scrollBounds.getHeight() <= 0) return;
         scrollY.writeValueRaw((sy - scrollBounds.getY()) / (float) scrollBounds.getHeight());
-        lsy = this.getScrollY();
+        updatePanelScroll();
     }
 
     public void setZoom(float z) {
@@ -167,6 +167,8 @@ public class CanvasScrolling implements IGuiCanvas {
     @Override
     public void drawPanel(int mx, int my, float partialTick) {
         float zs = zoomScale.readValue();
+        int viewportWidth = (int) Math.ceil(transform.getWidth() / zs);
+        int viewportHeight = (int) Math.ceil(transform.getHeight() / zs);
 
         int tx = transform.getX();
         int ty = transform.getY();
@@ -245,11 +247,12 @@ public class CanvasScrolling implements IGuiCanvas {
 
             }
 
-            lsx = getScrollX();
-            lsy = getScrollY();
+            this.updatePanelScroll();
             lsz = zs;
 
-        } else if (lsx != getScrollX() || lsy != getScrollY()) // We can skip this if the above case ran
+        } else if (lsx != getScrollX() || lsy != getScrollY()
+            || scrollWindow.w != viewportWidth
+            || scrollWindow.h != viewportHeight) // We can skip this if the above case ran
         {
             this.updatePanelScroll();
         }
@@ -269,7 +272,7 @@ public class CanvasScrolling implements IGuiCanvas {
         }
 
         for (IGuiPanel panel : getVisiblePanels()) {
-            if (panel.isEnabled()) {
+            if (panel.isEnabled() && shouldDrawPanel(panel)) {
                 panel.drawPanel(smx, smy, partialTick);
             }
         }
@@ -605,7 +608,15 @@ public class CanvasScrolling implements IGuiCanvas {
         refreshScrollBounds();
     }
 
-    private List<IGuiPanel> getVisiblePanels() {
+    protected boolean shouldDrawPanel(IGuiPanel panel) {
+        return true;
+    }
+
+    protected boolean isBlockingEnabled() {
+        return useBlocking;
+    }
+
+    protected List<IGuiPanel> getVisiblePanels() {
         return useBlocking ? cullingManager.getVisiblePanels() : guiPanels;
     }
 }

@@ -168,6 +168,21 @@ public class ConfigHandler {
             2000F,
             "Zoom smoothness in ms");
 
+        BQ_Settings.questIconCacheMode = config.getInt(
+            "Quest icon cache mode",
+            Configuration.CATEGORY_GENERAL,
+            1,
+            0,
+            2,
+            "Quest icon rendering cache: 0 = off, 1 = low FPS, 2 = freeze.");
+        BQ_Settings.questIconCacheFps = config.getInt(
+            "Quest icon cache FPS",
+            Configuration.CATEGORY_GENERAL,
+            16,
+            1,
+            144,
+            "Refresh rate used by quest icon cache mode 1.");
+
         BQ_Settings.zoomInToCursor = config.getBoolean(
             "Zoom in on cursor",
             Configuration.CATEGORY_GENERAL,

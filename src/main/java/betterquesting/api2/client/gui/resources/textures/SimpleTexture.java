@@ -29,6 +29,10 @@ public class SimpleTexture implements IGuiTexture {
         return this;
     }
 
+    public boolean isMaintainingAspect() {
+        return maintainAspect;
+    }
+
     @Override
     public void drawTexture(int x, int y, int width, int height, float zLevel, float partialTick) {
         drawTexture(x, y, width, height, zLevel, partialTick, defColor);
