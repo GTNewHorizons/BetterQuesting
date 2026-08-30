@@ -111,6 +111,7 @@ public class CanvasQuestLine extends CanvasScrolling {
     public void drawPanel(int mx, int my, float partialTick) {
         boolean batchLines = isBlockingEnabled() && areLinesBatchable();
         boolean cacheButtons = isBlockingEnabled() && BUTTON_CACHE.isEnabled() && areButtonsTopLayer();
+        boolean cacheLines = batchLines && cacheButtons;
         suppressButtonRendering = cacheButtons || batchLines;
         suppressLineRendering = batchLines;
         try {
@@ -121,8 +122,8 @@ public class CanvasQuestLine extends CanvasScrolling {
         }
 
         float zoom = lsz;
-        if (batchLines) {
-            drawQuestLines(mx, my, partialTick, zoom);
+        if (batchLines && !cacheLines) {
+            drawQuestLines(mx, my, partialTick, zoom, true);
             if (!cacheButtons) drawQuestButtons(mx, my, partialTick, zoom, true);
         }
 
@@ -135,11 +136,11 @@ public class CanvasQuestLine extends CanvasScrolling {
                     lsy,
                     zoom,
                     getButtonStateHash(),
-                    () -> drawQuestButtons(mx, my, partialTick, zoom, true),
-                    () -> drawQuestButtons(mx, my, partialTick, zoom, false));
+                    () -> drawQuestContent(mx, my, partialTick, zoom, cacheLines, true),
+                    () -> drawQuestContent(mx, my, partialTick, zoom, cacheLines, false));
             } catch (RuntimeException e) {
                 BUTTON_CACHE.fail(e);
-                drawQuestButtons(mx, my, partialTick, zoom, true);
+                drawQuestContent(mx, my, partialTick, zoom, cacheLines, true);
             }
         }
     }
@@ -194,7 +195,33 @@ public class CanvasQuestLine extends CanvasScrolling {
         return hash;
     }
 
-    private void drawQuestLines(int mx, int my, float partialTick, float zs) {
+    private void drawQuestContent(int mx, int my, float partialTick, float zs, boolean includeLines, boolean clip) {
+        if (includeLines) {
+            if (!clip) {
+                GL11.glEnable(GL11.GL_BLEND);
+                OpenGlHelper.glBlendFunc(
+                    GL11.GL_SRC_ALPHA,
+                    GL11.GL_ONE_MINUS_SRC_ALPHA,
+                    GL11.GL_ONE,
+                    GL11.GL_ONE_MINUS_SRC_ALPHA);
+            }
+            try {
+                drawQuestLines(mx, my, partialTick, zs, clip);
+            } finally {
+                if (!clip) {
+                    GL11.glDisable(GL11.GL_BLEND);
+                    OpenGlHelper.glBlendFunc(
+                        GL11.GL_SRC_ALPHA,
+                        GL11.GL_ONE_MINUS_SRC_ALPHA,
+                        GL11.GL_SRC_ALPHA,
+                        GL11.GL_ONE_MINUS_SRC_ALPHA);
+                }
+            }
+        }
+        drawQuestButtons(mx, my, partialTick, zs, clip);
+    }
+
+    private void drawQuestLines(int mx, int my, float partialTick, float zs, boolean clip) {
         IGuiRect bounds = getTransform();
         int tx = bounds.getX();
         int ty = bounds.getY();
@@ -202,7 +229,7 @@ public class CanvasQuestLine extends CanvasScrolling {
         int smy = (int) ((my - ty) / zs) + lsy;
 
         GL11.glPushMatrix();
-        RenderUtils.startScissor(bounds);
+        if (clip) RenderUtils.startScissor(bounds);
         try {
             GL11.glTranslatef(tx - lsx * zs, ty - lsy * zs, 0F);
             GL11.glScalef(zs, zs, zs);
@@ -232,7 +259,7 @@ public class CanvasQuestLine extends CanvasScrolling {
         } finally {
             GL11.glEnable(GL11.GL_TEXTURE_2D);
             GL11.glColor4f(1F, 1F, 1F, 1F);
-            RenderUtils.endScissor();
+            if (clip) RenderUtils.endScissor();
             GL11.glPopMatrix();
         }
     }
