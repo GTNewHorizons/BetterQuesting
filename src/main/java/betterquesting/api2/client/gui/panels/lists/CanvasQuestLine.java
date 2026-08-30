@@ -126,10 +126,11 @@ public class CanvasQuestLine extends CanvasScrolling {
                     lsy,
                     getZoom(),
                     getButtonStateHash(mx, my),
-                    () -> drawQuestButtons(mx, my, partialTick));
+                    () -> drawQuestButtons(mx, my, partialTick, true),
+                    () -> drawQuestButtons(mx, my, partialTick, false));
             } catch (RuntimeException e) {
                 BUTTON_CACHE.fail(e);
-                drawQuestButtons(mx, my, partialTick);
+                drawQuestButtons(mx, my, partialTick, true);
             }
         }
     }
@@ -171,7 +172,7 @@ public class CanvasQuestLine extends CanvasScrolling {
         return 31 * hash + (Mouse.isButtonDown(0) ? 1 : 0);
     }
 
-    private void drawQuestButtons(int mx, int my, float partialTick) {
+    private void drawQuestButtons(int mx, int my, float partialTick, boolean clip) {
         float zs = getZoom();
         IGuiRect bounds = getTransform();
         int tx = bounds.getX();
@@ -180,7 +181,7 @@ public class CanvasQuestLine extends CanvasScrolling {
         int smy = (int) ((my - ty) / zs) + lsy;
 
         GL11.glPushMatrix();
-        RenderUtils.startScissor(bounds);
+        if (clip) RenderUtils.startScissor(bounds);
         try {
             GL11.glTranslatef(tx - lsx * zs, ty - lsy * zs, 0F);
             GL11.glScalef(zs, zs, zs);
@@ -191,7 +192,7 @@ public class CanvasQuestLine extends CanvasScrolling {
                 }
             }
         } finally {
-            RenderUtils.endScissor();
+            if (clip) RenderUtils.endScissor();
             GL11.glPopMatrix();
         }
     }
@@ -458,7 +459,7 @@ public class CanvasQuestLine extends CanvasScrolling {
         }
 
         private void draw(Object owner, IGuiRect bounds, int scrollX, int scrollY, float zoom, int contentHash,
-            Runnable drawButtons) {
+            Runnable drawButtons, Runnable captureButtons) {
             int mode = Math.max(0, Math.min(2, BQ_Settings.questIconCacheMode));
             boolean viewChanged = updateView(owner, bounds, scrollX, scrollY, zoom, contentHash);
 
@@ -474,7 +475,7 @@ public class CanvasQuestLine extends CanvasScrolling {
             if (!valid || cache.framebufferWidth != minecraft.displayWidth
                 || cache.framebufferHeight != minecraft.displayHeight
                 || mode == 1 && now >= nextRefresh) {
-                capture(cache, minecraft, drawButtons);
+                capture(cache, minecraft, captureButtons);
                 nextRefresh = mode == 1 ? now + 1000L / Math.max(1, BQ_Settings.questIconCacheFps) : Long.MAX_VALUE;
                 valid = true;
             }

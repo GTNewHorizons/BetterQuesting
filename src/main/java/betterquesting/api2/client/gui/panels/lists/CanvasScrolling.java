@@ -167,6 +167,8 @@ public class CanvasScrolling implements IGuiCanvas {
     @Override
     public void drawPanel(int mx, int my, float partialTick) {
         float zs = zoomScale.readValue();
+        int viewportWidth = (int) Math.ceil(transform.getWidth() / zs);
+        int viewportHeight = (int) Math.ceil(transform.getHeight() / zs);
 
         int tx = transform.getX();
         int ty = transform.getY();
@@ -248,7 +250,9 @@ public class CanvasScrolling implements IGuiCanvas {
             this.updatePanelScroll();
             lsz = zs;
 
-        } else if (lsx != getScrollX() || lsy != getScrollY()) // We can skip this if the above case ran
+        } else if (lsx != getScrollX() || lsy != getScrollY()
+            || scrollWindow.w != viewportWidth
+            || scrollWindow.h != viewportHeight) // We can skip this if the above case ran
         {
             this.updatePanelScroll();
         }
