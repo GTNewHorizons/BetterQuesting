@@ -606,16 +606,23 @@ public class CanvasQuestLine extends CanvasScrolling {
 
         private Framebuffer getFramebuffer(Minecraft minecraft) {
             if (framebuffer == null) {
-                framebuffer = new Framebuffer(1, 1, true);
-                framebuffer.setFramebufferColor(0F, 0F, 0F, 0F);
-                minecraft.getFramebuffer()
-                    .bindFramebuffer(false);
+                GL11.glPushAttrib(
+                    GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT | GL11.GL_VIEWPORT_BIT);
+                try {
+                    framebuffer = new Framebuffer(minecraft.displayWidth, minecraft.displayHeight, true);
+                    framebuffer.setFramebufferColor(0F, 0F, 0F, 0F);
+                } finally {
+                    GL11.glPopAttrib();
+                    minecraft.getFramebuffer()
+                        .bindFramebuffer(false);
+                }
             }
             return framebuffer;
         }
 
         private void capture(Framebuffer cache, Minecraft minecraft, Runnable drawButtons) {
-            GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+            GL11.glPushAttrib(
+                GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT | GL11.GL_VIEWPORT_BIT);
             try {
                 GL11.glDisable(GL11.GL_SCISSOR_TEST);
                 if (cache.framebufferWidth != minecraft.displayWidth
@@ -627,6 +634,7 @@ public class CanvasQuestLine extends CanvasScrolling {
                 }
                 cache.bindFramebuffer(false);
                 GL11.glDisable(GL11.GL_BLEND);
+                GL11.glDisable(GL11.GL_DEPTH_TEST);
                 GL11.glDepthMask(true);
                 OpenGlHelper.glBlendFunc(
                     GL11.GL_SRC_ALPHA,
