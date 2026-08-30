@@ -135,7 +135,7 @@ public class CanvasQuestLine extends CanvasScrolling {
                     lsx,
                     lsy,
                     zoom,
-                    getButtonStateHash(),
+                    getContentStateHash(cacheLines),
                     () -> drawQuestContent(mx, my, partialTick, zoom, cacheLines, true),
                     () -> drawQuestContent(mx, my, partialTick, zoom, cacheLines, false));
             } catch (RuntimeException e) {
@@ -183,8 +183,8 @@ public class CanvasQuestLine extends CanvasScrolling {
         return foundButton;
     }
 
-    private int getButtonStateHash() {
-        int hash = 1;
+    private int getContentStateHash(boolean includeLines) {
+        int hash = includeLines ? 1 : 0;
         for (IGuiPanel panel : getVisiblePanels()) {
             if (panel instanceof PanelButtonQuest) {
                 PanelButtonQuest button = (PanelButtonQuest) panel;
@@ -192,6 +192,9 @@ public class CanvasQuestLine extends CanvasScrolling {
                 hash = 31 * hash + (button.isEnabled() ? 1 : 0);
                 hash = 31 * hash + (button.isActive() ? 1 : 0);
                 hash = 31 * hash + (button.isBookmarked() ? 1 : 0);
+            } else if (includeLines && panel instanceof PanelLine) {
+                hash = 31 * hash + System.identityHashCode(panel);
+                hash = 31 * hash + (panel.isEnabled() ? 1 : 0);
             }
         }
         return hash;
