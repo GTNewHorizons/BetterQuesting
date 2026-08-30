@@ -29,6 +29,7 @@ import betterquesting.api2.client.gui.misc.GuiRectangle;
 import betterquesting.api2.client.gui.misc.GuiTransform;
 import betterquesting.api2.client.gui.misc.IGuiRect;
 import betterquesting.api2.client.gui.panels.IGuiPanel;
+import betterquesting.api2.client.gui.panels.lists.CanvasQuestLine;
 import betterquesting.api2.client.gui.popups.PopChoice;
 import betterquesting.api2.client.gui.themes.presets.PresetIcon;
 import betterquesting.api2.utils.QuestTranslation;
@@ -136,6 +137,7 @@ public class GuiScreenCanvas extends GuiScreen implements IScene {
         super.onGuiClosed();
 
         Keyboard.enableRepeatEvents(false);
+        CanvasQuestLine.releaseButtonCache();
     }
 
     @Override

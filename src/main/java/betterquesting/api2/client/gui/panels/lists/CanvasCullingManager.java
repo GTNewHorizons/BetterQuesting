@@ -2,6 +2,7 @@ package betterquesting.api2.client.gui.panels.lists;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -19,6 +20,8 @@ public class CanvasCullingManager {
 
     private final List<IGuiPanel> cachedPanels = new CopyOnWriteArrayList<>(); // The last updated list of visible
                                                                                // panels
+    private final Map<IGuiPanel, Integer> panelOrder = new IdentityHashMap<>();
+    private int nextPanelOrder;
 
     private final int gridSize;
 
@@ -34,9 +37,12 @@ public class CanvasCullingManager {
         dynamicPanels.clear();
         panelRegions.clear();
         cachedPanels.clear();
+        panelOrder.clear();
+        nextPanelOrder = 0;
     }
 
     public void addPanel(IGuiPanel panel, boolean useBlocks) {
+        if (!panelOrder.containsKey(panel)) panelOrder.put(panel, nextPanelOrder++);
         if (!useBlocks) {
             if (!dynamicPanels.contains(panel)) {
                 dynamicPanels.add(panel);
@@ -84,7 +90,7 @@ public class CanvasCullingManager {
 
                     if (cbl.enabled) {
                         cachedPanels.add(panel);
-                        cachedPanels.sort(ComparatorGuiDepth.INSTANCE);
+                        sortCachedPanels();
                     }
                 }
 
@@ -135,6 +141,7 @@ public class CanvasCullingManager {
         } else {
             cachedPanels.remove(panel);
         }
+        panelOrder.remove(panel);
     }
 
     public List<IGuiPanel> getVisiblePanels() {
@@ -160,8 +167,15 @@ public class CanvasCullingManager {
         }
 
         if (changed) {
-            cachedPanels.sort(ComparatorGuiDepth.INSTANCE);
+            sortCachedPanels();
         }
+    }
+
+    private void sortCachedPanels() {
+        cachedPanels.sort((first, second) -> {
+            int depth = ComparatorGuiDepth.INSTANCE.compare(first, second);
+            return depth != 0 ? depth : Integer.compare(panelOrder.get(first), panelOrder.get(second));
+        });
     }
 
     // TODO: Move this to a utility class
