@@ -157,7 +157,8 @@ public class CanvasQuestLine extends CanvasScrolling {
         for (IGuiPanel panel : getChildren()) {
             if (!panel.isEnabled()) continue;
             if (panel instanceof PanelLine) {
-                if (foundButton || !((PanelLine) panel).isBatchable()) return false;
+                if (panel.getClass() != PanelLine.class || foundButton || !((PanelLine) panel).isBatchable())
+                    return false;
                 foundLine = true;
             } else if (panel instanceof PanelButtonQuest) {
                 foundButton = true;
@@ -173,6 +174,7 @@ public class CanvasQuestLine extends CanvasScrolling {
         for (IGuiPanel panel : getChildren()) {
             if (!panel.isEnabled()) continue;
             if (panel instanceof PanelButtonQuest) {
+                if (panel.getClass() != PanelButtonQuest.class) return false;
                 foundButton = true;
             } else if (foundButton) {
                 return false;
