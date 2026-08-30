@@ -528,7 +528,7 @@ public class CanvasQuestLine extends CanvasScrolling {
                 invalidate();
                 if (mode == 0) release();
             }
-            return mode > 0 && OpenGlHelper.framebufferSupported && System.currentTimeMillis() >= retryAt;
+            return mode > 0 && OpenGlHelper.isFramebufferEnabled() && System.currentTimeMillis() >= retryAt;
         }
 
         private void invalidate() {
