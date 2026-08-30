@@ -20,7 +20,6 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.StringUtils;
 
 import org.lwjgl.input.Keyboard;
-import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 
 import com.google.common.collect.Maps;
@@ -125,7 +124,7 @@ public class CanvasQuestLine extends CanvasScrolling {
                     lsx,
                     lsy,
                     getZoom(),
-                    getButtonStateHash(mx, my),
+                    getButtonStateHash(),
                     () -> drawQuestButtons(mx, my, partialTick, true),
                     () -> drawQuestButtons(mx, my, partialTick, false));
             } catch (RuntimeException e) {
@@ -153,11 +152,7 @@ public class CanvasQuestLine extends CanvasScrolling {
         return foundButton;
     }
 
-    private int getButtonStateHash(int mx, int my) {
-        float zs = getZoom();
-        IGuiRect bounds = getTransform();
-        int smx = (int) ((mx - bounds.getX()) / zs) + lsx;
-        int smy = (int) ((my - bounds.getY()) / zs) + lsy;
+    private int getButtonStateHash() {
         int hash = 1;
         for (IGuiPanel panel : getVisiblePanels()) {
             if (panel instanceof PanelButtonQuest) {
@@ -166,10 +161,9 @@ public class CanvasQuestLine extends CanvasScrolling {
                 hash = 31 * hash + (button.isEnabled() ? 1 : 0);
                 hash = 31 * hash + (button.isActive() ? 1 : 0);
                 hash = 31 * hash + (button.isBookmarked() ? 1 : 0);
-                hash = 31 * hash + (button.rect.contains(smx, smy) ? 1 : 0);
             }
         }
-        return 31 * hash + (Mouse.isButtonDown(0) ? 1 : 0);
+        return hash;
     }
 
     private void drawQuestButtons(int mx, int my, float partialTick, boolean clip) {
