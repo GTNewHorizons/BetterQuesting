@@ -1,5 +1,6 @@
 package betterquesting.api2.client.gui.panels.lists;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -9,11 +10,18 @@ import java.util.Map;
 import java.util.UUID;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.ScaledResolution;
+import net.minecraft.client.renderer.OpenGlHelper;
+import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.resources.IReloadableResourceManager;
+import net.minecraft.client.shader.Framebuffer;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.StringUtils;
 
 import org.lwjgl.input.Keyboard;
+import org.lwjgl.input.Mouse;
+import org.lwjgl.opengl.GL11;
 
 import com.google.common.collect.Maps;
 
@@ -26,10 +34,12 @@ import betterquesting.api.questing.IQuest.RequirementType;
 import betterquesting.api.questing.IQuestLine;
 import betterquesting.api.questing.IQuestLineEntry;
 import betterquesting.api.storage.BQ_Settings;
+import betterquesting.api.utils.RenderUtils;
 import betterquesting.api2.cache.QuestCache;
 import betterquesting.api2.client.gui.controls.PanelButtonQuest;
 import betterquesting.api2.client.gui.misc.GuiRectangle;
 import betterquesting.api2.client.gui.misc.IGuiRect;
+import betterquesting.api2.client.gui.panels.IGuiPanel;
 import betterquesting.api2.client.gui.panels.content.PanelGeneric;
 import betterquesting.api2.client.gui.panels.content.PanelLine;
 import betterquesting.api2.client.gui.panels.content.PanelLine.ShouldDrawPredicate;
@@ -39,17 +49,21 @@ import betterquesting.api2.client.gui.resources.lines.IGuiLine;
 import betterquesting.api2.client.gui.resources.textures.SimpleTexture;
 import betterquesting.api2.client.gui.themes.presets.PresetColor;
 import betterquesting.api2.client.gui.themes.presets.PresetLine;
+import betterquesting.core.BetterQuesting;
 
 /**
  * My class for lazy quest line setup on a scrolling canvas
  */
 public class CanvasQuestLine extends CanvasScrolling {
 
+    private static final QuestButtonCache BUTTON_CACHE = new QuestButtonCache();
+
     private final List<PanelButtonQuest> btnList = new ArrayList<>();
 
     private final int buttonId;
     private IQuestLine lastQL;
     private int zoomToFitMargin = 24;
+    private boolean suppressButtonRendering;
 
     public CanvasQuestLine(IGuiRect rect, int buttonId) {
         super(rect);
@@ -59,6 +73,10 @@ public class CanvasQuestLine extends CanvasScrolling {
 
     public Collection<PanelButtonQuest> getQuestButtons() {
         return Collections.unmodifiableCollection(this.btnList);
+    }
+
+    public static void releaseButtonCache() {
+        BUTTON_CACHE.release();
     }
 
     public PanelButtonQuest getButtonAt(int mx, int my) {
@@ -81,6 +99,101 @@ public class CanvasQuestLine extends CanvasScrolling {
 
     public void refreshQuestLine() {
         setQuestLine(lastQL);
+    }
+
+    @Override
+    public void resetCanvas() {
+        BUTTON_CACHE.invalidate();
+        super.resetCanvas();
+    }
+
+    @Override
+    public void drawPanel(int mx, int my, float partialTick) {
+        boolean cacheButtons = isBlockingEnabled() && BUTTON_CACHE.isEnabled() && areButtonsTopLayer();
+        suppressButtonRendering = cacheButtons;
+        try {
+            super.drawPanel(mx, my, partialTick);
+        } finally {
+            suppressButtonRendering = false;
+        }
+
+        if (cacheButtons) {
+            try {
+                BUTTON_CACHE.draw(
+                    this,
+                    getTransform(),
+                    lsx,
+                    lsy,
+                    getZoom(),
+                    getButtonStateHash(mx, my),
+                    () -> drawQuestButtons(mx, my, partialTick));
+            } catch (RuntimeException e) {
+                BUTTON_CACHE.fail(e);
+                drawQuestButtons(mx, my, partialTick);
+            }
+        }
+    }
+
+    @Override
+    protected boolean shouldDrawPanel(IGuiPanel panel) {
+        return !suppressButtonRendering || !(panel instanceof PanelButtonQuest);
+    }
+
+    private boolean areButtonsTopLayer() {
+        boolean foundButton = false;
+        for (IGuiPanel panel : getChildren()) {
+            if (!panel.isEnabled()) continue;
+            if (panel instanceof PanelButtonQuest) {
+                foundButton = true;
+            } else if (foundButton) {
+                return false;
+            }
+        }
+        return foundButton;
+    }
+
+    private int getButtonStateHash(int mx, int my) {
+        float zs = getZoom();
+        IGuiRect bounds = getTransform();
+        int smx = (int) ((mx - bounds.getX()) / zs) + lsx;
+        int smy = (int) ((my - bounds.getY()) / zs) + lsy;
+        int hash = 1;
+        for (IGuiPanel panel : getVisiblePanels()) {
+            if (panel instanceof PanelButtonQuest) {
+                PanelButtonQuest button = (PanelButtonQuest) panel;
+                hash = 31 * hash + System.identityHashCode(button);
+                hash = 31 * hash + (button.isEnabled() ? 1 : 0);
+                hash = 31 * hash + (button.isActive() ? 1 : 0);
+                hash = 31 * hash + (button.isBookmarked() ? 1 : 0);
+                hash = 31 * hash + (button.rect.contains(smx, smy) ? 1 : 0);
+            }
+        }
+        return 31 * hash + (Mouse.isButtonDown(0) ? 1 : 0);
+    }
+
+    private void drawQuestButtons(int mx, int my, float partialTick) {
+        float zs = getZoom();
+        IGuiRect bounds = getTransform();
+        int tx = bounds.getX();
+        int ty = bounds.getY();
+        int smx = (int) ((mx - tx) / zs) + lsx;
+        int smy = (int) ((my - ty) / zs) + lsy;
+
+        GL11.glPushMatrix();
+        RenderUtils.startScissor(bounds);
+        try {
+            GL11.glTranslatef(tx - lsx * zs, ty - lsy * zs, 0F);
+            GL11.glScalef(zs, zs, zs);
+
+            for (IGuiPanel panel : getVisiblePanels()) {
+                if (panel instanceof PanelButtonQuest && panel.isEnabled()) {
+                    panel.drawPanel(smx, smy, partialTick);
+                }
+            }
+        } finally {
+            RenderUtils.endScissor();
+            GL11.glPopMatrix();
+        }
     }
 
     /**
@@ -291,5 +404,183 @@ public class CanvasQuestLine extends CanvasScrolling {
 
         this.setScrollX(btnCenterX - scrollWindow.w / 2);
         this.setScrollY(btnCenterY - scrollWindow.h / 2);
+    }
+
+    private static final class QuestButtonCache {
+
+        private Framebuffer framebuffer;
+        private boolean valid;
+        private int lastMode = -1;
+        private long nextRefresh;
+        private long retryAt;
+        private WeakReference<Object> lastOwner = new WeakReference<>(null);
+        private int lastX;
+        private int lastY;
+        private int lastWidth;
+        private int lastHeight;
+        private int lastScrollX;
+        private int lastScrollY;
+        private int lastContentHash;
+        private float lastZoom;
+
+        private QuestButtonCache() {
+            ((IReloadableResourceManager) Minecraft.getMinecraft()
+                .getResourceManager()).registerReloadListener(resourceManager -> invalidate());
+        }
+
+        private boolean isEnabled() {
+            int mode = Math.max(0, Math.min(2, BQ_Settings.questIconCacheMode));
+            if (mode != lastMode) {
+                lastMode = mode;
+                retryAt = 0;
+                invalidate();
+                if (mode == 0) release();
+            }
+            return mode > 0 && OpenGlHelper.framebufferSupported && System.currentTimeMillis() >= retryAt;
+        }
+
+        private void invalidate() {
+            valid = false;
+            nextRefresh = 0;
+        }
+
+        private void release() {
+            invalidate();
+            if (framebuffer != null) framebuffer.deleteFramebuffer();
+            framebuffer = null;
+            lastOwner.clear();
+        }
+
+        private void fail(RuntimeException e) {
+            invalidate();
+            retryAt = System.currentTimeMillis() + 5000L;
+            BetterQuesting.logger.warn("Unable to cache quest icons", e);
+        }
+
+        private void draw(Object owner, IGuiRect bounds, int scrollX, int scrollY, float zoom, int contentHash,
+            Runnable drawButtons) {
+            int mode = Math.max(0, Math.min(2, BQ_Settings.questIconCacheMode));
+            boolean viewChanged = updateView(owner, bounds, scrollX, scrollY, zoom, contentHash);
+
+            if (viewChanged) {
+                invalidate();
+                drawButtons.run();
+                return;
+            }
+
+            Minecraft minecraft = Minecraft.getMinecraft();
+            Framebuffer cache = getFramebuffer(minecraft);
+            long now = System.currentTimeMillis();
+            if (!valid || cache.framebufferWidth != minecraft.displayWidth
+                || cache.framebufferHeight != minecraft.displayHeight
+                || mode == 1 && now >= nextRefresh) {
+                capture(cache, minecraft, drawButtons);
+                nextRefresh = mode == 1 ? now + 1000L / Math.max(1, BQ_Settings.questIconCacheFps) : Long.MAX_VALUE;
+                valid = true;
+            }
+
+            render(cache, minecraft, bounds);
+        }
+
+        private boolean updateView(Object owner, IGuiRect bounds, int scrollX, int scrollY, float zoom,
+            int contentHash) {
+            boolean changed = owner != lastOwner.get() || bounds.getX() != lastX
+                || bounds.getY() != lastY
+                || bounds.getWidth() != lastWidth
+                || bounds.getHeight() != lastHeight
+                || scrollX != lastScrollX
+                || scrollY != lastScrollY
+                || contentHash != lastContentHash
+                || Float.floatToIntBits(zoom) != Float.floatToIntBits(lastZoom);
+            lastOwner = new WeakReference<>(owner);
+            lastX = bounds.getX();
+            lastY = bounds.getY();
+            lastWidth = bounds.getWidth();
+            lastHeight = bounds.getHeight();
+            lastScrollX = scrollX;
+            lastScrollY = scrollY;
+            lastContentHash = contentHash;
+            lastZoom = zoom;
+            return changed;
+        }
+
+        private Framebuffer getFramebuffer(Minecraft minecraft) {
+            if (framebuffer == null) {
+                framebuffer = new Framebuffer(1, 1, true);
+                framebuffer.setFramebufferColor(0F, 0F, 0F, 0F);
+                minecraft.getFramebuffer()
+                    .bindFramebuffer(false);
+            }
+            return framebuffer;
+        }
+
+        private void capture(Framebuffer cache, Minecraft minecraft, Runnable drawButtons) {
+            GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+            try {
+                GL11.glDisable(GL11.GL_SCISSOR_TEST);
+                if (cache.framebufferWidth != minecraft.displayWidth
+                    || cache.framebufferHeight != minecraft.displayHeight) {
+                    cache.createBindFramebuffer(minecraft.displayWidth, minecraft.displayHeight);
+                    cache.setFramebufferFilter(GL11.GL_NEAREST);
+                } else {
+                    cache.framebufferClear();
+                }
+                cache.bindFramebuffer(false);
+                GL11.glDisable(GL11.GL_BLEND);
+                GL11.glDepthMask(true);
+                OpenGlHelper.glBlendFunc(
+                    GL11.GL_SRC_ALPHA,
+                    GL11.GL_ONE_MINUS_SRC_ALPHA,
+                    GL11.GL_SRC_ALPHA,
+                    GL11.GL_ONE_MINUS_SRC_ALPHA);
+                GL11.glColor4f(1F, 1F, 1F, 1F);
+                drawButtons.run();
+            } finally {
+                GL11.glPopAttrib();
+                minecraft.getFramebuffer()
+                    .bindFramebuffer(false);
+            }
+        }
+
+        private void render(Framebuffer cache, Minecraft minecraft, IGuiRect bounds) {
+            ScaledResolution resolution = new ScaledResolution(
+                minecraft,
+                minecraft.displayWidth,
+                minecraft.displayHeight);
+            double screenWidth = resolution.getScaledWidth_double();
+            double screenHeight = resolution.getScaledHeight_double();
+            double left = bounds.getX();
+            double top = bounds.getY();
+            double right = left + bounds.getWidth();
+            double bottom = top + bounds.getHeight();
+            double u0 = left / screenWidth;
+            double u1 = right / screenWidth;
+            double v0 = 1D - bottom / screenHeight;
+            double v1 = 1D - top / screenHeight;
+
+            GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+            cache.bindFramebufferTexture();
+            try {
+                GL11.glEnable(GL11.GL_BLEND);
+                GL11.glDisable(GL11.GL_DEPTH_TEST);
+                GL11.glDepthMask(false);
+                OpenGlHelper
+                    .glBlendFunc(GL11.GL_ONE, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ONE_MINUS_SRC_ALPHA);
+                GL11.glColor4f(1F, 1F, 1F, 1F);
+                GL11.glEnable(GL11.GL_TEXTURE_2D);
+
+                Tessellator tessellator = Tessellator.instance;
+                tessellator.startDrawingQuads();
+                tessellator.addVertexWithUV(left, bottom, 0D, u0, v0);
+                tessellator.addVertexWithUV(right, bottom, 0D, u1, v0);
+                tessellator.addVertexWithUV(right, top, 0D, u1, v1);
+                tessellator.addVertexWithUV(left, top, 0D, u0, v1);
+                tessellator.draw();
+            } finally {
+                cache.unbindFramebufferTexture();
+                GL11.glPopAttrib();
+                GL11.glColor4f(1F, 1F, 1F, 1F);
+            }
+        }
     }
 }

@@ -264,7 +264,7 @@ public class CanvasScrolling implements IGuiCanvas {
         int smy = (int) ((my - ty) / zs) + lsy;
 
         for (IGuiPanel panel : getVisiblePanels()) {
-            if (panel.isEnabled()) {
+            if (panel.isEnabled() && shouldDrawPanel(panel)) {
                 panel.drawPanel(smx, smy, partialTick);
             }
         }
@@ -600,7 +600,15 @@ public class CanvasScrolling implements IGuiCanvas {
         refreshScrollBounds();
     }
 
-    private List<IGuiPanel> getVisiblePanels() {
+    protected boolean shouldDrawPanel(IGuiPanel panel) {
+        return true;
+    }
+
+    protected boolean isBlockingEnabled() {
+        return useBlocking;
+    }
+
+    protected List<IGuiPanel> getVisiblePanels() {
         return useBlocking ? cullingManager.getVisiblePanels() : guiPanels;
     }
 }

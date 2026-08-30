@@ -40,6 +40,8 @@ public class BQ_Settings {
 
     public static float zoomSpeed = 1.25f;
     public static float zoomTimeInMs = 100f;
+    public static int questIconCacheMode = 1;
+    public static int questIconCacheFps = 16;
 
     public static boolean zoomInToCursor = true;
     public static boolean zoomOutToCursor = false;

@@ -132,6 +132,10 @@ public class PanelButtonQuest extends PanelButtonStorage<Map.Entry<UUID, IQuest>
         isBookmarked = state;
     }
 
+    public boolean isBookmarked() {
+        return isBookmarked;
+    }
+
     @Override
     public List<String> getTooltip(int mx, int my) {
         if (!this.getTransform()
