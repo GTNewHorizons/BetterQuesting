@@ -11,6 +11,9 @@ import betterquesting.api2.client.gui.resources.colors.IGuiColor;
 
 public class DirectionalLine implements IGuiLine {
 
+    // The 4096th quad forces Tessellator past its retained 0x20000-int buffer.
+    private static final int MAX_BATCH_QUADS = 4095;
+
     public static final float DefArrowWidth = 0.5f;
     public static final float DefArrowSize = 0.75f;
     public static final float DefArrowOpacity = 0.2f;
@@ -39,15 +42,15 @@ public class DirectionalLine implements IGuiLine {
         GL11.glDisable(GL11.GL_TEXTURE_2D);
         Tessellator tessellator = Tessellator.instance;
         tessellator.startDrawingQuads();
-        addLine(tessellator, startRect, endRect, width, color, animate);
+        addLine(tessellator, startRect, endRect, width, color, animate, 0);
         tessellator.draw();
         GL11.glEnable(GL11.GL_TEXTURE_2D);
         GL11.glColor4f(1F, 1F, 1F, 1F);
         GL11.glPopMatrix();
     }
 
-    public void addLine(Tessellator tessellator, IGuiRect startRect, IGuiRect endRect, int width, IGuiColor color,
-        boolean animate) {
+    public int addLine(Tessellator tessellator, IGuiRect startRect, IGuiRect endRect, int width, IGuiColor color,
+        boolean animate, int batchQuads) {
         float scaledWidth = width * widthScale;
         float startX = startRect.getX() + startRect.getWidth() / 2f;
         float startY = startRect.getY() + startRect.getHeight() / 2f;
@@ -57,7 +60,8 @@ public class DirectionalLine implements IGuiLine {
         float cos = length > 0F ? diffX / length : 1F;
         float sin = length > 0F ? diffY / length : 0F;
         int argb = color.getRGB();
-        tessellator.setColorRGBA(argb >> 16 & 255, argb >> 8 & 255, argb & 255, argb >> 24 & 255);
+        setColor(tessellator, argb);
+        batchQuads = beginQuad(tessellator, batchQuads, argb);
         addVertex(tessellator, startX, startY, cos, sin, 0F, scaledWidth / 2F);
         addVertex(tessellator, startX, startY, cos, sin, length, scaledWidth / 2F);
         addVertex(tessellator, startX, startY, cos, sin, length, -scaledWidth / 2F);
@@ -65,7 +69,9 @@ public class DirectionalLine implements IGuiLine {
 
         // Arrow
         if (BQ_Settings.showDependencyArrows && length > 0F) {
-            tessellator.setColorRGBA(0, 0, 0, Math.round(arrowOpacity * (argb >> 24 & 255)));
+            int arrowAlpha = Math.max(0, Math.min(255, Math.round(arrowOpacity * (argb >> 24 & 255))));
+            int arrowColor = arrowAlpha << 24;
+            setColor(tessellator, arrowColor);
             int numberOfArrows = MathHelper.ceiling_float_int(length / 20f);
 
             float arrowSize = scaledWidth * arrowSizeBase;
@@ -84,17 +90,32 @@ public class DirectionalLine implements IGuiLine {
                 float arrowRight = arrowX + arrowWidth / 2F;
                 float tipLeft = arrowX + arrowSize - arrowWidth / 2F;
                 float tipRight = arrowX + arrowSize + arrowWidth / 2F;
+                batchQuads = beginQuad(tessellator, batchQuads, arrowColor);
                 addVertex(tessellator, startX, startY, cos, sin, arrowLeft, scaledWidth / 2F);
                 addVertex(tessellator, startX, startY, cos, sin, arrowRight, scaledWidth / 2F);
                 addVertex(tessellator, startX, startY, cos, sin, tipRight, 0F);
                 addVertex(tessellator, startX, startY, cos, sin, tipLeft, 0F);
 
+                batchQuads = beginQuad(tessellator, batchQuads, arrowColor);
                 addVertex(tessellator, startX, startY, cos, sin, arrowLeft, -scaledWidth / 2F);
                 addVertex(tessellator, startX, startY, cos, sin, tipLeft, 0F);
                 addVertex(tessellator, startX, startY, cos, sin, tipRight, 0F);
                 addVertex(tessellator, startX, startY, cos, sin, arrowRight, -scaledWidth / 2F);
             }
         }
+        return batchQuads;
+    }
+
+    private static int beginQuad(Tessellator tessellator, int batchQuads, int color) {
+        if (batchQuads < MAX_BATCH_QUADS) return batchQuads + 1;
+        tessellator.draw();
+        tessellator.startDrawingQuads();
+        setColor(tessellator, color);
+        return 1;
+    }
+
+    private static void setColor(Tessellator tessellator, int argb) {
+        tessellator.setColorRGBA(argb >> 16 & 255, argb >> 8 & 255, argb & 255, argb >> 24 & 255);
     }
 
     private static void addVertex(Tessellator tessellator, float startX, float startY, float cos, float sin, float x,

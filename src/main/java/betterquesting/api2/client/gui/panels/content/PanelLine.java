@@ -68,13 +68,13 @@ public class PanelLine implements IGuiPanel {
         return line.getClass() == DirectionalLine.class;
     }
 
-    public boolean addToBatch(Tessellator tessellator, int mx, int my, float partialTick) {
-        if (!isBatchable()) return false;
+    public int addToBatch(Tessellator tessellator, int mx, int my, float partialTick, int batchQuads) {
+        if (!isBatchable()) return batchQuads;
         if (enabled && (shouldDraw == null || shouldDraw.shouldDraw(mx, my, partialTick))) {
             boolean shouldAnimate = animatePredicate != null && animatePredicate.shouldDraw(mx, my, partialTick);
-            ((DirectionalLine) line).addLine(tessellator, start, end, width, color, shouldAnimate);
+            return ((DirectionalLine) line).addLine(tessellator, start, end, width, color, shouldAnimate, batchQuads);
         }
-        return true;
+        return batchQuads;
     }
 
     @Override

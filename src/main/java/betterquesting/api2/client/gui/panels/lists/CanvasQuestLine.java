@@ -210,14 +210,24 @@ public class CanvasQuestLine extends CanvasScrolling {
 
             Tessellator tessellator = Tessellator.instance;
             tessellator.startDrawingQuads();
+            RuntimeException failure = null;
             try {
+                int batchQuads = 0;
                 for (IGuiPanel panel : getVisiblePanels()) {
                     if (panel instanceof PanelLine && panel.isEnabled()) {
-                        ((PanelLine) panel).addToBatch(tessellator, smx, smy, partialTick);
+                        batchQuads = ((PanelLine) panel).addToBatch(tessellator, smx, smy, partialTick, batchQuads);
                     }
                 }
+            } catch (RuntimeException e) {
+                failure = e;
+                throw e;
             } finally {
-                tessellator.draw();
+                try {
+                    tessellator.draw();
+                } catch (RuntimeException e) {
+                    if (failure == null) throw e;
+                    failure.addSuppressed(e);
+                }
             }
         } finally {
             GL11.glEnable(GL11.GL_TEXTURE_2D);
