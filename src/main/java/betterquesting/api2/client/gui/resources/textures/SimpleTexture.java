@@ -62,7 +62,8 @@ public class SimpleTexture implements IGuiTexture {
         color.applyGlColor();
 
         GL11.glEnable(GL11.GL_BLEND);
-        OpenGlHelper.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ZERO);
+        OpenGlHelper
+            .glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ONE_MINUS_SRC_ALPHA);
 
         Minecraft.getMinecraft().renderEngine.bindTexture(texture);
         GuiUtils.drawTexturedModalRect(
