@@ -237,7 +237,7 @@ public class CanvasQuestLine extends CanvasScrolling {
         if (clip) RenderUtils.startScissor(bounds);
         try {
             GL11.glTranslatef(tx - lsx * zs, ty - lsy * zs, 0F);
-            GL11.glScalef(zs, zs, zs);
+            GL11.glScalef(zs, zs, 1F);
             GL11.glDisable(GL11.GL_TEXTURE_2D);
 
             Tessellator tessellator = Tessellator.instance;
@@ -280,7 +280,7 @@ public class CanvasQuestLine extends CanvasScrolling {
         if (clip) RenderUtils.startScissor(bounds);
         try {
             GL11.glTranslatef(tx - lsx * zs, ty - lsy * zs, 0F);
-            GL11.glScalef(zs, zs, zs);
+            GL11.glScalef(zs, zs, 1F);
 
             for (IGuiPanel panel : getVisiblePanels()) {
                 if (panel instanceof PanelButtonQuest && panel.isEnabled()) {
@@ -633,13 +633,14 @@ public class CanvasQuestLine extends CanvasScrolling {
                     cache.framebufferClear();
                 }
                 cache.bindFramebuffer(false);
-                GL11.glDisable(GL11.GL_BLEND);
+                // Preserve alpha coverage from every button layer.
+                GL11.glEnable(GL11.GL_BLEND);
                 GL11.glDisable(GL11.GL_DEPTH_TEST);
                 GL11.glDepthMask(true);
                 OpenGlHelper.glBlendFunc(
                     GL11.GL_SRC_ALPHA,
                     GL11.GL_ONE_MINUS_SRC_ALPHA,
-                    GL11.GL_SRC_ALPHA,
+                    GL11.GL_ONE,
                     GL11.GL_ONE_MINUS_SRC_ALPHA);
                 GL11.glColor4f(1F, 1F, 1F, 1F);
                 drawButtons.run();
@@ -672,8 +673,11 @@ public class CanvasQuestLine extends CanvasScrolling {
                 GL11.glEnable(GL11.GL_BLEND);
                 GL11.glDisable(GL11.GL_DEPTH_TEST);
                 GL11.glDepthMask(false);
-                OpenGlHelper
-                    .glBlendFunc(GL11.GL_ONE, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ONE_MINUS_SRC_ALPHA);
+                OpenGlHelper.glBlendFunc(
+                    GL11.GL_SRC_ALPHA,
+                    GL11.GL_ONE_MINUS_SRC_ALPHA,
+                    GL11.GL_ONE,
+                    GL11.GL_ONE_MINUS_SRC_ALPHA);
                 GL11.glColor4f(1F, 1F, 1F, 1F);
                 GL11.glEnable(GL11.GL_TEXTURE_2D);
 
