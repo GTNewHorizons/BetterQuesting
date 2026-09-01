@@ -287,6 +287,30 @@ public class CanvasQuestLine extends CanvasScrolling {
                     panel.drawPanel(smx, smy, partialTick);
                 }
             }
+
+            if (!clip) {
+                GL11.glPushAttrib(GL11.GL_COLOR_BUFFER_BIT);
+                GL11.glColorMask(false, false, false, true);
+                try {
+                    for (IGuiPanel panel : getVisiblePanels()) {
+                        if (panel instanceof PanelButtonQuest && panel.isEnabled()) {
+                            PanelButtonQuest button = (PanelButtonQuest) panel;
+                            IGuiRect frame = button.getTransform();
+                            if (button.txFrame != null) {
+                                button.txFrame.drawTexture(
+                                    frame.getX(),
+                                    frame.getY(),
+                                    frame.getWidth(),
+                                    frame.getHeight(),
+                                    0F,
+                                    partialTick);
+                            }
+                        }
+                    }
+                } finally {
+                    GL11.glPopAttrib();
+                }
+            }
         } finally {
             if (clip) RenderUtils.endScissor();
             GL11.glPopMatrix();
@@ -673,11 +697,8 @@ public class CanvasQuestLine extends CanvasScrolling {
                 GL11.glEnable(GL11.GL_BLEND);
                 GL11.glDisable(GL11.GL_DEPTH_TEST);
                 GL11.glDepthMask(false);
-                OpenGlHelper.glBlendFunc(
-                    GL11.GL_SRC_ALPHA,
-                    GL11.GL_ONE_MINUS_SRC_ALPHA,
-                    GL11.GL_ONE,
-                    GL11.GL_ONE_MINUS_SRC_ALPHA);
+                OpenGlHelper
+                    .glBlendFunc(GL11.GL_ONE, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ONE_MINUS_SRC_ALPHA);
                 GL11.glColor4f(1F, 1F, 1F, 1F);
                 GL11.glEnable(GL11.GL_TEXTURE_2D);
 
