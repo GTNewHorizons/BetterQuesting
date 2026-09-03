@@ -36,6 +36,7 @@ import betterquesting.api.questing.IQuest;
 import betterquesting.api.storage.BQ_Settings;
 import betterquesting.api.utils.RenderUtils;
 import betterquesting.api.utils.UuidConverter;
+import betterquesting.api2.client.gui.context.QuestHoverRegistry;
 import betterquesting.api2.client.gui.context.QuestTooltipRegistry;
 import betterquesting.api2.client.gui.misc.GuiAlign;
 import betterquesting.api2.client.gui.misc.GuiRectangle;
@@ -340,21 +341,16 @@ public class PanelTextBox implements IGuiPanel {
         StringBuilder formattedText = new StringBuilder(text.length() + underline.length());
         formattedText.append(underline);
 
-        for (int i = 0; i < text.length(); i++) {
-            char character = text.charAt(i);
-            formattedText.append(character);
-            if (character == '\u00a7' && i + 1 < text.length()) {
-                char formattingCode = text.charAt(++i);
-                formattedText.append(formattingCode);
-                int sequenceLength = getSectionColorSequenceLength(text, i - 1, formattingCode);
-                if (sequenceLength > 2) {
-                    formattedText.append(text, i + 1, i - 1 + sequenceLength);
-                    i += sequenceLength - 2;
-                }
-                if (resetsTextFormatting(formattingCode)) {
-                    formattedText.append(underline);
-                }
+        for (int i = 0; i < text.length();) {
+            int tokenLength = RenderUtils.getFormattingTokenLength(text, i);
+            if (tokenLength <= 0) {
+                formattedText.append(text.charAt(i++));
+                continue;
             }
+
+            formattedText.append(text, i, i + tokenLength);
+            if (RenderUtils.resetsTextFormatting(text, i)) formattedText.append(underline);
+            i += tokenLength;
         }
 
         return formattedText.toString();
@@ -367,19 +363,24 @@ public class PanelTextBox implements IGuiPanel {
         return new PanelTextBox(new GuiRectangle(0, 0, 0, 0), displayedText, false, true).text;
     }
 
-    private static int getSectionColorSequenceLength(String text, int start, char formattingCode) {
-        char lowerCode = Character.toLowerCase(formattingCode);
-        if (lowerCode == 'x' && RenderUtils.isValidSectionX(text, start)) return 14;
-        if (lowerCode != 'g' || start + 30 > text.length()) return 2;
-        return RenderUtils.isValidSectionX(text, start + 2) && RenderUtils.isValidSectionX(text, start + 16) ? 30 : 2;
-    }
-
-    private static boolean resetsTextFormatting(char formattingCode) {
-        return formattingCode == 'r' || (formattingCode >= '0' && formattingCode <= '9')
-            || (formattingCode >= 'a' && formattingCode <= 'f')
-            || formattingCode == 'x'
-            || formattingCode == 'g'
-            || formattingCode == 'q';
+    public static String getPlainText(String text) {
+        Objects.requireNonNull(text, "text");
+        String escapedText = text.replace("\\&", "\uE000");
+        String displayedText = GuiTextToggles.applyMonochromeIfEnabled(
+            IMAGE_TAG_PATTERN.matcher(escapedText)
+                .replaceAll(""));
+        PanelTextBox renderedText = new PanelTextBox(new GuiRectangle(0, 0, 0, 0), displayedText, false, true);
+        StringBuilder plainText = new StringBuilder(renderedText.text.length());
+        for (int i = 0; i < renderedText.text.length();) {
+            int tokenLength = RenderUtils.getFormattingTokenLength(renderedText.text, i);
+            if (tokenLength <= 0) {
+                plainText.append(renderedText.text.charAt(i++));
+            } else {
+                i += tokenLength;
+            }
+        }
+        return plainText.toString()
+            .replace('\uE000', '&');
     }
 
     private void bakeHotZones(List<String> lines) {
@@ -556,9 +557,8 @@ public class PanelTextBox implements IGuiPanel {
 
     @Override
     public boolean onMouseClick(int mx, int my, int click) {
-        int mxt = mx + getTransform().getX(), myt = my + getTransform().getY();
         for (HotZone hotZone : hotZones) {
-            if (hotZone.location.contains(mxt, myt)) {
+            if (hotZone.location.contains(mx, my)) {
                 if (hotZone.link instanceof String) {
                     URI uri = parseUri((String) hotZone.link);
                     if (uri == null) return false;
@@ -606,9 +606,9 @@ public class PanelTextBox implements IGuiPanel {
 
     @Override
     public List<String> getTooltip(int mx, int my) {
-        int mxt = mx + getTransform().getX(), myt = my + getTransform().getY();
         for (HotZone hotZone : hotZones) {
-            if (hotZone.location.contains(mxt, myt)) {
+            if (hotZone.location.contains(mx, my)) {
+                QuestHoverRegistry.offerCurrentTarget(hotZone.link);
                 List<String> tooltip = new ArrayList<>();
                 if (hotZone.link instanceof String) {
                     URI uri = parseUri((String) hotZone.link);
