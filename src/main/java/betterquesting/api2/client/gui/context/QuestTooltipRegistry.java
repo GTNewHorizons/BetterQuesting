@@ -16,6 +16,11 @@ public class QuestTooltipRegistry {
         providers.addIfAbsent(Objects.requireNonNull(provider, "provider"));
     }
 
+    /** Unregisters a provider and returns whether it was present. */
+    public static boolean unregister(IQuestTooltipProvider provider) {
+        return providers.remove(Objects.requireNonNull(provider, "provider"));
+    }
+
     /** Appends registered tooltip content in provider registration order. */
     public static void appendTooltip(Object target, List<String> tooltip) {
         Objects.requireNonNull(target, "target");

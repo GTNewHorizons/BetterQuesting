@@ -118,13 +118,6 @@ public class PanelButtonQuest extends PanelButtonStorage<Map.Entry<UUID, IQuest>
     @Override
     public void drawPanel(int mx, int my, float partialTick) {
         super.drawPanel(mx, my, partialTick);
-        Map.Entry<UUID, IQuest> value = this.getStoredValue();
-        if (value != null && value.getValue() != null) {
-            if (this.getTransform()
-                .contains(mx, my)) {
-                QuestHoverRegistry.setCurrentTarget(value);
-            }
-        }
         if (isBookmarked) {
             IGuiRect bounds = this.getTransform();
             PIN_TEX.drawTexture(
@@ -153,6 +146,7 @@ public class PanelButtonQuest extends PanelButtonStorage<Map.Entry<UUID, IQuest>
         Map.Entry<UUID, IQuest> value = this.getStoredValue();
         if (value == null || value.getValue() == null) return Collections.emptyList();
 
+        QuestHoverRegistry.offerCurrentTarget(value);
         List<String> tooltip = getQuestTooltip(value.getValue(), player, value.getKey());
         QuestTooltipRegistry.appendTooltip(value, tooltip);
         return tooltip;

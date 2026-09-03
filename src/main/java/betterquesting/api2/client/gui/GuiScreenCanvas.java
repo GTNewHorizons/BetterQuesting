@@ -195,12 +195,6 @@ public class GuiScreenCanvas extends GuiScreen implements IScene {
         try {
             this.drawPanel(mx, my, partialTick);
 
-            if (popup != null && popup.isEnabled()
-                && popup.getTransform()
-                    .contains(mx, my)) {
-                QuestHoverRegistry.clearCurrentTarget();
-            }
-
             List<String> tt = this.getTooltip(mx, my);
 
             if (tt != null && !tt.isEmpty()) {
@@ -415,8 +409,10 @@ public class GuiScreenCanvas extends GuiScreen implements IScene {
         List<String> tt;
 
         if (popup != null && popup.isEnabled()) {
-            tt = popup.getTooltip(mx, my);
-            if (tt != null) return tt;
+            if (popup.getTransform()
+                .contains(mx, my)) {
+                return popup.getTooltip(mx, my);
+            }
         }
 
         while (pnIter.hasPrevious()) {
