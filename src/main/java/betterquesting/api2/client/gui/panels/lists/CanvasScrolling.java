@@ -266,6 +266,10 @@ public class CanvasScrolling implements IGuiCanvas {
 
         int smx = (int) ((mx - tx) / zs) + lsx;
         int smy = (int) ((my - ty) / zs) + lsy;
+        if (!transform.contains(mx, my)) {
+            smx = Integer.MIN_VALUE;
+            smy = Integer.MIN_VALUE;
+        }
 
         for (IGuiPanel panel : getVisiblePanels()) {
             if (panel.isEnabled() && shouldDrawPanel(panel)) {
