@@ -262,7 +262,7 @@ public class CanvasScrolling implements IGuiCanvas {
         RenderUtils.startScissor(transform);
 
         GL11.glTranslatef(tx - lsx * zs, ty - lsy * zs, 0F);
-        GL11.glScalef(zs, zs, zs);
+        GL11.glScalef(zs, zs, 1F);
 
         int smx = (int) ((mx - tx) / zs) + lsx;
         int smy = (int) ((my - ty) / zs) + lsy;
