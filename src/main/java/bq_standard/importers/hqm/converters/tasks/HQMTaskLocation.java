@@ -21,18 +21,18 @@ public class HQMTaskLocation {
 
             TaskLocation task = new TaskLocation();
             task.name = JsonHelper.GetString(jLoc, "name", "New Location");
-            task.x = JsonHelper.GetNumber(jLoc, "posX", 0)
+            task.x = JsonHelper.GetNumber(jLoc, "x", 0)
                 .intValue();
-            task.y = JsonHelper.GetNumber(jLoc, "posY", 0)
+            task.y = JsonHelper.GetNumber(jLoc, "y", 0)
                 .intValue();
-            task.z = JsonHelper.GetNumber(jLoc, "posZ", 0)
+            task.z = JsonHelper.GetNumber(jLoc, "z", 0)
                 .intValue();
             task.dim = JsonHelper.GetNumber(jLoc, "dim", 0)
                 .intValue();
             task.range = JsonHelper.GetNumber(jLoc, "radius", -1)
                 .intValue();
-            task.hideInfo = JsonHelper.GetString(jLoc, "", "")
-                .equalsIgnoreCase("NONE");
+            task.hideInfo = JsonHelper.GetString(jLoc, "visible", "Location")
+                .equalsIgnoreCase("None");
             tList.add(task);
         }
 
