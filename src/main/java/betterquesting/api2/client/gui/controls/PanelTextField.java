@@ -868,8 +868,10 @@ public class PanelTextField<T> implements IGuiPanel {
             return true;
         } else if (this.isFocused && !lockFocus) {
             this.isFocused = false;
-            this.text = filter.parseValue(this.text)
-                .toString();
+            if (this.text != null && !this.text.isEmpty()) {
+                this.text = filter.parseValue(this.text)
+                    .toString();
+            }
             invalidateVisualLines();
             updateDisplayText();
             // setCursorPosition(0);
