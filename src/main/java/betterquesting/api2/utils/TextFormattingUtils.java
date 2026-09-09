@@ -1,6 +1,6 @@
 package betterquesting.api2.utils;
 
-public final class TextFormattingUtils {
+public class TextFormattingUtils {
 
     private TextFormattingUtils() {}
 

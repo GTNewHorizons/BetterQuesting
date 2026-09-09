@@ -167,6 +167,10 @@ public class PanelTextField<T> implements IGuiPanel {
         return (int) (scrollHeight * scrollY.readValue());
     }
 
+    public boolean hasVerticalScroll() {
+        return scrollHeight > 0;
+    }
+
     public void setScrollX(int value) {
         if (scrollWidth <= 0) {
             scrollX.writeValue(0F);
@@ -219,6 +223,14 @@ public class PanelTextField<T> implements IGuiPanel {
 
     public String getRawText() {
         return this.text;
+    }
+
+    public int getSelectionStart() {
+        return selectStart;
+    }
+
+    public int getSelectionEnd() {
+        return selectEnd;
     }
 
     public T getValue() {

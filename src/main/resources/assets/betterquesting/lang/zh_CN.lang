@@ -79,6 +79,7 @@ betterquesting.btn.prereq_visbility.implicit=除悬停或按住Shift时，其余
 betterquesting.btn.prereq_visbility.hidden=始终隐藏
 betterquesting.btn.bookmark_quest=加入书签
 betterquesting.btn.unbookmark_quest=取消书签
+betterquesting.btn.copy_description=复制描述
 betterquesting.btn.view_dependencies=查看前置
 betterquesting.btn.view_dependants=查看附属
 
@@ -131,6 +132,7 @@ betterquesting.tooltip.cycle.true=点击禁用
 betterquesting.tooltip.cycle.false=点击启用
 betterquesting.tooltip.lock_tray.true=点击解锁弹出栏
 betterquesting.tooltip.lock_tray.false=点击锁定弹出栏
+betterquesting.tooltip.quest_link.click=点击跳转
 
 betterquesting.notice.complete=任务完成
 betterquesting.notice.update=任务更新
