@@ -580,6 +580,7 @@ public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeeds
 
         csReward.setScrollY(scrollPosition.getRewardScrollY());
         csReward.updatePanelScroll();
+        updateScrollBar(csReward, scList);
 
         updateButtons();
     }
@@ -661,6 +662,7 @@ public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeeds
         }
         csTask.setScrollY(scrollPosition.getTaskScrollY());
         csTask.updatePanelScroll();
+        updateScrollBar(csTask, scList);
 
         updateButtons();
     }
@@ -691,12 +693,14 @@ public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeeds
         }
         cvInner.addPanel(paDescScroll);
         csDesc.setScrollDriverY(paDescScroll);
-        paDescScroll.setEnabled(
-            csDesc.getScrollBounds()
-                .getHeight() > 0);
+        updateScrollBar(csDesc, paDescScroll);
 
         csDesc.setScrollY(scrollPosition.getDescScrollY());
         csDesc.updatePanelScroll();
+    }
+
+    private static void updateScrollBar(CanvasScrolling canvas, PanelVScrollBar scrollBar) {
+        scrollBar.setEnabled(canvas.getScrollBounds().getHeight() > 0);
     }
 
     private void addQuestDescPanels() {
