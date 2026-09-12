@@ -700,7 +700,9 @@ public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeeds
     }
 
     private static void updateScrollBar(CanvasScrolling canvas, PanelVScrollBar scrollBar) {
-        scrollBar.setEnabled(canvas.getScrollBounds().getHeight() > 0);
+        scrollBar.setEnabled(
+            canvas.getScrollBounds()
+                .getHeight() > 0);
     }
 
     private void addQuestDescPanels() {
