@@ -55,6 +55,8 @@ public class SaveLoadHandler {
 
     private final Set<UUID> dirtyPlayers = new ConcurrentSet<>();
 
+    private final Set<UUID> loadedPlayers = new ConcurrentSet<>();
+
     public boolean hasUpdate() {
         return this.hasUpdate;
     }
@@ -77,6 +79,7 @@ public class SaveLoadHandler {
 
     public void loadDatabases(MinecraftServer server) {
         hasUpdate = false;
+        loadedPlayers.clear();
 
         if (BetterQuesting.proxy.isClient()) {
             GuiHome.bookmark = null;
@@ -152,6 +155,7 @@ public class SaveLoadHandler {
         BQ_Settings.curWorldDir = null;
         hasUpdate = false;
         isDirty = false;
+        loadedPlayers.clear();
 
         QuestSettings.INSTANCE.reset();
         QuestDatabase.INSTANCE.clear();
@@ -265,13 +269,13 @@ public class SaveLoadHandler {
                 }
             }
             dirtyPlayers.addAll(usersFound);
+            // Players migrated from the legacy combined file are already in
+            // memory; mark them loaded so they are not re-read on connect.
+            loadedPlayers.addAll(usersFound);
         }
 
-        getPlayerProgressFiles().forEach(file -> {
-            JsonObject json = JsonHelper.ReadFromFile(file);
-            NBTTagCompound nbt = NBTConverter.JSONtoNBT_Object(json, new NBTTagCompound(), true);
-            QuestDatabase.INSTANCE.readProgressFromNBT(nbt.getTagList("questProgress", 10), true);
-        });
+        // Per-player progress files are now loaded lazily in loadPlayerProgress
+        // when each player connects.
     }
 
     private void LoadParties() {
@@ -369,16 +373,19 @@ public class SaveLoadHandler {
             out -> NBTConverter.NBTtoJSON_Compound(json, out, true));
     }
 
-    private List<File> getPlayerProgressFiles() {
-        final File[] files = dirProgress.listFiles();
-        if (files == null) {
-            return new ArrayList<>();
+    public void loadPlayerProgress(UUID player) {
+        if (player == null || !loadedPlayers.add(player)) {
+            // Null UUID, or already loaded this session - do not re-read and
+            // clobber in-memory progress that may be newer than disk.
+            return;
         }
-        return Arrays.stream(files)
-            .filter(
-                f -> f.getName()
-                    .endsWith(".json"))
-            .collect(Collectors.toList());
+
+        File playerFile = new File(dirProgress, player.toString() + ".json");
+        if (playerFile.exists()) {
+            JsonObject json = JsonHelper.ReadFromFile(playerFile);
+            NBTTagCompound nbt = NBTConverter.JSONtoNBT_Object(json, new NBTTagCompound(), true);
+            QuestDatabase.INSTANCE.readProgressFromNBT(nbt.getTagList("questProgress", 10), true);
+        }
     }
 
 }
