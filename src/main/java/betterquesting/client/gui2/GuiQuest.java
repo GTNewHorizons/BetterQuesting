@@ -73,16 +73,6 @@ public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeeds
      */
     private static final Map<UUID, ScrollPosition> scrollsPositions = new HashMap<>();
     private static final Pattern img = Pattern.compile("\\[img height=([1-9]\\d*)] *(.*?:.*?) *\\[/img]");
-    private static final Pattern DESCRIPTION_FORMATING_REMOVER = Pattern.compile(
-        "§g§x(?:§[0-9a-fA-F]){6}§x(?:§[0-9a-fA-F]){6}" // §g gradient (30 chars)
-            + "|§x(?:§[0-9a-fA-F]){6}" // §x RGB (14 chars)
-            + "|§[0-9a-fA-Fk-orxqgzv]" // § single codes
-            + "|&g&#[0-9a-fA-F]{6}&#[0-9a-fA-F]{6}" // &g gradient (18 chars)
-            + "|&#[0-9a-fA-F]{6}" // &#RRGGBB (8 chars)
-            + "|&[0-9a-fA-Fk-orqgzv]" // & single codes
-            + "|\\[(?:url|warn|note|quest|questlink)]" // opening tags
-            + "|\\[/(?:url|warn|note|quest|questlink|img)]" // closing tags
-            + "|\\[img.*?]"); // img tags
     private ScrollPosition scrollPosition;
 
     public static class ScrollPosition {
@@ -207,6 +197,8 @@ public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeeds
 
         PanelButton copyButton = new PanelButton(new GuiTransform(GuiAlign.TOP_LEFT, 16, 10, 16, 16, 0), 8, "");
         copyButton.setIcon(PresetIcon.ICON_COPY.getTexture());
+        copyButton
+            .setTooltip(Collections.singletonList(QuestTranslation.translate("betterquesting.btn.copy_description")));
         cvBackground.addPanel(copyButton);
 
         int btnOffset = 34;
@@ -386,10 +378,7 @@ public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeeds
                 break;
             case 8: // Copy description
                 String questText = QuestTranslation.translateQuestDescription(questID, quest);
-                questText = questText.replace("\\&", "\uE000");
-                Matcher matcher = DESCRIPTION_FORMATING_REMOVER.matcher(questText);
-                String clearedText = matcher.replaceAll("")
-                    .replace('\uE000', '&');
+                String clearedText = PanelTextBox.getPlainText(questText);
                 setClipboardString(clearedText);
                 break;
             case 9: // View dependencies

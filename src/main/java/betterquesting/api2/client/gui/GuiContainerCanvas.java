@@ -21,6 +21,7 @@ import org.lwjgl.opengl.GL11;
 import betterquesting.api.client.gui.misc.IVolatileScreen;
 import betterquesting.api.storage.BQ_Settings;
 import betterquesting.api.utils.RenderUtils;
+import betterquesting.api2.client.gui.context.QuestHoverRegistry;
 import betterquesting.api2.client.gui.misc.ComparatorGuiDepth;
 import betterquesting.api2.client.gui.misc.GuiAlign;
 import betterquesting.api2.client.gui.misc.GuiPadding;
@@ -115,6 +116,7 @@ public class GuiContainerCanvas extends GuiContainer implements IScene {
     @Override
     public void onGuiClosed() {
         super.onGuiClosed();
+        QuestHoverRegistry.clearCurrentTarget();
 
         Keyboard.enableRepeatEvents(false);
     }
@@ -157,16 +159,19 @@ public class GuiContainerCanvas extends GuiContainer implements IScene {
         GL11.glColor4f(1F, 1F, 1F, 1F);
         GL11.glDisable(GL11.GL_DEPTH_TEST);
 
-        this.drawPanel(mx, my, partialTick);
+        QuestHoverRegistry.beginFrame();
+        try {
+            this.drawPanel(mx, my, partialTick);
 
-        List<String> tt = this.getTooltip(mx, my);
-
-        if (tt != null && tt.size() > 0) {
-            this.drawHoveringText(tt, mx, my, fontRendererObj);
+            List<String> tt = this.getTooltip(mx, my);
+            if (tt != null && tt.size() > 0) {
+                this.drawHoveringText(tt, mx, my, fontRendererObj);
+            }
+        } finally {
+            QuestHoverRegistry.endFrame();
+            GL11.glEnable(GL11.GL_DEPTH_TEST);
+            GL11.glPopMatrix();
         }
-
-        GL11.glEnable(GL11.GL_DEPTH_TEST);
-        GL11.glPopMatrix();
     }
 
     /**
@@ -356,8 +361,10 @@ public class GuiContainerCanvas extends GuiContainer implements IScene {
         List<String> tt;
 
         if (popup != null && popup.isEnabled()) {
-            tt = popup.getTooltip(mx, my);
-            if (tt != null) return tt;
+            if (popup.getTransform()
+                .contains(mx, my)) {
+                return popup.getTooltip(mx, my);
+            }
         }
 
         while (pnIter.hasPrevious()) {

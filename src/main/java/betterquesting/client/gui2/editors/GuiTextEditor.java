@@ -79,6 +79,13 @@ public class GuiTextEditor extends GuiScreenCanvas implements IPEventListener, I
     public void initPanel() {
         super.initPanel();
 
+        PanelTextField<String> previousTextField = flText;
+        String currentText = previousTextField == null ? textIn : previousTextField.getRawText();
+        int selectionStart = previousTextField == null ? 0 : previousTextField.getSelectionStart();
+        int selectionEnd = previousTextField == null ? 0 : previousTextField.getSelectionEnd();
+        int scrollX = previousTextField == null ? 0 : previousTextField.getScrollX();
+        int scrollY = previousTextField == null ? 0 : previousTextField.getScrollY();
+
         PEventBroadcaster.INSTANCE.register(this, PEventButton.class);
         Keyboard.enableRepeatEvents(true);
 
@@ -102,13 +109,26 @@ public class GuiTextEditor extends GuiScreenCanvas implements IPEventListener, I
 
         flText = new PanelTextField<>(
             new GuiTransform(GuiAlign.FULL_BOX, new GuiPadding(124, 32, 24, 32), 0),
-            flText != null ? flText.getRawText() : textIn,
+            currentText,
             FieldFilterString.INSTANCE);
         flText.setDisplayFormatter(new TextEditorSyntaxHighlighter());
         cvBackground.addPanel(flText);
         flText.setMaxLength(Integer.MAX_VALUE);
         flText.enableWrapping(true);
         flText.lockFocus(true);
+
+        PanelVScrollBar scTextScroll = new PanelVScrollBar(
+            new GuiTransform(GuiAlign.RIGHT_EDGE, new GuiPadding(0, 0, -8, 0), 0));
+        cvBackground.addPanel(scTextScroll);
+        scTextScroll.getTransform()
+            .setParent(flText.getTransform());
+        flText.setScrollDriverY(scTextScroll);
+        scTextScroll.setActive(flText.hasVerticalScroll());
+        flText.setCallback(value -> scTextScroll.setActive(flText.hasVerticalScroll()));
+        flText.setCursorPosition(selectionStart);
+        flText.setSelectionPos(selectionEnd);
+        flText.setScrollX(scrollX);
+        flText.setScrollY(scrollY);
 
         CanvasScrolling cvFormatList = new CanvasScrolling(
             new GuiTransform(GuiAlign.LEFT_EDGE, new GuiPadding(16, 32, -116, 32), 0));

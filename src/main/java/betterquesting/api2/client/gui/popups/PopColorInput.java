@@ -446,7 +446,7 @@ public class PopColorInput extends CanvasEmpty {
         return true;
     }
 
-    // ==================== Inner panel classes ====================
+    // Inner panel classes
 
     /** Saturation/Value square: X = saturation, Y = value (inverted) */
     private class SatValPanel implements IGuiPanel {
