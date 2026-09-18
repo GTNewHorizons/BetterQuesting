@@ -2,12 +2,15 @@ package betterquesting.api2.client.gui.panels.content;
 
 import java.util.List;
 
+import net.minecraft.client.renderer.Tessellator;
+
 import org.lwjgl.opengl.GL11;
 
 import betterquesting.api2.client.gui.misc.GuiRectangle;
 import betterquesting.api2.client.gui.misc.IGuiRect;
 import betterquesting.api2.client.gui.panels.IGuiPanel;
 import betterquesting.api2.client.gui.resources.colors.IGuiColor;
+import betterquesting.api2.client.gui.resources.lines.DirectionalLine;
 import betterquesting.api2.client.gui.resources.lines.IGuiLine;
 
 public class PanelLine implements IGuiPanel {
@@ -59,6 +62,19 @@ public class PanelLine implements IGuiPanel {
     @Override
     public boolean isEnabled() {
         return this.enabled;
+    }
+
+    public boolean isBatchable() {
+        return line.getClass() == DirectionalLine.class;
+    }
+
+    public int addToBatch(Tessellator tessellator, int mx, int my, float partialTick, int batchQuads) {
+        if (!isBatchable()) return batchQuads;
+        if (enabled && (shouldDraw == null || shouldDraw.shouldDraw(mx, my, partialTick))) {
+            boolean shouldAnimate = animatePredicate != null && animatePredicate.shouldDraw(mx, my, partialTick);
+            return ((DirectionalLine) line).addLine(tessellator, start, end, width, color, shouldAnimate, batchQuads);
+        }
+        return batchQuads;
     }
 
     @Override

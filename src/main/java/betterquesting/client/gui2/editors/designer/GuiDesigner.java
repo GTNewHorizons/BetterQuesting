@@ -109,6 +109,7 @@ public class GuiDesigner extends GuiScreenCanvas implements IVolatileScreen, INe
         cvBackground.addPanel(pnFrame);
 
         cvQuest = new CanvasQuestLine(new GuiTransform(GuiAlign.FULL_BOX, new GuiPadding(16, 16, 16, 16), 0), 1);
+        cvQuest.enableBlocking(false); // Designer tools move panels without rebuilding culling regions.
         cvBackground.addPanel(cvQuest);
         cvQuest.setQuestLine(questLine);
 

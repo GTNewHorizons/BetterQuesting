@@ -4,6 +4,8 @@ import java.util.function.Consumer;
 
 import net.minecraft.client.gui.GuiScreen;
 
+import org.lwjgl.input.Keyboard;
+
 import betterquesting.api2.client.gui.GuiScreenCanvas;
 import betterquesting.api2.client.gui.controls.PanelButton;
 import betterquesting.api2.client.gui.controls.PanelTextField;
@@ -32,6 +34,7 @@ public class GuiQuestSearch extends GuiScreenCanvas {
     @Override
     public void initPanel() {
         super.initPanel();
+        Keyboard.enableRepeatEvents(true);
         CanvasTextured cvBackground = new CanvasTextured(
             new GuiTransform(GuiAlign.FULL_BOX, new GuiPadding(0, 0, 0, 0), 0),
             PresetTexture.PANEL_MAIN.getTexture());

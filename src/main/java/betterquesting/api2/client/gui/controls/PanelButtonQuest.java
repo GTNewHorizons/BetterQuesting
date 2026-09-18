@@ -96,7 +96,7 @@ public class PanelButtonQuest extends PanelButtonStorage<Map.Entry<UUID, IQuest>
                 txFrame = null;
         }
 
-        IGuiTexture btnTx = new GuiTextureColored(txFrame, txIconCol);
+        IGuiTexture btnTx = new GuiTextureColored(QuestFrameCache.wrap(txFrame), txIconCol);
         setTextures(btnTx, btnTx, btnTx);
         setIcon(
             new OreDictTexture(
@@ -130,6 +130,10 @@ public class PanelButtonQuest extends PanelButtonStorage<Map.Entry<UUID, IQuest>
 
     public void setBookmarked(boolean state) {
         isBookmarked = state;
+    }
+
+    public boolean isBookmarked() {
+        return isBookmarked;
     }
 
     @Override
