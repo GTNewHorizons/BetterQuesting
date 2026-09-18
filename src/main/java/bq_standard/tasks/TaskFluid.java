@@ -29,6 +29,7 @@ import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.questing.IQuest;
 import betterquesting.api.questing.tasks.IFluidTask;
 import betterquesting.api.questing.tasks.IItemTask;
+import betterquesting.api.questing.tasks.TaskProgressLine;
 import betterquesting.api.utils.JsonHelper;
 import betterquesting.api.utils.NBTConverter;
 import betterquesting.api2.client.gui.misc.IGuiRect;
@@ -36,6 +37,7 @@ import betterquesting.api2.client.gui.panels.IGuiPanel;
 import betterquesting.api2.utils.ParticipantInfo;
 import betterquesting.api2.utils.Tuple2;
 import bq_standard.client.gui.tasks.PanelTaskFluid;
+import bq_standard.tasks.base.HudProgress;
 import bq_standard.tasks.base.TaskProgressableBase;
 import bq_standard.tasks.factory.FactoryTaskFluid;
 import cpw.mods.fml.relauncher.Side;
@@ -510,5 +512,10 @@ public class TaskFluid extends TaskProgressableBase<int[]> implements ITaskInven
                 }
             }
         }
+    }
+
+    @Override
+    public List<TaskProgressLine> getHudProgress(UUID uuid) {
+        return HudProgress.fluids(requiredFluids, getUsersProgress(uuid));
     }
 }

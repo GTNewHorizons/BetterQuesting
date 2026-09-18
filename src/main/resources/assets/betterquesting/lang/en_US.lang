@@ -84,6 +84,8 @@ betterquesting.btn.prereq_visbility.hidden=Hidden regardless of user input
 betterquesting.btn.bookmark_quest=Bookmark
 betterquesting.btn.unbookmark_quest=Unbookmark
 betterquesting.btn.share_quest=Share to Chat
+betterquesting.btn.track_quest=Track
+betterquesting.btn.untrack_quest=Untrack
 betterquesting.btn.copy_quest=Copy Quest ID
 betterquesting.btn.view_dependencies=View Dependencies
 betterquesting.btn.view_dependants=View Dependents
@@ -164,6 +166,7 @@ betterquesting.msg.share_quest_hover_text_failure=§cQuest is Currently Inaccess
 betterquesting.msg.copy_quest_copied=§eCopied to clipboard:
 betterquesting.msg.copy_quest_failed=§cCould not copy to clipboard!
 
+key.betterquesting.tracker=Toggle Quest Tracker
 key.betterquesting.quests=Open Quests
 key.betterquesting.party=Party Manager
 key.betterquesting.themes=Change Theme

@@ -35,6 +35,32 @@ public class ConfigHandler {
         } else {
             BQ_Settings.notificationStyle = style;
         }
+        BQ_Settings.trackerHud = config.getBoolean(
+            "Quest Tracker HUD",
+            Configuration.CATEGORY_GENERAL,
+            true,
+            "Show the tracked quest and its task progress on screen");
+        BQ_Settings.trackerOffsetX = config.getInt(
+            "Quest Tracker Offset X",
+            Configuration.CATEGORY_GENERAL,
+            4,
+            -1000,
+            1000,
+            "Horizontal offset of the quest tracker. Positive = from the left screen edge, negative = right aligned from the right edge.");
+        BQ_Settings.trackerOffsetY = config.getInt(
+            "Quest Tracker Offset Y",
+            Configuration.CATEGORY_GENERAL,
+            4,
+            -1000,
+            1000,
+            "Vertical offset of the quest tracker from the top of the screen. Positive = lower.");
+        BQ_Settings.trackerScale = config.getFloat(
+            "Quest Tracker Scale",
+            Configuration.CATEGORY_GENERAL,
+            0.75f,
+            0.5f,
+            3.0f,
+            "Text size of the quest tracker");
         BQ_Settings.showNotificationIcon = config.getBoolean(
             "Show Notification Icon",
             Configuration.CATEGORY_GENERAL,
