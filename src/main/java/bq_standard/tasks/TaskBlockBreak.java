@@ -19,6 +19,7 @@ import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.oredict.OreDictionary;
 
 import betterquesting.api.questing.IQuest;
+import betterquesting.api.questing.tasks.TaskProgressLine;
 import betterquesting.api.utils.ItemComparison;
 import betterquesting.api.utils.NBTConverter;
 import betterquesting.api2.client.gui.misc.IGuiRect;
@@ -27,6 +28,7 @@ import betterquesting.api2.utils.ParticipantInfo;
 import betterquesting.api2.utils.Tuple2;
 import bq_standard.NbtBlockType;
 import bq_standard.client.gui.tasks.PanelTaskBlockBreak;
+import bq_standard.tasks.base.HudProgress;
 import bq_standard.tasks.base.TaskProgressableBase;
 import bq_standard.tasks.factory.FactoryTaskBlockBreak;
 import cpw.mods.fml.relauncher.Side;
@@ -206,15 +208,15 @@ public class TaskBlockBreak extends TaskProgressableBase<int[]> {
     }
 
     @Override
-    public List<String> getHudProgress(UUID uuid) {
+    public List<TaskProgressLine> getHudProgress(UUID uuid) {
         int[] progress = getUsersProgress(uuid);
-        List<String> lines = new ArrayList<>(blockTypes.size());
+        List<TaskProgressLine> lines = new ArrayList<>(blockTypes.size());
         for (int i = 0; i < blockTypes.size(); i++) {
             NbtBlockType type = blockTypes.get(i);
             int done = i < progress.length ? progress[i] : 0;
             String name = type.oreDict != null && !type.oreDict.isEmpty() ? type.oreDict
                 : new ItemStack(type.b, 1, Math.max(type.m, 0)).getDisplayName();
-            lines.add(Math.min(done, type.n) + "/" + type.n + " " + name);
+            lines.add(HudProgress.format(done, type.n, name));
         }
         return lines;
     }

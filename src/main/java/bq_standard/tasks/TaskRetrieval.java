@@ -24,6 +24,7 @@ import net.minecraftforge.common.util.Constants;
 import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.questing.IQuest;
 import betterquesting.api.questing.tasks.IItemTask;
+import betterquesting.api.questing.tasks.TaskProgressLine;
 import betterquesting.api.utils.BigItemStack;
 import betterquesting.api.utils.ItemComparison;
 import betterquesting.api.utils.JsonHelper;
@@ -382,7 +383,7 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
     }
 
     @Override
-    public List<String> getHudProgress(UUID uuid) {
+    public List<TaskProgressLine> getHudProgress(UUID uuid) {
         return HudProgress.items(requiredItems, getUsersProgress(uuid));
     }
 }

@@ -14,6 +14,7 @@ import net.minecraft.util.DamageSource;
 import net.minecraft.util.ResourceLocation;
 
 import betterquesting.api.questing.IQuest;
+import betterquesting.api.questing.tasks.TaskProgressLine;
 import betterquesting.api.utils.ItemComparison;
 import betterquesting.api2.client.gui.misc.IGuiRect;
 import betterquesting.api2.client.gui.panels.IGuiPanel;
@@ -155,7 +156,7 @@ public class TaskHunt extends TaskProgressableBase<Integer> {
     }
 
     @Override
-    public List<String> getHudProgress(UUID uuid) {
+    public List<TaskProgressLine> getHudProgress(UUID uuid) {
         return HudProgress.line(idName, getUsersProgress(uuid), required);
     }
 }

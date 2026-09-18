@@ -6,6 +6,7 @@ import java.util.List;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.fluids.FluidStack;
 
+import betterquesting.api.questing.tasks.TaskProgressLine;
 import betterquesting.api.utils.BigItemStack;
 
 /**
@@ -13,30 +14,34 @@ import betterquesting.api.utils.BigItemStack;
  */
 public class HudProgress {
 
-    public static List<String> line(String name, long progress, long required) {
-        List<String> lines = new ArrayList<>(1);
-        lines.add(Math.min(progress, required) + "/" + required + " " + name);
+    public static List<TaskProgressLine> line(String name, long progress, long required) {
+        List<TaskProgressLine> lines = new ArrayList<>(1);
+        lines.add(format(progress, required, name));
         return lines;
     }
 
-    public static List<String> items(List<BigItemStack> required, int[] progress) {
-        List<String> lines = new ArrayList<>(required.size());
+    public static List<TaskProgressLine> items(List<BigItemStack> required, int[] progress) {
+        List<TaskProgressLine> lines = new ArrayList<>(required.size());
         for (int i = 0; i < required.size(); i++) {
             BigItemStack req = required.get(i);
             int done = i < progress.length ? progress[i] : 0;
-            lines.add(Math.min(done, req.stackSize) + "/" + req.stackSize + " " + itemName(req));
+            lines.add(format(done, req.stackSize, itemName(req)));
         }
         return lines;
     }
 
-    public static List<String> fluids(List<FluidStack> required, int[] progress) {
-        List<String> lines = new ArrayList<>(required.size());
+    public static List<TaskProgressLine> fluids(List<FluidStack> required, int[] progress) {
+        List<TaskProgressLine> lines = new ArrayList<>(required.size());
         for (int i = 0; i < required.size(); i++) {
             FluidStack req = required.get(i);
             int done = i < progress.length ? progress[i] : 0;
-            lines.add(Math.min(done, req.amount) + "/" + req.amount + " " + req.getLocalizedName());
+            lines.add(format(done, req.amount, req.getLocalizedName()));
         }
         return lines;
+    }
+
+    public static TaskProgressLine format(long progress, long required, String name) {
+        return new TaskProgressLine(Math.min(progress, required) + "/" + required + " " + name, progress >= required);
     }
 
     private static String itemName(BigItemStack stack) {

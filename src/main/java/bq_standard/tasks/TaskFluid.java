@@ -29,6 +29,7 @@ import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.questing.IQuest;
 import betterquesting.api.questing.tasks.IFluidTask;
 import betterquesting.api.questing.tasks.IItemTask;
+import betterquesting.api.questing.tasks.TaskProgressLine;
 import betterquesting.api.utils.JsonHelper;
 import betterquesting.api.utils.NBTConverter;
 import betterquesting.api2.client.gui.misc.IGuiRect;
@@ -514,7 +515,7 @@ public class TaskFluid extends TaskProgressableBase<int[]> implements ITaskInven
     }
 
     @Override
-    public List<String> getHudProgress(UUID uuid) {
+    public List<TaskProgressLine> getHudProgress(UUID uuid) {
         return HudProgress.fluids(requiredFluids, getUsersProgress(uuid));
     }
 }

@@ -23,6 +23,7 @@ import org.apache.logging.log4j.Level;
 
 import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.questing.IQuest;
+import betterquesting.api.questing.tasks.TaskProgressLine;
 import betterquesting.api.utils.BigItemStack;
 import betterquesting.api.utils.ItemComparison;
 import betterquesting.api.utils.JsonHelper;
@@ -272,7 +273,7 @@ public class TaskCrafting extends TaskProgressableBase<int[]> implements ITaskIt
     }
 
     @Override
-    public List<String> getHudProgress(UUID uuid) {
+    public List<TaskProgressLine> getHudProgress(UUID uuid) {
         return HudProgress.items(requiredItems, getUsersProgress(uuid));
     }
 }

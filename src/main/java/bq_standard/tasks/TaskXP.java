@@ -12,6 +12,7 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.util.Constants;
 
 import betterquesting.api.questing.IQuest;
+import betterquesting.api.questing.tasks.TaskProgressLine;
 import betterquesting.api2.client.gui.misc.IGuiRect;
 import betterquesting.api2.client.gui.panels.IGuiPanel;
 import betterquesting.api2.utils.ParticipantInfo;
@@ -143,7 +144,7 @@ public class TaskXP extends TaskProgressableBase<Long> implements ITaskTickable 
     }
 
     @Override
-    public List<String> getHudProgress(UUID uuid) {
+    public List<TaskProgressLine> getHudProgress(UUID uuid) {
         long xp = getUsersProgress(uuid);
         if (levels) xp = XPHelper.getXPLevel(xp);
         return HudProgress.line(levels ? "L" : "XP", xp, amount);

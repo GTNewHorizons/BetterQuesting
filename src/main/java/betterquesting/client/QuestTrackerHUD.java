@@ -13,6 +13,7 @@ import org.lwjgl.opengl.GL11;
 import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.questing.IQuest;
 import betterquesting.api.questing.tasks.ITask;
+import betterquesting.api.questing.tasks.TaskProgressLine;
 import betterquesting.api.storage.BQ_Settings;
 import betterquesting.api2.storage.DBEntry;
 import betterquesting.api2.utils.QuestTranslation;
@@ -91,10 +92,9 @@ public class QuestTrackerHUD {
         for (DBEntry<ITask> entry : quest.getTasks()
             .getEntries()) {
             final ITask task = entry.getValue();
+            // Tasks with OR logic count as done before every requirement is filled
             final boolean taskDone = task.isComplete(owner);
-            final String prefix = (taskDone ? EnumChatFormatting.GREEN + "✔ " : EnumChatFormatting.GRAY + "• ");
-
-            List<String> progress = null;
+            List<TaskProgressLine> progress = null;
             try {
                 progress = task.getHudProgress(owner);
             } catch (Exception ignored) {
@@ -102,14 +102,18 @@ public class QuestTrackerHUD {
             }
 
             if (progress == null || progress.isEmpty()) {
-                lines.add(prefix + QuestTranslation.translate(task.getUnlocalisedName()));
+                lines.add(prefix(taskDone) + QuestTranslation.translate(task.getUnlocalisedName()));
             } else {
-                for (String line : progress) {
-                    lines.add(prefix + line);
+                for (TaskProgressLine line : progress) {
+                    lines.add(prefix(taskDone || line.complete) + line.text);
                 }
             }
         }
 
         return lines;
+    }
+
+    private static String prefix(boolean complete) {
+        return complete ? EnumChatFormatting.GREEN + "✔ " : EnumChatFormatting.GRAY + "• ";
     }
 }
