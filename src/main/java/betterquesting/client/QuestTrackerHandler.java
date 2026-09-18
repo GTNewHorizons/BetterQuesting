@@ -49,7 +49,11 @@ public class QuestTrackerHandler {
     }
 
     private static void save() {
-        if (trackerFile == null) return;
+        if (trackerFile == null) {
+            // Nothing has been loaded yet, so we have nowhere safe to write to
+            BetterQuesting.logger.warn("Tracked quest not saved: no world or server loaded yet.");
+            return;
+        }
         try {
             FileUtils.writeLines(trackerFile, Collections.singletonList(tracked == null ? "" : tracked.toString()));
         } catch (IOException ignored) {
