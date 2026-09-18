@@ -64,7 +64,9 @@ public class QuestTrackerHUD {
             widest = Math.max(widest, mc.fontRenderer.getStringWidth(line));
         }
 
-        final int x = screenWidth - widest + BQ_Settings.trackerOffsetX;
+        // Positive X anchors to the left edge, negative anchors (and right aligns) to the right edge
+        final boolean rightAligned = BQ_Settings.trackerOffsetX < 0;
+        final int x = rightAligned ? screenWidth + BQ_Settings.trackerOffsetX - widest : BQ_Settings.trackerOffsetX;
         int y = BQ_Settings.trackerOffsetY;
 
         GL11.glPushMatrix();
@@ -72,7 +74,8 @@ public class QuestTrackerHUD {
         GL11.glEnable(GL11.GL_BLEND);
         GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         for (String line : lines) {
-            mc.fontRenderer.drawStringWithShadow(line, x + widest - mc.fontRenderer.getStringWidth(line), y, 0xFFFFFF);
+            int lineX = rightAligned ? x + widest - mc.fontRenderer.getStringWidth(line) : x;
+            mc.fontRenderer.drawStringWithShadow(line, lineX, y, 0xFFFFFF);
             y += mc.fontRenderer.FONT_HEIGHT + 1;
         }
         GL11.glPopMatrix();

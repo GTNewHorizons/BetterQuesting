@@ -43,21 +43,21 @@ public class ConfigHandler {
         BQ_Settings.trackerOffsetX = config.getInt(
             "Quest Tracker Offset X",
             Configuration.CATEGORY_GENERAL,
-            -4,
+            4,
             -1000,
             1000,
-            "Horizontal offset of the quest tracker. Negative = further left of the right screen edge.");
+            "Horizontal offset of the quest tracker. Positive = from the left screen edge, negative = right aligned from the right edge.");
         BQ_Settings.trackerOffsetY = config.getInt(
             "Quest Tracker Offset Y",
             Configuration.CATEGORY_GENERAL,
-            72,
+            4,
             -1000,
             1000,
-            "Vertical offset of the quest tracker from the top of the screen. Positive = lower. Default clears a minimap.");
+            "Vertical offset of the quest tracker from the top of the screen. Positive = lower.");
         BQ_Settings.trackerScale = config.getFloat(
             "Quest Tracker Scale",
             Configuration.CATEGORY_GENERAL,
-            1.0f,
+            0.75f,
             0.5f,
             3.0f,
             "Text size of the quest tracker");
