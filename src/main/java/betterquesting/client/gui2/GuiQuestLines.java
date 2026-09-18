@@ -77,6 +77,7 @@ import betterquesting.api2.storage.DBEntry;
 import betterquesting.api2.utils.QuestTranslation;
 import betterquesting.api2.utils.Tuple2;
 import betterquesting.client.BookmarkHandler;
+import betterquesting.client.QuestTrackerHandler;
 import betterquesting.client.gui2.editors.GuiQuestLinesEditor;
 import betterquesting.client.gui2.editors.designer.GuiDesigner;
 import betterquesting.core.BetterQuesting;
@@ -649,6 +650,10 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
                             .getStringWidth(QuestTranslation.translate("betterquesting.btn.share_quest"), fr);
                         maxWidth = Math.max(
                             maxWidth,
+                            RenderUtils
+                                .getStringWidth(QuestTranslation.translate("betterquesting.btn.untrack_quest"), fr));
+                        maxWidth = Math.max(
+                            maxWidth,
                             RenderUtils.getStringWidth(
                                 QuestTranslation.translate("betterquesting.btn.view_dependencies"),
                                 fr));
@@ -657,8 +662,8 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
                             RenderUtils
                                 .getStringWidth(QuestTranslation.translate("betterquesting.btn.view_dependants"), fr));
 
-                        int menuItemCount = 5 + QuestContextMenuRegistry.getEntries()
-                            .size(); // bookmark, share, copy, deps, dependants + external
+                        int menuItemCount = 6 + QuestContextMenuRegistry.getEntries()
+                            .size(); // bookmark, track, share, copy, deps, dependants + external
                         PopContextMenuHoverSub popup = new PopContextMenuHoverSub(
                             new GuiRectangle(mx, my, maxWidth + 20, menuItemCount * 16),
                             true);
@@ -676,6 +681,17 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
                             pinPopupText = QuestTranslation.translate("betterquesting.btn.bookmark_quest");
                         }
                         popup.addButton(pinPopupText, null, pinQuest);
+
+                        Runnable trackQuest = () -> {
+                            QuestTrackerHandler.toggle(questId);
+                            closePopup();
+                        };
+                        popup.addButton(
+                            QuestTranslation.translate(
+                                QuestTrackerHandler.isTracked(questId) ? "betterquesting.btn.untrack_quest"
+                                    : "betterquesting.btn.track_quest"),
+                            null,
+                            trackQuest);
 
                         Runnable questSharer = () -> {
                             mc.thePlayer

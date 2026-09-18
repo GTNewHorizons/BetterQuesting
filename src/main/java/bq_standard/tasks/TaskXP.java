@@ -1,5 +1,6 @@
 package bq_standard.tasks;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -16,6 +17,7 @@ import betterquesting.api2.client.gui.panels.IGuiPanel;
 import betterquesting.api2.utils.ParticipantInfo;
 import bq_standard.XPHelper;
 import bq_standard.client.gui.tasks.PanelTaskXP;
+import bq_standard.tasks.base.HudProgress;
 import bq_standard.tasks.base.TaskProgressableBase;
 import bq_standard.tasks.factory.FactoryTaskXP;
 import cpw.mods.fml.relauncher.Side;
@@ -138,5 +140,12 @@ public class TaskXP extends TaskProgressableBase<Long> implements ITaskTickable 
         long totalXP = getUsersProgress(pInfo.UUID);
 
         if (totalXP >= rawXP) setComplete(pInfo.UUID);
+    }
+
+    @Override
+    public List<String> getHudProgress(UUID uuid) {
+        long xp = getUsersProgress(uuid);
+        if (levels) xp = XPHelper.getXPLevel(xp);
+        return HudProgress.line(levels ? "L" : "XP", xp, amount);
     }
 }

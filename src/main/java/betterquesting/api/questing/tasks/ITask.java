@@ -51,4 +51,12 @@ public interface ITask extends INBTSaveLoad<NBTTagCompound>, INBTProgress<NBTTag
     default List<String> getTextsForSearch() {
         return null;
     }
+
+    /**
+     * Short progress lines for the quest tracker HUD, e.g. "15/26 Sand".
+     * Tasks without countable progress return null and the HUD falls back to the task name.
+     */
+    default List<String> getHudProgress(UUID uuid) {
+        return null;
+    }
 }

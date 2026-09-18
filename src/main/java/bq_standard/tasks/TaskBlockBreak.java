@@ -204,4 +204,18 @@ public class TaskBlockBreak extends TaskProgressableBase<int[]> {
         }
         return texts;
     }
+
+    @Override
+    public List<String> getHudProgress(UUID uuid) {
+        int[] progress = getUsersProgress(uuid);
+        List<String> lines = new ArrayList<>(blockTypes.size());
+        for (int i = 0; i < blockTypes.size(); i++) {
+            NbtBlockType type = blockTypes.get(i);
+            int done = i < progress.length ? progress[i] : 0;
+            String name = type.oreDict != null && !type.oreDict.isEmpty() ? type.oreDict
+                : new ItemStack(type.b, 1, Math.max(type.m, 0)).getDisplayName();
+            lines.add(Math.min(done, type.n) + "/" + type.n + " " + name);
+        }
+        return lines;
+    }
 }

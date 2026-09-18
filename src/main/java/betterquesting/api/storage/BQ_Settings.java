@@ -20,6 +20,10 @@ public class BQ_Settings {
     public static int guiHeight = -1;
     public static float textWidthCorrection = 1.0f;
     public static boolean questNotices = true;
+    public static boolean trackerHud = true;
+    public static int trackerOffsetX = -4;
+    public static int trackerOffsetY = 72;
+    public static float trackerScale = 1.0f;
     public static String notificationStyle = "title";
     public static boolean showNotificationIcon = true;
     public static float notificationDuration = 4.5f;

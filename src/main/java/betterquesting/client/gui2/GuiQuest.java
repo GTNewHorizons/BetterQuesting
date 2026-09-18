@@ -59,6 +59,7 @@ import betterquesting.api2.client.gui.themes.presets.PresetLine;
 import betterquesting.api2.client.gui.themes.presets.PresetTexture;
 import betterquesting.api2.storage.DBEntry;
 import betterquesting.api2.utils.QuestTranslation;
+import betterquesting.client.QuestTrackerHandler;
 import betterquesting.client.util.GuiTextToggles;
 import betterquesting.core.BetterQuesting;
 import betterquesting.network.handlers.NetQuestAction;
@@ -148,6 +149,7 @@ public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeeds
     private CanvasScrolling csTask;
 
     private CanvasScrolling csDesc;
+    private PanelButton btnTrack;
 
     public GuiQuest(GuiScreen parent, UUID questID) {
         super(parent);
@@ -265,11 +267,17 @@ public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeeds
         // if(quest.getTasks().size() > 0)
         {
             btnDetect = new PanelButton(
-                new GuiTransform(new Vector4f(0.5F, 1F, 1F, 1F), new GuiPadding(8, -16, 0, 0), 0),
+                new GuiTransform(new Vector4f(0.5F, 1F, 1F, 1F), new GuiPadding(8, -16, 68, 0), 0),
                 7,
                 QuestTranslation.translate("betterquesting.btn.detect_submit"));
             btnDetect.setActive(false);
             cvInner.addPanel(btnDetect);
+
+            btnTrack = new PanelButton(
+                new GuiTransform(new Vector4f(1F, 1F, 1F, 1F), new GuiPadding(-64, -16, 0, 0), 0),
+                11,
+                trackButtonText());
+            cvInner.addPanel(btnTrack);
 
             rectTask = new GuiTransform(GuiAlign.HALF_RIGHT, new GuiPadding(8, 16, 0, 16), 0);
             rectTask.setParent(cvInner.getTransform());
@@ -383,6 +391,10 @@ public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeeds
                 break;
             case 7: // Task detect/submit
                 NetQuestAction.requestDetect(Collections.singletonList(questID));
+                break;
+            case 11: // Track on the HUD
+                QuestTrackerHandler.toggle(questID);
+                if (btnTrack != null) btnTrack.setText(trackButtonText());
                 break;
             case 8: // Copy description
                 String questText = QuestTranslation.translateQuestDescription(questID, quest);
@@ -757,6 +769,12 @@ public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeeds
             new SimpleNoUVTexture(resourceLocation, dimension).maintainAspect(true));
         csDesc.addCulledPanel(paDesc, false);
         return paDesc;
+    }
+
+    private String trackButtonText() {
+        return QuestTranslation.translate(
+            QuestTrackerHandler.isTracked(questID) ? "betterquesting.btn.untrack_quest"
+                : "betterquesting.btn.track_quest");
     }
 
     private static int ceilDiv(int lhs, int rhs) {
