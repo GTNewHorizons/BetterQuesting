@@ -47,6 +47,7 @@ import betterquesting.api2.client.gui.panels.CanvasEmpty;
 import betterquesting.api2.client.gui.panels.CanvasTextured;
 import betterquesting.api2.client.gui.panels.IGuiPanel;
 import betterquesting.api2.client.gui.panels.bars.PanelVScrollBar;
+import betterquesting.api2.client.gui.panels.content.ItemNameTextProcessor;
 import betterquesting.api2.client.gui.panels.content.PanelGeneric;
 import betterquesting.api2.client.gui.panels.content.PanelLine;
 import betterquesting.api2.client.gui.panels.content.PanelTextBox;
@@ -385,7 +386,8 @@ public class GuiQuest extends GuiScreenCanvas implements IPEventListener, INeeds
                 NetQuestAction.requestDetect(Collections.singletonList(questID));
                 break;
             case 8: // Copy description
-                String questText = QuestTranslation.translateQuestDescription(questID, quest);
+                String questText = ItemNameTextProcessor
+                    .process(QuestTranslation.translateQuestDescription(questID, quest));
                 questText = questText.replace("\\&", "\uE000");
                 Matcher matcher = DESCRIPTION_FORMATING_REMOVER.matcher(questText);
                 String clearedText = matcher.replaceAll("")
