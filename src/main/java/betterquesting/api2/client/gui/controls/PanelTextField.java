@@ -25,6 +25,7 @@ import betterquesting.api2.client.gui.resources.colors.IGuiColor;
 import betterquesting.api2.client.gui.resources.textures.IGuiTexture;
 import betterquesting.api2.client.gui.themes.presets.PresetColor;
 import betterquesting.api2.client.gui.themes.presets.PresetTexture;
+import betterquesting.api2.utils.TextFormattingUtils;
 
 public class PanelTextField<T> implements IGuiPanel {
 
@@ -600,7 +601,7 @@ public class PanelTextField<T> implements IGuiPanel {
                 break;
             }
             currentLineStart = currentLineEnd;
-            activeFormatting = RenderUtils.getFormatFromString(activeFormatting + line);
+            activeFormatting = TextFormattingUtils.getFormatFromString(activeFormatting + line);
         }
 
         int targetLine = MathHelper.clamp_int(currentLine + direction, 0, lines.size() - 1);
@@ -622,7 +623,7 @@ public class PanelTextField<T> implements IGuiPanel {
         for (int index = 0; index < targetLine; index++) {
             String line = lines.get(index);
             targetLineStart += line.length();
-            targetFormatting = RenderUtils.getFormatFromString(targetFormatting + line);
+            targetFormatting = TextFormattingUtils.getFormatFromString(targetFormatting + line);
         }
 
         String targetLineText = lines.get(targetLine);
@@ -677,7 +678,7 @@ public class PanelTextField<T> implements IGuiPanel {
                     }
 
                     idx += s.length();
-                    lastFormat = RenderUtils.getFormatFromString(lastFormat + s);
+                    lastFormat = TextFormattingUtils.getFormatFromString(lastFormat + s);
                 }
 
                 y *= font.FONT_HEIGHT;
