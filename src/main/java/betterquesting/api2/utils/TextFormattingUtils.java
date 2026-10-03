@@ -62,19 +62,16 @@ public class TextFormattingUtils {
         char marker = text.charAt(pos);
         char code = Character.toLowerCase(text.charAt(pos + 1));
         if (marker == '&' && (code == '#' || code == 'g')) return true;
-        return code == 'r' || isFormatColor(text.charAt(pos + 1)) || code == 'x' || code == 'g' || code == 'q';
+        return code == 'r' || isFormatColor(text.charAt(pos + 1)) || code == 'x' || code == 'g';
     }
 
-    public static boolean isSingleCode(char code) {
+    private static boolean isSingleCode(char code) {
         char lowerCode = Character.toLowerCase(code);
         return isFormatColor(code) || lowerCode >= 'k' && lowerCode <= 'o'
             || lowerCode == 'r'
-            || lowerCode == 'u'
-            || lowerCode == 'x'
             || lowerCode == 'q'
             || lowerCode == 'z'
-            || lowerCode == 'v'
-            || lowerCode == 'g';
+            || lowerCode == 'v';
     }
 
     public static boolean isFormatColor(char code) {
@@ -94,22 +91,21 @@ public class TextFormattingUtils {
         return true;
     }
 
-    public static boolean isHex6(String text, int start) {
+    private static boolean isHex6(String text, int start) {
         if (start + 6 > text.length()) return false;
         for (int i = 0; i < 6; i++) if (!isHexChar(text.charAt(start + i))) return false;
         return true;
     }
 
-    public static boolean isHexChar(char code) {
+    private static boolean isHexChar(char code) {
         return code >= '0' && code <= '9' || code >= 'a' && code <= 'f' || code >= 'A' && code <= 'F';
     }
 
     /** Returns whether {@code code} is a supported ampersand formatting code. */
-    public static boolean isValidAmpCode(char code) {
+    private static boolean isValidAmpCode(char code) {
         char lowerCode = Character.toLowerCase(code);
         return isFormatColor(code) || lowerCode >= 'k' && lowerCode <= 'o'
             || lowerCode == 'r'
-            || lowerCode == 'x'
             || lowerCode == 'q'
             || lowerCode == 'z'
             || lowerCode == 'v';
@@ -129,7 +125,7 @@ public class TextFormattingUtils {
     }
 
     /** Parses six hexadecimal digits at {@code offset}, or returns {@code -1} on failure. */
-    public static int parseHex6(String text, int offset) {
+    private static int parseHex6(String text, int offset) {
         if (offset + 6 > text.length()) return -1;
         int value = 0;
         for (int i = 0; i < 6; i++) {
@@ -141,7 +137,7 @@ public class TextFormattingUtils {
     }
 
     /** Interpolates two RGB colors without an alpha channel. */
-    public static int lerpRgb(int from, int to, float blend) {
+    private static int lerpRgb(int from, int to, float blend) {
         int red = (int) (((from >> 16) & 0xFF) * (1 - blend) + ((to >> 16) & 0xFF) * blend);
         int green = (int) (((from >> 8) & 0xFF) * (1 - blend) + ((to >> 8) & 0xFF) * blend);
         int blue = (int) ((from & 0xFF) * (1 - blend) + (to & 0xFF) * blend);
@@ -149,12 +145,12 @@ public class TextFormattingUtils {
     }
 
     /** Formats an RGB value as an ampersand hex color token. */
-    public static String buildAmpHexColor(int rgb) {
+    private static String buildAmpHexColor(int rgb) {
         return String.format("&#%06X", rgb & 0xFFFFFF);
     }
 
     /** Counts visible characters until the active gradient is terminated. */
-    public static int countVisibleCharsInGradient(String text, int startIndex) {
+    private static int countVisibleCharsInGradient(String text, int startIndex) {
         int count = 0;
         for (int i = startIndex; i < text.length(); i++) {
             char character = text.charAt(i);
@@ -287,7 +283,7 @@ public class TextFormattingUtils {
     }
 
     /** Parses a section-sign RGB token at {@code offset}, or returns {@code -1} on failure. */
-    public static int parseRgbFromSectionX(String text, int offset) {
+    private static int parseRgbFromSectionX(String text, int offset) {
         if (offset + 14 > text.length()) return -1;
         int value = 0;
         for (int i = 0; i < 6; i++) {
@@ -317,8 +313,4 @@ public class TextFormattingUtils {
         return last == 'r' || last == 'R' ? "" : format.toString();
     }
 
-    /** Returns whether {@code code} is a style or reset formatting code. */
-    public static boolean isFormatSpecial(char code) {
-        return code >= 107 && code <= 111 || code >= 75 && code <= 79 || code == 114 || code == 82;
-    }
 }

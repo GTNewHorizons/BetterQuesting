@@ -654,6 +654,16 @@ public class RenderUtils {
     }
 
     /**
+     * Extracts active formatting tokens from a line for continuation on the next line.
+     *
+     * @deprecated Use {@link TextFormattingUtils#getFormatFromString(String)}.
+     */
+    @Deprecated
+    public static String getFormatFromString(String text) {
+        return TextFormattingUtils.getFormatFromString(text);
+    }
+
+    /**
      * Returns the index position under a given set of coordinates in a wrapped piece of text
      */
     public static int getCursorPos(String text, int x, int y, int width, FontRenderer font) {

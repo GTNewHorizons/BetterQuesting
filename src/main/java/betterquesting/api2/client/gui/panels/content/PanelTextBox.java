@@ -78,8 +78,7 @@ public class PanelTextBox implements IGuiPanel {
 
     static {
         QuestTooltipRegistry.register((target, tooltip) -> {
-            if (!(target instanceof UUID)) return;
-            UUID questId = (UUID) target;
+            if (!(target instanceof UUID questId)) return;
 
             IQuest quest = QuestDatabase.INSTANCE.get(questId);
             if (quest == null) return;
