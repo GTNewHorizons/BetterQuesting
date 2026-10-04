@@ -26,6 +26,8 @@ import betterquesting.api.questing.IQuest;
 import betterquesting.api.questing.tasks.ITask;
 import betterquesting.api.storage.BQ_Settings;
 import betterquesting.api.utils.BigItemStack;
+import betterquesting.api2.client.gui.context.QuestHoverRegistry;
+import betterquesting.api2.client.gui.context.QuestTooltipRegistry;
 import betterquesting.api2.client.gui.misc.GuiRectangle;
 import betterquesting.api2.client.gui.misc.IGuiRect;
 import betterquesting.api2.client.gui.resources.colors.IGuiColor;
@@ -142,7 +144,12 @@ public class PanelButtonQuest extends PanelButtonStorage<Map.Entry<UUID, IQuest>
             .contains(mx, my)) return null;
 
         Map.Entry<UUID, IQuest> value = this.getStoredValue();
-        return value == null ? Collections.emptyList() : getQuestTooltip(value.getValue(), player, value.getKey());
+        if (value == null || value.getValue() == null) return Collections.emptyList();
+
+        QuestHoverRegistry.offerCurrentTarget(value);
+        List<String> tooltip = getQuestTooltip(value.getValue(), player, value.getKey());
+        QuestTooltipRegistry.appendTooltip(value, tooltip);
+        return tooltip;
     }
 
     private List<String> getQuestTooltip(IQuest quest, EntityPlayer player, UUID qID) {

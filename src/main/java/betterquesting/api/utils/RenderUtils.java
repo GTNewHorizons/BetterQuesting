@@ -689,6 +689,66 @@ public class RenderUtils {
         return true;
     }
 
+    /**
+     * Returns the length of a formatting token starting at {@code pos}, or zero for text.
+     *
+     * <p>
+     * Supported tokens include two-character section-sign and ampersand codes, section-sign
+     * RGB ({@code §x}, 14 characters), section-sign gradients ({@code §g}, 30 characters),
+     * ampersand RGB ({@code &#RRGGBB}, 8 characters), and ampersand gradients ({@code &g},
+     * 18 characters).
+     * </p>
+     */
+    public static int getFormattingTokenLength(String text, int pos) {
+        if (text == null || pos < 0 || pos >= text.length()) return 0;
+
+        char marker = text.charAt(pos);
+        if (marker == '\u00a7' && pos + 1 < text.length()) {
+            char code = text.charAt(pos + 1);
+            char lowerCode = Character.toLowerCase(code);
+            if (lowerCode == 'g' && pos + 30 <= text.length()
+                && isValidSectionX(text, pos + 2)
+                && isValidSectionX(text, pos + 16)) return 30;
+            if (lowerCode == 'x' && isValidSectionX(text, pos)) return 14;
+            if (lowerCode == 'r' || isFormatColor(code)
+                || isFormatSpecial(code)
+                || lowerCode == 'q'
+                || lowerCode == 'z'
+                || lowerCode == 'v') return 2;
+            return 0;
+        }
+
+        if (marker != '&' || pos + 1 >= text.length()) return 0;
+        char code = text.charAt(pos + 1);
+        char lowerCode = Character.toLowerCase(code);
+        if (lowerCode == 'g' && pos + 18 <= text.length()
+            && text.charAt(pos + 2) == '&'
+            && text.charAt(pos + 3) == '#'
+            && isHex6(text, pos + 4)
+            && text.charAt(pos + 10) == '&'
+            && text.charAt(pos + 11) == '#'
+            && isHex6(text, pos + 12)) return 18;
+        if (code == '#' && pos + 8 <= text.length() && isHex6(text, pos + 2)) return 8;
+        if (lowerCode == 'r' || isFormatColor(code)
+            || isFormatSpecial(code)
+            || lowerCode == 'q'
+            || lowerCode == 'z'
+            || lowerCode == 'v') return 2;
+        return 0;
+    }
+
+    /** Returns whether the formatting token at {@code pos} resets colors or text styles. */
+    public static boolean resetsTextFormatting(String text, int pos) {
+        int tokenLength = getFormattingTokenLength(text, pos);
+        if (tokenLength == 0) return false;
+
+        char marker = text.charAt(pos);
+        char code = text.charAt(pos + 1);
+        char lowerCode = Character.toLowerCase(code);
+        if (marker == '&' && (code == '#' || lowerCode == 'g')) return true;
+        return lowerCode == 'r' || isFormatColor(code) || lowerCode == 'x' || lowerCode == 'g' || lowerCode == 'q';
+    }
+
     private static boolean isHex6(String str, int start) {
         if (start + 6 > str.length()) return false;
         for (int k = 0; k < 6; k++) {
