@@ -66,6 +66,7 @@ public class TextFormattingUtils {
         return code == 'r' || isFormatColor(text.charAt(pos + 1)) || code == 'x' || code == 'g';
     }
 
+    /** Returns whether the character is a supported single formatting code for either marker. */
     private static boolean isSingleCode(char code) {
         char lowerCode = Character.toLowerCase(code);
         return isFormatColor(code) || lowerCode >= 'k' && lowerCode <= 'o'
@@ -119,16 +120,6 @@ public class TextFormattingUtils {
 
     private static boolean isHexChar(char code) {
         return code >= '0' && code <= '9' || code >= 'a' && code <= 'f' || code >= 'A' && code <= 'F';
-    }
-
-    /** Returns whether {@code code} is a supported ampersand formatting code. */
-    private static boolean isValidAmpCode(char code) {
-        char lowerCode = Character.toLowerCase(code);
-        return isFormatColor(code) || lowerCode >= 'k' && lowerCode <= 'o'
-            || lowerCode == 'r'
-            || lowerCode == 'q'
-            || lowerCode == 'z'
-            || lowerCode == 'v';
     }
 
     /** Returns whether {@code format} starts with an ampersand RGB gradient. */
@@ -185,7 +176,7 @@ public class TextFormattingUtils {
                 if (lowerCode == 'g' && getFormattingTokenLength(text, i) == 18) break;
                 if (next == '#' && getFormattingTokenLength(text, i) == 8) break;
                 if (lowerCode == 'q' || lowerCode == 'r' || isFormatColor(next)) break;
-                if (isValidAmpCode(next)) i++;
+                if (isSingleCode(next)) i++;
                 else count++;
             } else {
                 count++;
@@ -232,7 +223,7 @@ public class TextFormattingUtils {
                         lastIndex = i;
                         break;
                     }
-                    if (isValidAmpCode(next)) {
+                    if (isSingleCode(next)) {
                         result.append(character)
                             .append(next);
                         i++;
