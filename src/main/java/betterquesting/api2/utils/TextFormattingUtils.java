@@ -77,9 +77,14 @@ public class TextFormattingUtils {
 
     private static boolean isStrippableSingleCode(char code) {
         char lowerCode = Character.toLowerCase(code);
-        return isFormatColor(code) || lowerCode >= 'k' && lowerCode <= 'o' || lowerCode == 'r'
-            || lowerCode == 'u' || lowerCode == 'x' || lowerCode == 'q' || lowerCode == 'z'
-            || lowerCode == 'v' || lowerCode == 'g';
+        return isFormatColor(code) || lowerCode >= 'k' && lowerCode <= 'o'
+            || lowerCode == 'r'
+            || lowerCode == 'u'
+            || lowerCode == 'x'
+            || lowerCode == 'q'
+            || lowerCode == 'z'
+            || lowerCode == 'v'
+            || lowerCode == 'g';
     }
 
     private static int getStrippableFormattingTokenLength(String text, int pos) {
