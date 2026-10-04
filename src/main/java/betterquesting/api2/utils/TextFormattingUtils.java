@@ -18,6 +18,7 @@ public class TextFormattingUtils {
                 i += 2;
             } else {
                 int tokenLength = getFormattingTokenLength(text, i);
+                if (tokenLength == 0) tokenLength = getStrippableFormattingTokenLength(text, i);
                 if (tokenLength > 0) i += tokenLength;
                 else {
                     sb.append(ch);
@@ -72,6 +73,20 @@ public class TextFormattingUtils {
             || lowerCode == 'q'
             || lowerCode == 'z'
             || lowerCode == 'v';
+    }
+
+    private static boolean isStrippableSingleCode(char code) {
+        char lowerCode = Character.toLowerCase(code);
+        return isFormatColor(code) || lowerCode >= 'k' && lowerCode <= 'o' || lowerCode == 'r'
+            || lowerCode == 'u' || lowerCode == 'x' || lowerCode == 'q' || lowerCode == 'z'
+            || lowerCode == 'v' || lowerCode == 'g';
+    }
+
+    private static int getStrippableFormattingTokenLength(String text, int pos) {
+        if (text == null || pos < 0 || pos >= text.length()) return 0;
+        char marker = text.charAt(pos);
+        if ((marker != '\u00a7' && marker != '&') || pos + 1 >= text.length()) return 0;
+        return isStrippableSingleCode(text.charAt(pos + 1)) ? 2 : 0;
     }
 
     public static boolean isFormatColor(char code) {
