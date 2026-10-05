@@ -47,6 +47,7 @@ import betterquesting.api2.client.gui.panels.IGuiPanel;
 import betterquesting.api2.client.gui.resources.colors.GuiColorStatic;
 import betterquesting.api2.client.gui.resources.colors.IGuiColor;
 import betterquesting.api2.utils.QuestTranslation;
+import betterquesting.api2.utils.TextFormattingUtils;
 import betterquesting.client.gui2.GuiQuest;
 import betterquesting.client.util.GuiTextToggles;
 import betterquesting.core.BetterQuesting;
@@ -342,14 +343,14 @@ public class PanelTextBox implements IGuiPanel {
         formattedText.append(underline);
 
         for (int i = 0; i < text.length();) {
-            int tokenLength = RenderUtils.getFormattingTokenLength(text, i);
+            int tokenLength = TextFormattingUtils.getFormattingTokenLength(text, i);
             if (tokenLength <= 0) {
                 formattedText.append(text.charAt(i++));
                 continue;
             }
 
             formattedText.append(text, i, i + tokenLength);
-            if (RenderUtils.resetsTextFormatting(text, i)) formattedText.append(underline);
+            if (TextFormattingUtils.resetsTextFormatting(text, i)) formattedText.append(underline);
             i += tokenLength;
         }
 
@@ -372,7 +373,7 @@ public class PanelTextBox implements IGuiPanel {
         PanelTextBox renderedText = new PanelTextBox(new GuiRectangle(0, 0, 0, 0), displayedText, false, true);
         StringBuilder plainText = new StringBuilder(renderedText.text.length());
         for (int i = 0; i < renderedText.text.length();) {
-            int tokenLength = RenderUtils.getFormattingTokenLength(renderedText.text, i);
+            int tokenLength = TextFormattingUtils.getFormattingTokenLength(renderedText.text, i);
             if (tokenLength <= 0) {
                 plainText.append(renderedText.text.charAt(i++));
             } else {

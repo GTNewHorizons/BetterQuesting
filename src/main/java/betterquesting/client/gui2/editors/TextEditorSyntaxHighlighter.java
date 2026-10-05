@@ -4,9 +4,9 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import betterquesting.api.utils.RenderUtils;
 import betterquesting.api2.client.gui.controls.PanelTextField;
 import betterquesting.api2.client.gui.panels.content.FormattingTag;
+import betterquesting.api2.utils.TextFormattingUtils;
 
 public class TextEditorSyntaxHighlighter implements Function<String, PanelTextField.TextDisplayText> {
 
@@ -73,7 +73,7 @@ public class TextEditorSyntaxHighlighter implements Function<String, PanelTextFi
                     formatting,
                     renderedText,
                     sourceToDisplay);
-                activeFormatting = RenderUtils.getFormatFromString(activeFormatting + formatting);
+                activeFormatting = TextFormattingUtils.getFormatFromString(activeFormatting + formatting);
                 index += sourceFormattingLength;
                 continue;
             }
@@ -81,7 +81,7 @@ public class TextEditorSyntaxHighlighter implements Function<String, PanelTextFi
             int sectionFormattingLength = getSectionFormattingLength(text, index, end);
             if (sectionFormattingLength > 0) {
                 appendRaw(text, index, index + sectionFormattingLength, renderedText, sourceToDisplay);
-                activeFormatting = RenderUtils
+                activeFormatting = TextFormattingUtils
                     .getFormatFromString(activeFormatting + text.substring(index, index + sectionFormattingLength));
                 index += sectionFormattingLength;
                 continue;
@@ -133,7 +133,7 @@ public class TextEditorSyntaxHighlighter implements Function<String, PanelTextFi
             return 0;
         }
         if (Character.toLowerCase(text.charAt(index + 1)) == 'x' && index + 14 <= end
-            && RenderUtils.isValidSectionX(text, index)) {
+            && TextFormattingUtils.isValidSectionX(text, index)) {
             return 14;
         }
         return 2;
