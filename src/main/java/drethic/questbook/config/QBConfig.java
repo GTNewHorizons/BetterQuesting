@@ -16,8 +16,6 @@ public class QBConfig {
     public static QBConfig instance;
 
     public static boolean spawnWithBook;
-    public static boolean disablePartyNotifications;
-    public static boolean disableQuestNotifications;
     public static boolean syncQuestRewards;
 
     public static final void init(FMLPreInitializationEvent e) {
@@ -35,16 +33,6 @@ public class QBConfig {
             "spawnWithBook",
             false,
             "Enable this option so new players will spawn with a Quest Book.  Default: false");
-        disablePartyNotifications = configBoolOption(
-            CATEGORY_GENERAL,
-            "disablePartyNotifications",
-            false,
-            "[NYI]Disable party notifications.  Default: false");
-        disableQuestNotifications = configBoolOption(
-            CATEGORY_GENERAL,
-            "disableQuestNotifications",
-            false,
-            "[NYI]Disable quest notifications.  Default: false");
         syncQuestRewards = configBoolOption(
             CATEGORY_GENERAL,
             "syncQuestRewards",
