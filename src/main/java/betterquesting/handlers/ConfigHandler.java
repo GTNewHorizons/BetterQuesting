@@ -9,6 +9,9 @@ import betterquesting.core.BetterQuesting;
 
 public class ConfigHandler {
 
+    public static final String CATEGORY_GENERAL = "general";
+    public static final String CATEGORY_NOTIFICATIONS = "notifications";
+
     public static Configuration config;
 
     public static void initConfigs() {
@@ -19,15 +22,160 @@ public class ConfigHandler {
 
         config.load();
 
+        BQ_Settings.curTheme = config
+            .getString("Theme", CATEGORY_GENERAL, "betterquesting:light", "The current questing theme");
+        BQ_Settings.useBookmark = config
+            .getBoolean("Use Quest Bookmark", CATEGORY_GENERAL, true, "Jumps the user to the last opened quest");
+        BQ_Settings.guiWidth = config.getInt(
+            "Max GUI Width",
+            CATEGORY_GENERAL,
+            -1,
+            -1,
+            Integer.MAX_VALUE,
+            "Clamps the max UI width (-1 to disable)");
+        BQ_Settings.guiHeight = config.getInt(
+            "Max GUI Height",
+            CATEGORY_GENERAL,
+            -1,
+            -1,
+            Integer.MAX_VALUE,
+            "Clamps the max UI height (-1 to disable)");
+        BQ_Settings.textWidthCorrection = config.getFloat(
+            "Text Width Correction",
+            CATEGORY_GENERAL,
+            1F,
+            0.01F,
+            10.0F,
+            "Correcting the width of split text");
+
+        BQ_Settings.scrollMultiplier = config
+            .getFloat("Scroll multiplier", CATEGORY_GENERAL, 1F, 0F, 10F, "Scrolling multiplier");
+
+        BQ_Settings.zoomSpeed = config.getFloat("Zoom Speed", CATEGORY_GENERAL, 1.25F, 1.05F, 3F, "Zoom Speed");
+
+        BQ_Settings.zoomTimeInMs = config
+            .getFloat("Zoom smoothness in ms", CATEGORY_GENERAL, 100F, 0F, 2000F, "Zoom smoothness in ms");
+
+        BQ_Settings.questIconCacheMode = config.getInt(
+            "Quest icon cache mode",
+            CATEGORY_GENERAL,
+            1,
+            0,
+            2,
+            "Quest icon rendering cache: 0 = off, 1 = low FPS, 2 = freeze.");
+        BQ_Settings.questIconCacheFps = config.getInt(
+            "Quest icon cache FPS",
+            CATEGORY_GENERAL,
+            16,
+            1,
+            144,
+            "Refresh rate used by quest icon cache mode 1.");
+
+        BQ_Settings.zoomInToCursor = config.getBoolean(
+            "Zoom in on cursor",
+            CATEGORY_GENERAL,
+            true,
+            "Zoom in on cursor. If false, zooms in on center of screen.");
+        BQ_Settings.zoomOutToCursor = config.getBoolean(
+            "Zoom out on cursor",
+            CATEGORY_GENERAL,
+            true,
+            "Zoom out on cursor. If false, zooms out on center of screen.");
+
+        BQ_Settings.claimAllConfirmation = config.getBoolean(
+            "Claim all requires confirmation",
+            CATEGORY_GENERAL,
+            true,
+            "If true, then when you click on Claim all, a warning dialog will be displayed");
+
+        BQ_Settings.claimAllRandomChoice = config.getBoolean(
+            "Claim all random select choice rewards",
+            CATEGORY_GENERAL,
+            false,
+            "If true, then when you Claim all quests, choice rewards will be randomly selected");
+
+        BQ_Settings.skipHome = config.getBoolean(
+            "Skip home",
+            CATEGORY_GENERAL,
+            false,
+            "If true will skip home gui and open quests at startup. This property will be changed by the mod itself.");
+
+        BQ_Settings.lockTray = config
+            .getBoolean("Lock tray", CATEGORY_GENERAL, false, "Is quest chapters list locked and opened on start.");
+        BQ_Settings.hideLockedQuestLines = config.getBoolean(
+            "Hide locked quest lines",
+            CATEGORY_GENERAL,
+            false,
+            "If true, quest lines with no currently visible quests are hidden from the quest line list. This property can be changed by the GUI.");
+        BQ_Settings.viewMode = config.getBoolean(
+            "View mode",
+            CATEGORY_GENERAL,
+            false,
+            "If true, user can view not-yet-unlocked quests that are not hidden or secret. This property can be changed by the GUI.");
+        BQ_Settings.viewModeAllQuestLine = config.getBoolean(
+            "View mode all quest line",
+            CATEGORY_GENERAL,
+            true,
+            "If true, view mode will display the quest line regardless of whether the quest line is unlocked yet.");
+        BQ_Settings.viewModeBtn = config
+            .getBoolean("View mode button", CATEGORY_GENERAL, false, "If true, show view mode button.");
+        BQ_Settings.alwaysDrawImplicit = config.getBoolean(
+            "Always draw implicit dependency",
+            CATEGORY_GENERAL,
+            false,
+            "If true, always draw implicit dependency. This property can be changed by the GUI");
+        BQ_Settings.showDependencyArrows = config.getBoolean(
+            "Show dependency arrows",
+            CATEGORY_GENERAL,
+            true,
+            "If true, quest dependency lines will render directional arrows. This property can be changed by the GUI.");
+        BQ_Settings.animateDependencyArrows = config.getBoolean(
+            "Animate dependency arrows",
+            CATEGORY_GENERAL,
+            true,
+            "If true, directional arrows on quest dependency lines will animate on quest hover.");
+        BQ_Settings.forceMonochromeText = config.getBoolean(
+            "Force Monochrome Text",
+            CATEGORY_GENERAL,
+            false,
+            "If true, quest titles and text content will show no color. This property can be changed by the GUI.");
+        BQ_Settings.urlDebug = config.getBoolean(
+            "Highlight detected clickable url hotzone.",
+            CATEGORY_GENERAL,
+            false,
+            "If true, render each hotzone using alternating color.");
+        BQ_Settings.loadDefaultsOnStartup = config.getBoolean(
+            "Load the default quest DB on world startup.",
+            CATEGORY_GENERAL,
+            true,
+            "Does an equivalent of '/bq_admin default load' on every world load");
+        BQ_Settings.unrestrictAdminCommands = config.getBoolean(
+            "Unrestrict Admin Commands",
+            CATEGORY_GENERAL,
+            false,
+            "If true, all users can use /bq_admin commands regardless of op-status. Useful for single-player without cheats.");
+        BQ_Settings.logNullQuests = config.getBoolean(
+            "Log null quests",
+            CATEGORY_GENERAL,
+            true,
+            "Posts useful information in the log when encountering a null quest during loading.");
+
+        BQ_Settings.noRewards = config.getBoolean(
+            "Disable rewards",
+            CATEGORY_GENERAL,
+            false,
+            "If true, rewards will be disabled. This might not be supported by reward types.");
+
+        // Notifications
         BQ_Settings.questNotices = config.getBoolean(
             "Quest Notices",
-            Configuration.CATEGORY_GENERAL,
+            CATEGORY_NOTIFICATIONS,
             true,
             "Enabled the popup notices when quests are completed or updated");
 
         String style = config.getString(
             "Notification Style",
-            Configuration.CATEGORY_GENERAL,
+            CATEGORY_NOTIFICATIONS,
             "title",
             "How quest notifications display: 'title' (large centered text), 'classic' (small popup with icon), 'off' (disabled)");
         if (!BQ_Settings.questNotices) {
@@ -37,249 +185,95 @@ public class ConfigHandler {
         }
         BQ_Settings.showNotificationIcon = config.getBoolean(
             "Show Notification Icon",
-            Configuration.CATEGORY_GENERAL,
+            CATEGORY_NOTIFICATIONS,
             true,
             "Show the quest item icon with notifications");
         BQ_Settings.notificationDuration = config.getFloat(
             "Notification Duration",
-            Configuration.CATEGORY_GENERAL,
+            CATEGORY_NOTIFICATIONS,
             4.5f,
             1.0f,
             15.0f,
             "How long quest notifications stay on screen (seconds)");
         BQ_Settings.notificationFadeIn = config.getFloat(
             "Notification Fade In",
-            Configuration.CATEGORY_GENERAL,
+            CATEGORY_NOTIFICATIONS,
             0.5f,
             0.0f,
             5.0f,
             "How quickly the notification appears (seconds). 0 = instant");
         BQ_Settings.notificationFadeOut = config.getFloat(
             "Notification Fade Out",
-            Configuration.CATEGORY_GENERAL,
+            CATEGORY_NOTIFICATIONS,
             1.0f,
             0.0f,
             5.0f,
             "How quickly the notification disappears (seconds). 0 = instant");
         BQ_Settings.notificationIconScale = config.getFloat(
             "Notification Icon Scale",
-            Configuration.CATEGORY_GENERAL,
+            CATEGORY_NOTIFICATIONS,
             4.0f,
             0.5f,
             8.0f,
             "Size of the quest icon in title notifications (default 4.0 = 64x64 pixels)");
         BQ_Settings.notificationIconOffsetY = config.getInt(
             "Notification Icon Offset Y",
-            Configuration.CATEGORY_GENERAL,
+            CATEGORY_NOTIFICATIONS,
             -25,
             -100,
             100,
             "Vertical offset for the quest icon in pixels. Negative = higher, positive = lower.");
         BQ_Settings.notificationTitleScale = config.getFloat(
             "Notification Title Scale",
-            Configuration.CATEGORY_GENERAL,
+            CATEGORY_NOTIFICATIONS,
             0f,
             0f,
             8.0f,
             "Size of the title text in notifications (0 = use global GTNHLib setting)");
         BQ_Settings.notificationSubtitleScale = config.getFloat(
             "Notification Subtitle Scale",
-            Configuration.CATEGORY_GENERAL,
+            CATEGORY_NOTIFICATIONS,
             0f,
             0f,
             8.0f,
             "Size of the subtitle text in notifications (0 = use global GTNHLib setting)");
         BQ_Settings.notificationIconAnimation = config.getString(
             "Notification Icon Animation",
-            Configuration.CATEGORY_GENERAL,
+            CATEGORY_NOTIFICATIONS,
             "none",
             "Icon animation style during fade-in: none, fly_in, spin");
         BQ_Settings.notificationParticle = config.getString(
             "Notification Particle",
-            Configuration.CATEGORY_GENERAL,
+            CATEGORY_NOTIFICATIONS,
             "none",
             "Particle effect on quest completion: none, confetti, sparkle, firework, item_confetti");
         BQ_Settings.notificationTitleOffsetX = config.getInt(
             "Notification Title Offset X",
-            Configuration.CATEGORY_GENERAL,
+            CATEGORY_NOTIFICATIONS,
             0,
             -1000,
             1000,
             "Horizontal offset of the notification from screen center, in pixels. Negative = left, positive = right.");
         BQ_Settings.notificationTitleOffsetY = config.getInt(
             "Notification Title Offset Y",
-            Configuration.CATEGORY_GENERAL,
+            CATEGORY_NOTIFICATIONS,
             0,
             -1000,
             1000,
             "Vertical offset of the notification from screen center, in pixels. Negative = higher, positive = lower.");
         BQ_Settings.notificationEffectTier = config.getInt(
             "Notification Effect Tier",
-            Configuration.CATEGORY_GENERAL,
+            CATEGORY_NOTIFICATIONS,
             0,
             0,
             6,
             "Cinematic completion effect: 0 = none, 3 = hyperspace, 4 = singularity, 5 = warp, 6 = lightspeed");
         BQ_Settings.notificationHintSeen = config.getBoolean(
             "Notification Hint Seen",
-            Configuration.CATEGORY_GENERAL,
+            CATEGORY_NOTIFICATIONS,
             false,
             "Internal: set once the player opens the notification settings, hides the one-time hint.");
-        BQ_Settings.curTheme = config
-            .getString("Theme", Configuration.CATEGORY_GENERAL, "betterquesting:light", "The current questing theme");
-        BQ_Settings.useBookmark = config.getBoolean(
-            "Use Quest Bookmark",
-            Configuration.CATEGORY_GENERAL,
-            true,
-            "Jumps the user to the last opened quest");
-        BQ_Settings.guiWidth = config.getInt(
-            "Max GUI Width",
-            Configuration.CATEGORY_GENERAL,
-            -1,
-            -1,
-            Integer.MAX_VALUE,
-            "Clamps the max UI width (-1 to disable)");
-        BQ_Settings.guiHeight = config.getInt(
-            "Max GUI Height",
-            Configuration.CATEGORY_GENERAL,
-            -1,
-            -1,
-            Integer.MAX_VALUE,
-            "Clamps the max UI height (-1 to disable)");
-        BQ_Settings.textWidthCorrection = config.getFloat(
-            "Text Width Correction",
-            Configuration.CATEGORY_GENERAL,
-            1F,
-            0.01F,
-            10.0F,
-            "Correcting the width of split text");
 
-        BQ_Settings.scrollMultiplier = config
-            .getFloat("Scroll multiplier", Configuration.CATEGORY_GENERAL, 1F, 0F, 10F, "Scrolling multiplier");
-
-        BQ_Settings.zoomSpeed = config
-            .getFloat("Zoom Speed", Configuration.CATEGORY_GENERAL, 1.25F, 1.05F, 3F, "Zoom Speed");
-
-        BQ_Settings.zoomTimeInMs = config.getFloat(
-            "Zoom smoothness in ms",
-            Configuration.CATEGORY_GENERAL,
-            100F,
-            0F,
-            2000F,
-            "Zoom smoothness in ms");
-
-        BQ_Settings.questIconCacheMode = config.getInt(
-            "Quest icon cache mode",
-            Configuration.CATEGORY_GENERAL,
-            1,
-            0,
-            2,
-            "Quest icon rendering cache: 0 = off, 1 = low FPS, 2 = freeze.");
-        BQ_Settings.questIconCacheFps = config.getInt(
-            "Quest icon cache FPS",
-            Configuration.CATEGORY_GENERAL,
-            16,
-            1,
-            144,
-            "Refresh rate used by quest icon cache mode 1.");
-
-        BQ_Settings.zoomInToCursor = config.getBoolean(
-            "Zoom in on cursor",
-            Configuration.CATEGORY_GENERAL,
-            true,
-            "Zoom in on cursor. If false, zooms in on center of screen.");
-        BQ_Settings.zoomOutToCursor = config.getBoolean(
-            "Zoom out on cursor",
-            Configuration.CATEGORY_GENERAL,
-            true,
-            "Zoom out on cursor. If false, zooms out on center of screen.");
-
-        BQ_Settings.claimAllConfirmation = config.getBoolean(
-            "Claim all requires confirmation",
-            Configuration.CATEGORY_GENERAL,
-            true,
-            "If true, then when you click on Claim all, a warning dialog will be displayed");
-
-        BQ_Settings.claimAllRandomChoice = config.getBoolean(
-            "Claim all random select choice rewards",
-            Configuration.CATEGORY_GENERAL,
-            false,
-            "If true, then when you Claim all quests, choice rewards will be randomly selected");
-
-        BQ_Settings.skipHome = config.getBoolean(
-            "Skip home",
-            Configuration.CATEGORY_GENERAL,
-            false,
-            "If true will skip home gui and open quests at startup. This property will be changed by the mod itself.");
-
-        BQ_Settings.lockTray = config.getBoolean(
-            "Lock tray",
-            Configuration.CATEGORY_GENERAL,
-            false,
-            "Is quest chapters list locked and opened on start.");
-        BQ_Settings.hideLockedQuestLines = config.getBoolean(
-            "Hide locked quest lines",
-            Configuration.CATEGORY_GENERAL,
-            false,
-            "If true, quest lines with no currently visible quests are hidden from the quest line list. This property can be changed by the GUI.");
-        BQ_Settings.viewMode = config.getBoolean(
-            "View mode",
-            Configuration.CATEGORY_GENERAL,
-            false,
-            "If true, user can view not-yet-unlocked quests that are not hidden or secret. This property can be changed by the GUI.");
-        BQ_Settings.viewModeAllQuestLine = config.getBoolean(
-            "View mode all quest line",
-            Configuration.CATEGORY_GENERAL,
-            true,
-            "If true, view mode will display the quest line regardless of whether the quest line is unlocked yet.");
-        BQ_Settings.viewModeBtn = config
-            .getBoolean("View mode button", Configuration.CATEGORY_GENERAL, false, "If true, show view mode button.");
-        BQ_Settings.alwaysDrawImplicit = config.getBoolean(
-            "Always draw implicit dependency",
-            Configuration.CATEGORY_GENERAL,
-            false,
-            "If true, always draw implicit dependency. This property can be changed by the GUI");
-        BQ_Settings.showDependencyArrows = config.getBoolean(
-            "Show dependency arrows",
-            Configuration.CATEGORY_GENERAL,
-            true,
-            "If true, quest dependency lines will render directional arrows. This property can be changed by the GUI.");
-        BQ_Settings.animateDependencyArrows = config.getBoolean(
-            "Animate dependency arrows",
-            Configuration.CATEGORY_GENERAL,
-            true,
-            "If true, directional arrows on quest dependency lines will animate on quest hover.");
-        BQ_Settings.forceMonochromeText = config.getBoolean(
-            "Force Monochrome Text",
-            Configuration.CATEGORY_GENERAL,
-            false,
-            "If true, quest titles and text content will show no color. This property can be changed by the GUI.");
-        BQ_Settings.urlDebug = config.getBoolean(
-            "Highlight detected clickable url hotzone.",
-            Configuration.CATEGORY_GENERAL,
-            false,
-            "If true, render each hotzone using alternating color.");
-        BQ_Settings.loadDefaultsOnStartup = config.getBoolean(
-            "Load the default quest DB on world startup.",
-            Configuration.CATEGORY_GENERAL,
-            true,
-            "Does an equivalent of '/bq_admin default load' on every world load");
-        BQ_Settings.unrestrictAdminCommands = config.getBoolean(
-            "Unrestrict Admin Commands",
-            Configuration.CATEGORY_GENERAL,
-            false,
-            "If true, all users can use /bq_admin commands regardless of op-status. Useful for single-player without cheats.");
-        BQ_Settings.logNullQuests = config.getBoolean(
-            "Log null quests",
-            Configuration.CATEGORY_GENERAL,
-            true,
-            "Posts useful information in the log when encountering a null quest during loading.");
-
-        BQ_Settings.noRewards = config.getBoolean(
-            "Disable rewards",
-            Configuration.CATEGORY_GENERAL,
-            false,
-            "If true, rewards will be disabled. This might not be supported by reward types.");
         config.save();
     }
 }

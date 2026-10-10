@@ -19,7 +19,6 @@ import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
-import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.common.config.Property;
 
 import org.apache.commons.lang3.tuple.Pair;
@@ -168,7 +167,7 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
         GuiHome.bookmark = this;
         // If we come to quests gui - we set skip home to true
         if (!BQ_Settings.skipHome) {
-            ConfigHandler.config.get(Configuration.CATEGORY_GENERAL, "Skip home", false)
+            ConfigHandler.config.get(ConfigHandler.CATEGORY_GENERAL, "Skip home", false)
                 .set(true);
             ConfigHandler.config.save();
             BQ_Settings.skipHome = true;
@@ -324,7 +323,7 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
         updateTrayLockButton.run();
         btnTrayLock.setClickAction((b) -> {
             trayLock = !trayLock;
-            ConfigHandler.config.get(Configuration.CATEGORY_GENERAL, "Lock tray", false)
+            ConfigHandler.config.get(ConfigHandler.CATEGORY_GENERAL, "Lock tray", false)
                 .set(trayLock);
             ConfigHandler.config.save();
             ConfigHandler.initConfigs();
@@ -430,7 +429,7 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
                     btn -> claimAll(claimIdList, BQ_Settings.claimAllRandomChoice),
                     true);
                 popup.addOption(QuestTranslation.translate("betterquesting.gui.yes_always"), btn -> {
-                    ConfigHandler.config.get(Configuration.CATEGORY_GENERAL, "Claim all requires confirmation", true)
+                    ConfigHandler.config.get(ConfigHandler.CATEGORY_GENERAL, "Claim all requires confirmation", true)
                         .set(false);
                     ConfigHandler.config.save();
                     ConfigHandler.initConfigs();
@@ -440,7 +439,7 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
                 popup.addOption(getForceChoiceString(), btn -> {
                     // Always save the result of the checkbox, this way it is "remembered" for next time
                     Property prop = ConfigHandler.config
-                        .get(Configuration.CATEGORY_GENERAL, "Claim all random select choice rewards", false);
+                        .get(ConfigHandler.CATEGORY_GENERAL, "Claim all random select choice rewards", false);
                     prop.set(!prop.getBoolean());
                     ConfigHandler.config.save();
                     ConfigHandler.initConfigs();
@@ -487,7 +486,7 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
         btnHideLocked.setClickAction((b) -> {
             BQ_Settings.hideLockedQuestLines = !BQ_Settings.hideLockedQuestLines;
             ConfigHandler.config.get(
-                Configuration.CATEGORY_GENERAL,
+                ConfigHandler.CATEGORY_GENERAL,
                 "Hide locked quest lines",
                 false,
                 "If true, quest lines with no currently visible quests are hidden from the quest line list. This property can be changed by the GUI.")
@@ -519,7 +518,7 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
             updateViewModeButton.run();
             btnViewMode.setClickAction((b) -> {
                 viewMode = !viewMode;
-                ConfigHandler.config.get(Configuration.CATEGORY_GENERAL, "View mode", false)
+                ConfigHandler.config.get(ConfigHandler.CATEGORY_GENERAL, "View mode", false)
                     .set(viewMode);
                 ConfigHandler.config.save();
                 ConfigHandler.initConfigs();
@@ -550,7 +549,7 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
             alwaysDrawImplicit = !alwaysDrawImplicit;
             ConfigHandler.config
                 .get(
-                    Configuration.CATEGORY_GENERAL,
+                    ConfigHandler.CATEGORY_GENERAL,
                     "Always draw implicit dependency",
                     false,
                     "If true, always draw implicit dependency. This property can be changed by the GUI")
@@ -582,7 +581,7 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
         btnDependencyArrows.setClickAction((b) -> {
             BQ_Settings.showDependencyArrows = !BQ_Settings.showDependencyArrows;
             ConfigHandler.config.get(
-                Configuration.CATEGORY_GENERAL,
+                ConfigHandler.CATEGORY_GENERAL,
                 "Show dependency arrows",
                 false,
                 "If true, quest dependency lines will render directional arrows. This property can be changed by the GUI.")
@@ -614,7 +613,7 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
         btnMonoText.setClickAction((b) -> {
             BQ_Settings.forceMonochromeText = !BQ_Settings.forceMonochromeText;
             ConfigHandler.config.get(
-                Configuration.CATEGORY_GENERAL,
+                ConfigHandler.CATEGORY_GENERAL,
                 "Force Monochrome Text",
                 false,
                 "If true, quest titles and text content will show no color. This property can be changed by the GUI.")

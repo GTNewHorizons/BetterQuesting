@@ -9,7 +9,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.common.config.Configuration;
 
 import org.lwjgl.util.vector.Vector4f;
 
@@ -70,7 +69,7 @@ public class GuiHome extends GuiScreenCanvas implements IPEventListener {
         GuiHome.bookmark = this;
         // If we come to home gui - we set skip home to false
         if (BQ_Settings.skipHome) {
-            ConfigHandler.config.get(Configuration.CATEGORY_GENERAL, "Skip home", false)
+            ConfigHandler.config.get(ConfigHandler.CATEGORY_GENERAL, "Skip home", false)
                 .set(false);
             ConfigHandler.config.save();
             BQ_Settings.skipHome = false;

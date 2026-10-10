@@ -17,7 +17,6 @@ import net.minecraft.client.resources.IResourceManager;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.common.config.Configuration;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
@@ -189,7 +188,7 @@ public class ThemeRegistry implements IThemeRegistry {
         BQ_Settings.curTheme = id == null ? "" : id.toString();
 
         if (ConfigHandler.config != null) {
-            ConfigHandler.config.get(Configuration.CATEGORY_GENERAL, "Theme", "")
+            ConfigHandler.config.get(ConfigHandler.CATEGORY_GENERAL, "Theme", "")
                 .set(BQ_Settings.curTheme);
             ConfigHandler.config.save();
         } else {

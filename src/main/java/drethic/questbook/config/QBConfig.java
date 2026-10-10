@@ -10,6 +10,8 @@ import drethic.questbook.logger.QBLogger;
 
 public class QBConfig {
 
+    public static final String CATEGORY_GENERAL = "general";
+
     public static Configuration qbconfig;
     public static QBConfig instance;
 
@@ -26,25 +28,25 @@ public class QBConfig {
                     .getAbsolutePath() + "/betterquesting/questbook.cfg"));
         qbconfig.load();
 
-        qbconfig.addCustomCategoryComment(Configuration.CATEGORY_GENERAL, "General options for the Quest Book mod.");
+        qbconfig.addCustomCategoryComment(CATEGORY_GENERAL, "General options for the Quest Book mod.");
 
         spawnWithBook = configBoolOption(
-            Configuration.CATEGORY_GENERAL,
+            CATEGORY_GENERAL,
             "spawnWithBook",
             false,
             "Enable this option so new players will spawn with a Quest Book.  Default: false");
         disablePartyNotifications = configBoolOption(
-            Configuration.CATEGORY_GENERAL,
+            CATEGORY_GENERAL,
             "disablePartyNotifications",
             false,
             "[NYI]Disable party notifications.  Default: false");
         disableQuestNotifications = configBoolOption(
-            Configuration.CATEGORY_GENERAL,
+            CATEGORY_GENERAL,
             "disableQuestNotifications",
             false,
             "[NYI]Disable quest notifications.  Default: false");
         syncQuestRewards = configBoolOption(
-            Configuration.CATEGORY_GENERAL,
+            CATEGORY_GENERAL,
             "syncQuestRewards",
             false,
             "Quest rewards can only be claimed once per party.  Default: false");
