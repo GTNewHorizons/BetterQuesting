@@ -4,7 +4,6 @@ import java.util.List;
 
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraftforge.common.config.ConfigElement;
-import net.minecraftforge.common.config.Configuration;
 
 import bq_standard.core.BQ_Standard;
 import bq_standard.handlers.ConfigHandler;
@@ -20,7 +19,7 @@ public class GuiBQSConfig extends GuiConfig {
     public GuiBQSConfig(GuiScreen parent) {
         super(
             parent,
-            (List<IConfigElement>) new ConfigElement(ConfigHandler.config.getCategory(Configuration.CATEGORY_GENERAL))
+            (List<IConfigElement>) new ConfigElement(ConfigHandler.config.getCategory(ConfigHandler.CATEGORY_GENERAL))
                 .getChildElements(),
             BQ_Standard.MODID,
             false,

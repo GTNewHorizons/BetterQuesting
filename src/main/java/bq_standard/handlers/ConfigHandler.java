@@ -9,6 +9,8 @@ import bq_standard.core.BQ_Standard;
 
 public class ConfigHandler {
 
+    public static final String CATEGORY_GENERAL = "general";
+
     public static Configuration config;
 
     public static void initConfigs() {
@@ -20,7 +22,7 @@ public class ConfigHandler {
         config.load();
 
         BQS_Settings.hideUpdates = config
-            .getBoolean("Hide Updates", Configuration.CATEGORY_GENERAL, false, "Hide update notifications");
+            .getBoolean("Hide Updates", CATEGORY_GENERAL, false, "Hide update notifications");
 
         config.save();
 

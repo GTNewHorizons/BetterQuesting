@@ -6,7 +6,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
-import net.minecraftforge.common.config.Configuration;
 
 import org.lwjgl.util.vector.Vector4f;
 
@@ -686,37 +685,37 @@ public class GuiNotificationSettings extends GuiScreenCanvas implements IPEventL
 
     private void saveConfig() {
         if (ConfigHandler.config == null) return;
-        ConfigHandler.config.get(Configuration.CATEGORY_GENERAL, "Notification Style", "title")
+        ConfigHandler.config.get(ConfigHandler.CATEGORY_NOTIFICATIONS, "Notification Style", "title")
             .set(BQ_Settings.notificationStyle);
-        ConfigHandler.config.get(Configuration.CATEGORY_GENERAL, "Quest Notices", true)
+        ConfigHandler.config.get(ConfigHandler.CATEGORY_NOTIFICATIONS, "Quest Notices", true)
             .set(BQ_Settings.questNotices);
-        ConfigHandler.config.get(Configuration.CATEGORY_GENERAL, "Show Notification Icon", true)
+        ConfigHandler.config.get(ConfigHandler.CATEGORY_NOTIFICATIONS, "Show Notification Icon", true)
             .set(BQ_Settings.showNotificationIcon);
-        ConfigHandler.config.get(Configuration.CATEGORY_GENERAL, "Notification Duration", 4.5)
+        ConfigHandler.config.get(ConfigHandler.CATEGORY_NOTIFICATIONS, "Notification Duration", 4.5)
             .set(BQ_Settings.notificationDuration);
-        ConfigHandler.config.get(Configuration.CATEGORY_GENERAL, "Notification Fade In", 0.5)
+        ConfigHandler.config.get(ConfigHandler.CATEGORY_NOTIFICATIONS, "Notification Fade In", 0.5)
             .set(BQ_Settings.notificationFadeIn);
-        ConfigHandler.config.get(Configuration.CATEGORY_GENERAL, "Notification Fade Out", 1.0)
+        ConfigHandler.config.get(ConfigHandler.CATEGORY_NOTIFICATIONS, "Notification Fade Out", 1.0)
             .set(BQ_Settings.notificationFadeOut);
-        ConfigHandler.config.get(Configuration.CATEGORY_GENERAL, "Notification Icon Scale", 4.0)
+        ConfigHandler.config.get(ConfigHandler.CATEGORY_NOTIFICATIONS, "Notification Icon Scale", 4.0)
             .set(BQ_Settings.notificationIconScale);
-        ConfigHandler.config.get(Configuration.CATEGORY_GENERAL, "Notification Icon Offset Y", 0)
+        ConfigHandler.config.get(ConfigHandler.CATEGORY_NOTIFICATIONS, "Notification Icon Offset Y", 0)
             .set(BQ_Settings.notificationIconOffsetY);
-        ConfigHandler.config.get(Configuration.CATEGORY_GENERAL, "Notification Title Scale", 0.0)
+        ConfigHandler.config.get(ConfigHandler.CATEGORY_NOTIFICATIONS, "Notification Title Scale", 0.0)
             .set(BQ_Settings.notificationTitleScale);
-        ConfigHandler.config.get(Configuration.CATEGORY_GENERAL, "Notification Subtitle Scale", 0.0)
+        ConfigHandler.config.get(ConfigHandler.CATEGORY_NOTIFICATIONS, "Notification Subtitle Scale", 0.0)
             .set(BQ_Settings.notificationSubtitleScale);
-        ConfigHandler.config.get(Configuration.CATEGORY_GENERAL, "Notification Icon Animation", "none")
+        ConfigHandler.config.get(ConfigHandler.CATEGORY_NOTIFICATIONS, "Notification Icon Animation", "none")
             .set(BQ_Settings.notificationIconAnimation);
-        ConfigHandler.config.get(Configuration.CATEGORY_GENERAL, "Notification Particle", "none")
+        ConfigHandler.config.get(ConfigHandler.CATEGORY_NOTIFICATIONS, "Notification Particle", "none")
             .set(BQ_Settings.notificationParticle);
-        ConfigHandler.config.get(Configuration.CATEGORY_GENERAL, "Notification Title Offset X", 0)
+        ConfigHandler.config.get(ConfigHandler.CATEGORY_NOTIFICATIONS, "Notification Title Offset X", 0)
             .set(BQ_Settings.notificationTitleOffsetX);
-        ConfigHandler.config.get(Configuration.CATEGORY_GENERAL, "Notification Title Offset Y", 0)
+        ConfigHandler.config.get(ConfigHandler.CATEGORY_NOTIFICATIONS, "Notification Title Offset Y", 0)
             .set(BQ_Settings.notificationTitleOffsetY);
-        ConfigHandler.config.get(Configuration.CATEGORY_GENERAL, "Notification Effect Tier", 0)
+        ConfigHandler.config.get(ConfigHandler.CATEGORY_NOTIFICATIONS, "Notification Effect Tier", 0)
             .set(BQ_Settings.notificationEffectTier);
-        ConfigHandler.config.get(Configuration.CATEGORY_GENERAL, "Notification Hint Seen", false)
+        ConfigHandler.config.get(ConfigHandler.CATEGORY_NOTIFICATIONS, "Notification Hint Seen", false)
             .set(BQ_Settings.notificationHintSeen);
         ConfigHandler.config.save();
     }
