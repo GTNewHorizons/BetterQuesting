@@ -1,14 +1,17 @@
 package betterquesting.integration;
 
+import com.gtnewhorizons.postea.api.IVersionedTransformer;
 import net.minecraft.nbt.NBTTagCompound;
 
 import com.gtnewhorizons.postea.api.CustomDataReplacementManager;
 
 import cpw.mods.fml.common.Loader;
 
-/// Offers the world's quest database to Postea's custom world data API, so versioned transformers (MaterialLib's
-/// metadata renumbering) rewrite quest item stacks exactly once per version change. Safe to call without Postea
-/// installed: the Postea types live in the inner holder, which only loads when the mod is present.
+/// Used to provide custom save data (like the world's quest database) to Postea's [IVersionedTransformer]s.
+///
+/// These transformers allow other mods to change saved data based on their own version stamps. This compat flags,
+/// to those transformers, the times they should fire. [#transform] is used before consuming data, so the transformer
+/// can run, and [#stamp] is used for fresh data to ensure the transformer can add a stamp of its current version.
 public final class PosteaCustomData {
 
     private static final boolean POSTEA = Loader.isModLoaded("postea");
