@@ -54,6 +54,8 @@ import betterquesting.api2.client.gui.themes.presets.PresetGUIs;
 import betterquesting.api2.storage.DBEntry;
 import betterquesting.client.BQ_Keybindings;
 import betterquesting.client.BookmarkHandler;
+import betterquesting.client.QuestTrackerHUD;
+import betterquesting.client.QuestTrackerHandler;
 import betterquesting.client.gui2.GuiHome;
 import betterquesting.client.gui2.GuiQuestLines;
 import betterquesting.client.themes.ThemeRegistry;
@@ -100,6 +102,9 @@ public class EventHandler {
 
     @SideOnly(Side.CLIENT)
     private void handleOnOpenQuests() {
+        if (BQ_Keybindings.toggleTracker.isPressed()) {
+            QuestTrackerHUD.toggleVisibility();
+        }
         if (BQ_Keybindings.openQuests.isPressed()) {
             Minecraft mc = Minecraft.getMinecraft();
             if (BQ_Settings.useBookmark && GuiHome.bookmark != null) {
@@ -180,9 +185,10 @@ public class EventHandler {
     @SideOnly(Side.CLIENT)
     @SubscribeEvent
     public void onClientConnected(FMLNetworkEvent.ClientConnectedToServerEvent event) {
-        BookmarkHandler.loadBookmarks(
-            event.manager.getSocketAddress()
-                .toString());
+        String address = event.manager.getSocketAddress()
+            .toString();
+        BookmarkHandler.loadBookmarks(address);
+        QuestTrackerHandler.load(address);
     }
 
     @SubscribeEvent

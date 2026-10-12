@@ -23,6 +23,7 @@ import org.apache.logging.log4j.Level;
 
 import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.questing.IQuest;
+import betterquesting.api.questing.tasks.TaskProgressLine;
 import betterquesting.api.utils.BigItemStack;
 import betterquesting.api.utils.ItemComparison;
 import betterquesting.api.utils.JsonHelper;
@@ -33,6 +34,7 @@ import betterquesting.api2.utils.ParticipantInfo;
 import betterquesting.api2.utils.Tuple2;
 import bq_standard.client.gui.tasks.PanelTaskCrafting;
 import bq_standard.core.BQ_Standard;
+import bq_standard.tasks.base.HudProgress;
 import bq_standard.tasks.base.TaskProgressableBase;
 import bq_standard.tasks.factory.FactoryTaskCrafting;
 import cpw.mods.fml.relauncher.Side;
@@ -268,5 +270,10 @@ public class TaskCrafting extends TaskProgressableBase<int[]> implements ITaskIt
     @Override
     public List<BigItemStack> getItemInputs() {
         return requiredItems;
+    }
+
+    @Override
+    public List<TaskProgressLine> getHudProgress(UUID uuid) {
+        return HudProgress.items(requiredItems, getUsersProgress(uuid));
     }
 }

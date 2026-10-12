@@ -14,6 +14,7 @@ import net.minecraft.util.DamageSource;
 import net.minecraft.util.ResourceLocation;
 
 import betterquesting.api.questing.IQuest;
+import betterquesting.api.questing.tasks.TaskProgressLine;
 import betterquesting.api.utils.ItemComparison;
 import betterquesting.api2.client.gui.misc.IGuiRect;
 import betterquesting.api2.client.gui.panels.IGuiPanel;
@@ -22,6 +23,7 @@ import betterquesting.api2.utils.Tuple2;
 import bq_standard.client.gui.editors.tasks.GuiEditTaskHunt;
 import bq_standard.client.gui.tasks.PanelTaskHunt;
 import bq_standard.core.BQ_Standard;
+import bq_standard.tasks.base.HudProgress;
 import bq_standard.tasks.base.TaskProgressableBase;
 import bq_standard.tasks.factory.FactoryTaskHunt;
 import cpw.mods.fml.relauncher.Side;
@@ -151,5 +153,10 @@ public class TaskHunt extends TaskProgressableBase<Integer> {
     @Override
     public List<String> getTextsForSearch() {
         return Collections.singletonList(idName);
+    }
+
+    @Override
+    public List<TaskProgressLine> getHudProgress(UUID uuid) {
+        return HudProgress.line(idName, getUsersProgress(uuid), required);
     }
 }

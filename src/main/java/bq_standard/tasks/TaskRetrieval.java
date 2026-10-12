@@ -24,6 +24,7 @@ import net.minecraftforge.common.util.Constants;
 import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.questing.IQuest;
 import betterquesting.api.questing.tasks.IItemTask;
+import betterquesting.api.questing.tasks.TaskProgressLine;
 import betterquesting.api.utils.BigItemStack;
 import betterquesting.api.utils.ItemComparison;
 import betterquesting.api.utils.JsonHelper;
@@ -34,6 +35,7 @@ import betterquesting.api2.utils.ParticipantInfo;
 import betterquesting.api2.utils.Tuple2;
 import bq_standard.client.gui.tasks.PanelTaskRetrieval;
 import bq_standard.core.BQ_Standard;
+import bq_standard.tasks.base.HudProgress;
 import bq_standard.tasks.base.TaskProgressableBase;
 import bq_standard.tasks.factory.FactoryTaskRetrieval;
 import cpw.mods.fml.relauncher.Side;
@@ -378,5 +380,10 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
                 }
             }
         }
+    }
+
+    @Override
+    public List<TaskProgressLine> getHudProgress(UUID uuid) {
+        return HudProgress.items(requiredItems, getUsersProgress(uuid));
     }
 }

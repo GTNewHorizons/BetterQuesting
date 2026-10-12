@@ -13,6 +13,7 @@ import betterquesting.api2.client.gui.SceneController;
 import betterquesting.api2.client.gui.events.PEventBroadcaster;
 import betterquesting.client.BQ_Keybindings;
 import betterquesting.client.QuestNotification;
+import betterquesting.client.QuestTrackerHUD;
 import betterquesting.client.renderer.EntityPlaceholderRenderer;
 import betterquesting.client.themes.ThemeRegistry;
 import betterquesting.client.toolbox.ToolboxRegistry;
@@ -55,6 +56,7 @@ public class ClientProxy extends CommonProxy {
         ExpansionLoader.INSTANCE.initClientAPIs();
 
         MinecraftForge.EVENT_BUS.register(new QuestNotification());
+        MinecraftForge.EVENT_BUS.register(new QuestTrackerHUD());
         BQ_Keybindings.RegisterKeys();
 
         try {
