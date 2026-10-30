@@ -91,39 +91,7 @@ public class NetQuestSync {
 
         // Offload this to another thread as it could take a while to build
         BQThreadedIO.INSTANCE.enqueue(() -> {
-            NBTTagList questTagList = new NBTTagList();
-            final Map<UUID, IQuest> questSubset = questIDs == null ? QuestDatabase.INSTANCE
-                : QuestDatabase.INSTANCE.filterKeys(questIDs);
-            final List<UUID> pidList = player == null ? null
-                : Collections.singletonList(QuestingAPI.getQuestingUUID(player));
-
-            for (Map.Entry<UUID, IQuest> entry : questSubset.entrySet()) {
-                UUID questId = entry.getKey();
-                IQuest quest = entry.getValue();
-                NBTTagCompound questTag = new NBTTagCompound();
-
-                if (config) {
-                    final NBTTagCompound configTag = quest.writeToNBT(new NBTTagCompound());
-
-                    if (BQ_Settings.noRewards) {
-                        configTag.removeTag(TAG_QUEST_REWARDS);
-                    }
-
-                    questTag.setTag(TAG_QUEST_CONFIG, configTag);
-                }
-
-                if (progress) {
-                    questTag.setTag(TAG_QUEST_PROGRESS, quest.writeProgressToNBT(new NBTTagCompound(), pidList));
-                }
-
-                NBTConverter.UuidValueType.QUEST.writeId(questId, questTag);
-                questTagList.appendTag(questTag);
-            }
-
-            NBTTagCompound payload = new NBTTagCompound();
-            payload.setBoolean(TAG_MERGE, !config || questIDs != null);
-            payload.setBoolean(TAG_RESET_COMPLETION, resetCompletion);
-            payload.setTag(TAG_QUEST_LIST, questTagList);
+            NBTTagCompound payload = buildPayload(player, questIDs, config, progress, resetCompletion);
 
             if (player == null) {
                 PacketSender.INSTANCE.sendToAll(new QuestingPacket(ID_NAME, payload));
@@ -131,6 +99,44 @@ public class NetQuestSync {
                 PacketSender.INSTANCE.sendToPlayers(new QuestingPacket(ID_NAME, payload), player);
             }
         });
+    }
+
+    static NBTTagCompound buildPayload(@Nullable EntityPlayerMP player, @Nullable Collection<UUID> questIDs,
+        boolean config, boolean progress, boolean resetCompletion) {
+        NBTTagList questTagList = new NBTTagList();
+        final Map<UUID, IQuest> questSubset = questIDs == null ? QuestDatabase.INSTANCE
+            : QuestDatabase.INSTANCE.filterKeys(questIDs);
+        final List<UUID> pidList = player == null ? null
+            : Collections.singletonList(QuestingAPI.getQuestingUUID(player));
+
+        for (Map.Entry<UUID, IQuest> entry : questSubset.entrySet()) {
+            UUID questId = entry.getKey();
+            IQuest quest = entry.getValue();
+            NBTTagCompound questTag = new NBTTagCompound();
+
+            if (config) {
+                final NBTTagCompound configTag = quest.writeToNBT(new NBTTagCompound());
+
+                if (BQ_Settings.noRewards) {
+                    configTag.removeTag(TAG_QUEST_REWARDS);
+                }
+
+                questTag.setTag(TAG_QUEST_CONFIG, configTag);
+            }
+
+            if (progress) {
+                questTag.setTag(TAG_QUEST_PROGRESS, quest.writeProgressToNBT(new NBTTagCompound(), pidList));
+            }
+
+            NBTConverter.UuidValueType.QUEST.writeId(questId, questTag);
+            questTagList.appendTag(questTag);
+        }
+
+        NBTTagCompound payload = new NBTTagCompound();
+        payload.setBoolean(TAG_MERGE, !config || questIDs != null);
+        payload.setBoolean(TAG_RESET_COMPLETION, resetCompletion);
+        payload.setTag(TAG_QUEST_LIST, questTagList);
+        return payload;
     }
 
     // Asks the server to send specific quest data over
@@ -159,7 +165,7 @@ public class NetQuestSync {
     }
 
     @SideOnly(Side.CLIENT)
-    private static void onClient(NBTTagCompound payload) {
+    static void onClient(NBTTagCompound payload) {
         NBTTagList questListTag = payload.getTagList(TAG_QUEST_LIST, Constants.NBT.TAG_COMPOUND);
         boolean merge = payload.getBoolean(TAG_MERGE);
         boolean resetCompletion = payload.getBoolean(TAG_RESET_COMPLETION);

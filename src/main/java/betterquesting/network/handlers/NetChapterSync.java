@@ -48,28 +48,7 @@ public class NetChapterSync {
         }
 
         BQThreadedIO.INSTANCE.enqueue(() -> {
-            NBTTagList data = new NBTTagList();
-            final Map<UUID, IQuestLine> chapterSubset = chapterIDs == null ? QuestLineDatabase.INSTANCE
-                : QuestLineDatabase.INSTANCE.filterKeys(chapterIDs);
-
-            for (Map.Entry<UUID, IQuestLine> chapter : chapterSubset.entrySet()) {
-                NBTTagCompound entry = new NBTTagCompound();
-                NBTConverter.UuidValueType.QUEST_LINE.writeId(chapter.getKey(), entry);
-                // entry.setInteger("order", QuestLineDatabase.INSTANCE.getOrderIndex(chapter.getKey()));
-                entry.setTag(
-                    "config",
-                    chapter.getValue()
-                        .writeToNBT(new NBTTagCompound(), null));
-                data.appendTag(entry);
-            }
-
-            List<Map.Entry<UUID, IQuestLine>> allSort = QuestLineDatabase.INSTANCE.getOrderedEntries();
-            List<UUID> aryOrder = Lists.transform(allSort, Map.Entry::getKey);
-
-            NBTTagCompound payload = new NBTTagCompound();
-            payload.setBoolean("merge", chapterIDs != null);
-            payload.setTag("data", data);
-            payload.setTag("order", NBTConverter.UuidValueType.QUEST_LINE.writeIds(aryOrder));
+            NBTTagCompound payload = buildPayload(chapterIDs);
 
             if (player == null) {
                 PacketSender.INSTANCE.sendToAll(new QuestingPacket(ID_NAME, payload));
@@ -77,6 +56,32 @@ public class NetChapterSync {
                 PacketSender.INSTANCE.sendToPlayers(new QuestingPacket(ID_NAME, payload), player);
             }
         });
+    }
+
+    static NBTTagCompound buildPayload(@Nullable Collection<UUID> chapterIDs) {
+        NBTTagList data = new NBTTagList();
+        final Map<UUID, IQuestLine> chapterSubset = chapterIDs == null ? QuestLineDatabase.INSTANCE
+            : QuestLineDatabase.INSTANCE.filterKeys(chapterIDs);
+
+        for (Map.Entry<UUID, IQuestLine> chapter : chapterSubset.entrySet()) {
+            NBTTagCompound entry = new NBTTagCompound();
+            NBTConverter.UuidValueType.QUEST_LINE.writeId(chapter.getKey(), entry);
+            // entry.setInteger("order", QuestLineDatabase.INSTANCE.getOrderIndex(chapter.getKey()));
+            entry.setTag(
+                "config",
+                chapter.getValue()
+                    .writeToNBT(new NBTTagCompound(), null));
+            data.appendTag(entry);
+        }
+
+        List<Map.Entry<UUID, IQuestLine>> allSort = QuestLineDatabase.INSTANCE.getOrderedEntries();
+        List<UUID> aryOrder = Lists.transform(allSort, Map.Entry::getKey);
+
+        NBTTagCompound payload = new NBTTagCompound();
+        payload.setBoolean("merge", chapterIDs != null);
+        payload.setTag("data", data);
+        payload.setTag("order", NBTConverter.UuidValueType.QUEST_LINE.writeIds(aryOrder));
+        return payload;
     }
 
     @SideOnly(Side.CLIENT)
@@ -96,7 +101,7 @@ public class NetChapterSync {
     }
 
     @SideOnly(Side.CLIENT)
-    private static void onClient(NBTTagCompound message) {
+    static void onClient(NBTTagCompound message) {
         NBTTagList data = message.getTagList("data", 10);
         if (!message.getBoolean("merge")) {
             QuestLineDatabase.INSTANCE.clear();

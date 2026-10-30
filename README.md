@@ -3,6 +3,11 @@ BetterQuesting
 
 A new and improved questing mod for Minecraft pack creators
 
+Quest database cache: when joining a server, the client keeps a copy of the server's quest and chapter configs in
+`.minecraft/betterquesting/cache` (the 4 most recently used, stored by hash). On the next login the server only sends
+them again if they changed; player progress is always sent. It can be turned off on the client with the
+`Cache server quest database` config option.
+
 Standard Expansion
 ============
 

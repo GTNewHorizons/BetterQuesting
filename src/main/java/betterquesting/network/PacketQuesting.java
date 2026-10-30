@@ -1,10 +1,13 @@
 package betterquesting.network;
 
+import java.io.IOException;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.nbt.CompressedStreamTools;
+import net.minecraft.nbt.NBTSizeTracker;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ResourceLocation;
 
@@ -13,11 +16,12 @@ import org.apache.logging.log4j.Level;
 import betterquesting.api.api.QuestingAPI;
 import betterquesting.api2.utils.Tuple2;
 import betterquesting.core.BetterQuesting;
-import cpw.mods.fml.common.network.ByteBufUtils;
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
 import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
 import cpw.mods.fml.common.network.simpleimpl.MessageContext;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufInputStream;
+import io.netty.buffer.ByteBufOutputStream;
 
 public class PacketQuesting implements IMessage {
 
@@ -32,14 +36,24 @@ public class PacketQuesting implements IMessage {
         this.tags = tags;
     }
 
+    // Fragments carry data that PacketAssembly already gzipped, so the tag is written uncompressed
+    // (ByteBufUtils would gzip it a second time for no gain)
     @Override
     public void fromBytes(ByteBuf buf) {
-        tags = ByteBufUtils.readTag(buf);
+        try {
+            tags = CompressedStreamTools.func_152456_a(new ByteBufInputStream(buf), new NBTSizeTracker(2097152L));
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to read BQ packet fragment", e);
+        }
     }
 
     @Override
     public void toBytes(ByteBuf buf) {
-        ByteBufUtils.writeTag(buf, tags);
+        try {
+            CompressedStreamTools.write(tags, new ByteBufOutputStream(buf));
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to write BQ packet fragment", e);
+        }
     }
 
     public static class HandleServer implements IMessageHandler<PacketQuesting, IMessage> {

@@ -166,6 +166,12 @@ public class ConfigHandler {
             false,
             "If true, rewards will be disabled. This might not be supported by reward types.");
 
+        BQ_Settings.loginDatabaseCache = config.getBoolean(
+            "Cache server quest database",
+            CATEGORY_GENERAL,
+            true,
+            "Client side. If true, the quest database received from a server is cached, so the next login only downloads it again if it changed.");
+
         // Notifications
         BQ_Settings.questNotices = config.getBoolean(
             "Quest Notices",

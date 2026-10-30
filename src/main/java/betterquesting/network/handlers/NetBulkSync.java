@@ -1,5 +1,7 @@
 package betterquesting.network.handlers;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.UUID;
@@ -10,13 +12,18 @@ import javax.annotation.Nullable;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
+import net.minecraft.nbt.NBTTagString;
 import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.common.util.Constants;
 
 import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.network.QuestingPacket;
 import betterquesting.api.questing.party.IParty;
+import betterquesting.api.storage.BQ_Settings;
 import betterquesting.api2.storage.DBEntry;
 import betterquesting.api2.utils.Tuple2;
+import betterquesting.client.QuestDatabaseCache;
 import betterquesting.core.BetterQuesting;
 import betterquesting.handlers.SaveLoadHandler;
 import betterquesting.network.PacketSender;
@@ -31,6 +38,9 @@ import cpw.mods.fml.relauncher.SideOnly;
 public class NetBulkSync {
 
     private static final ResourceLocation ID_NAME = new ResourceLocation("betterquesting:main_sync");
+
+    private static final String TAG_CACHED_DATABASES = "cachedDatabases";
+    private static final int MAX_CACHED_DATABASES = 16;
 
     public static void registerHandler() {
         PacketTypeRegistry.INSTANCE.registerServerHandler(ID_NAME, NetBulkSync::onServer);
@@ -54,12 +64,24 @@ public class NetBulkSync {
     }
 
     public static void sendSync(@Nonnull EntityPlayerMP player) {
+        sendSync(player, null);
+    }
+
+    /**
+     * @param cachedDatabases hashes of the quest databases the client has cached, or null if it does not support
+     *                        {@link NetDatabaseCache}
+     */
+    public static void sendSync(@Nonnull EntityPlayerMP player, @Nullable Collection<String> cachedDatabases) {
         boolean nameChanged = NameCache.INSTANCE.updateName(player);
         UUID playerID = QuestingAPI.getQuestingUUID(player);
 
         NetSettingSync.sendSync(player);
-        NetQuestSync.sendSync(player, null, true, true);
-        NetChapterSync.sendSync(player, null);
+        if (cachedDatabases == null) {
+            NetQuestSync.sendSync(player, null, true, true);
+            NetChapterSync.sendSync(player, null);
+        } else {
+            NetDatabaseCache.sendSync(player, cachedDatabases);
+        }
         NetLifeSync.sendSync(new EntityPlayerMP[] { player }, new UUID[] { playerID });
         DBEntry<IParty> party = PartyManager.INSTANCE.getParty(playerID);
         List<Entry<Integer, Long>> invites = PartyInvitations.INSTANCE.getPartyInvites(playerID);
@@ -83,7 +105,32 @@ public class NetBulkSync {
     }
 
     private static void onServer(Tuple2<NBTTagCompound, EntityPlayerMP> message) {
-        sendSync(message.getSecond()); // Can include more sync options at a later date
+        NBTTagCompound payload = message.getFirst();
+        List<String> cachedDatabases = null;
+        if (payload.hasKey(TAG_CACHED_DATABASES, Constants.NBT.TAG_LIST)) {
+            NBTTagList list = payload.getTagList(TAG_CACHED_DATABASES, Constants.NBT.TAG_STRING);
+            cachedDatabases = new ArrayList<>();
+            for (int i = 0; i < Math.min(list.tagCount(), MAX_CACHED_DATABASES); i++) {
+                cachedDatabases.add(list.getStringTagAt(i));
+            }
+        }
+        sendSync(message.getSecond(), cachedDatabases);
+    }
+
+    // Asks the server for a full sync, telling it which quest databases we have cached
+    @SideOnly(Side.CLIENT)
+    static void requestSync(boolean useCache) {
+        NBTTagCompound payload = new NBTTagCompound();
+        if (BQ_Settings.loginDatabaseCache) {
+            NBTTagList list = new NBTTagList();
+            if (useCache) {
+                for (String hash : QuestDatabaseCache.listHashes()) {
+                    list.appendTag(new NBTTagString(hash));
+                }
+            }
+            payload.setTag(TAG_CACHED_DATABASES, list);
+        }
+        PacketSender.INSTANCE.sendToServer(new QuestingPacket(ID_NAME, payload));
     }
 
     @SideOnly(Side.CLIENT)
@@ -96,7 +143,7 @@ public class NetBulkSync {
 
         // Client doesn't really have to honor this, but it would mess with things otherwise
         if (message.getBoolean("respond")) {
-            PacketSender.INSTANCE.sendToServer(new QuestingPacket(ID_NAME, new NBTTagCompound()));
+            requestSync(true);
         }
     }
 }
