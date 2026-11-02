@@ -220,7 +220,7 @@ public class QuestRecipeHandler extends TemplateRecipeHandler {
 
     @Override
     public String getRecipeName() {
-        return BetterQuesting.NAME;
+        return QuestTranslation.translate("bq_standard.nei.title");
     }
 
     private static Map<UUID, IQuest> getVisibleQuests() {
