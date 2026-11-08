@@ -218,6 +218,9 @@ public class GuiScreenCanvas extends GuiScreen implements IScene {
     // Remembers the last mouse buttons states. Required to fire release events
     private boolean[] mBtnState = new boolean[3];
 
+    /** LWJGL index of the thumb button that browsers bind to "back". */
+    private static final int MOUSE_BUTTON_BACK = 3;
+
     @Override
     public void handleMouseInput() {
         super.handleMouseInput();
@@ -227,6 +230,11 @@ public class GuiScreenCanvas extends GuiScreen implements IScene {
         int k = Mouse.getEventButton();
         int SDX = (int) -Math.signum(Mouse.getEventDWheel());
         boolean flag = Mouse.getEventButtonState();
+
+        if (k == MOUSE_BUTTON_BACK && flag && BQ_Settings.mouseBackButton && mc.currentScreen == this) {
+            if (popup == null || !popup.isEnabled()) navigateBack();
+            return;
+        }
 
         if (k >= 0 && k < 3 && mBtnState[k] != flag) {
             if (flag) {
@@ -305,15 +313,17 @@ public class GuiScreenCanvas extends GuiScreen implements IScene {
             }
         }
 
-        if (!used && click == 1) {
-            if (parent != null && parent instanceof GuiScreenCanvas
-                && !(this instanceof GuiQuestLines && parent instanceof GuiHome)) {
-                mc.displayGuiScreen(parent);
-                return false;
-            }
-        }
+        if (!used && click == 1 && navigateBack()) return false;
 
         return used;
+    }
+
+    protected boolean navigateBack() {
+        if (!(parent instanceof GuiScreenCanvas) || (this instanceof GuiQuestLines && parent instanceof GuiHome)) {
+            return false;
+        }
+        mc.displayGuiScreen(parent);
+        return true;
     }
 
     @Override
