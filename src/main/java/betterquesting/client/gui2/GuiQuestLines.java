@@ -13,6 +13,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
+import betterquesting.client.BQ_Keybindings;
+import betterquesting.client.util.KeyBindHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.GuiScreen;
@@ -869,6 +871,19 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
                 scrollPosition.setChapterScrollY(cvLines.getScrollY());
             }
         }
+    }
+
+    @Override
+    public boolean onKeyTyped(char c, int keycode) {
+        if (super.onKeyTyped(c, keycode))
+            return true;
+
+        if (KeyBindHelper.matchesBinding(BQ_Keybindings.focusQuestSearch, keycode)) {
+            mc.displayGuiScreen(this.searchGui);
+            return true;
+        }
+
+        return false;
     }
 
     private Pair<List<UUID>, Integer> getAllPossibleClaims() {
