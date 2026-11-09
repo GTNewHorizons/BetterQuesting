@@ -1,5 +1,8 @@
 package betterquesting.client;
 
+import betterquesting.client.util.KeyBindHelper;
+import com.blamejared.controlling.api.ComboModifier;
+import com.blamejared.controlling.api.ControllingApi;
 import net.minecraft.client.settings.KeyBinding;
 
 import org.lwjgl.input.Keyboard;
@@ -14,7 +17,10 @@ public class BQ_Keybindings {
 
     public static void RegisterKeys() {
         openQuests = new KeyBinding("key.betterquesting.quests", Keyboard.KEY_GRAVE, BetterQuesting.NAME);
-        focusQuestSearch = new KeyBinding("key.betterquesting.search", Keyboard.KEY_NONE, BetterQuesting.NAME);
+        focusQuestSearch = new KeyBinding("key.betterquesting.search", Keyboard.KEY_F, BetterQuesting.NAME);
+
+        if (KeyBindHelper.isControllingLoaded())
+            ControllingApi.setDefaultComboKeyBinding(focusQuestSearch, ComboModifier.CONTROL);
 
         ClientRegistry.registerKeyBinding(openQuests);
         ClientRegistry.registerKeyBinding(focusQuestSearch);
