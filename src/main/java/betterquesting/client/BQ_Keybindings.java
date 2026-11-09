@@ -12,7 +12,7 @@ public class BQ_Keybindings {
     public static KeyBinding openQuests;
 
     public static void RegisterKeys() {
-        openQuests = new KeyBinding("key.betterquesting.quests", Keyboard.KEY_GRAVE, BetterQuesting.NAME);
+        openQuests = new KeyBinding("key.betterquesting.quests", Keyboard.KEY_NONE, BetterQuesting.NAME);
 
         ClientRegistry.registerKeyBinding(openQuests);
     }
