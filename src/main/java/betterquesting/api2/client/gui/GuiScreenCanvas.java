@@ -7,6 +7,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.annotation.Nonnull;
 
+import betterquesting.client.util.KeyBindHelper;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
@@ -384,8 +385,8 @@ public class GuiScreenCanvas extends GuiScreen implements IScene {
             }
         }
 
-        if (!used && (BQ_Keybindings.openQuests.getKeyCode() == keycode
-            || mc.gameSettings.keyBindInventory.getKeyCode() == keycode)) {
+        if (!used && (KeyBindHelper.matchesBinding(BQ_Keybindings.openQuests, keycode)
+                || KeyBindHelper.matchesBinding(mc.gameSettings.keyBindInventory, keycode))) {
             if (this.isVolatile || this instanceof IVolatileScreen) {
                 openPopup(
                     new PopChoice(
