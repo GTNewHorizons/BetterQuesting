@@ -24,7 +24,7 @@ public class KeyBindHelper {
         return true;
     }
 
-    private static boolean isControllingLoaded() {
+    public static boolean isControllingLoaded() {
         return Loader.isModLoaded("controlling") && KeyBindHelper.class.getClassLoader()
                 .getResource("com/blamejared/controlling/keybinding/ComboKeyBinding.class") != null;
     }
