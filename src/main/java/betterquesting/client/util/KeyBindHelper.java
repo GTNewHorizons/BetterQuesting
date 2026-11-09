@@ -1,16 +1,17 @@
 package betterquesting.client.util;
 
-import com.blamejared.controlling.keybinding.ComboKeyBinding;
-import cpw.mods.fml.common.Loader;
-import cpw.mods.fml.common.Optional;
 import net.minecraft.client.settings.KeyBinding;
 
+import com.blamejared.controlling.keybinding.ComboKeyBinding;
+
+import cpw.mods.fml.common.Loader;
+import cpw.mods.fml.common.Optional;
+
 public class KeyBindHelper {
+
     public static boolean matchesBinding(KeyBinding b, int keyCode) {
-        if (keyCode != b.getKeyCode())
-            return false;
-        if (isControllingLoaded())
-            return isComboModifierActive(b);
+        if (keyCode != b.getKeyCode()) return false;
+        if (isControllingLoaded()) return isComboModifierActive(b);
 
         return true;
     }
@@ -26,6 +27,6 @@ public class KeyBindHelper {
 
     public static boolean isControllingLoaded() {
         return Loader.isModLoaded("controlling") && KeyBindHelper.class.getClassLoader()
-                .getResource("com/blamejared/controlling/keybinding/ComboKeyBinding.class") != null;
+            .getResource("com/blamejared/controlling/keybinding/ComboKeyBinding.class") != null;
     }
 }

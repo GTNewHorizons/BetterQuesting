@@ -6,7 +6,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.annotation.Nonnull;
 
-import betterquesting.client.util.KeyBindHelper;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
@@ -34,6 +33,7 @@ import betterquesting.api2.client.gui.popups.PopChoice;
 import betterquesting.api2.client.gui.themes.presets.PresetIcon;
 import betterquesting.api2.utils.QuestTranslation;
 import betterquesting.client.BQ_Keybindings;
+import betterquesting.client.util.KeyBindHelper;
 
 // This will probably be rewritten at a later date once I reimplement Minecraft's inventory controls natively into their
 // own isolated canvas elements

@@ -1,12 +1,13 @@
 package betterquesting.client;
 
-import betterquesting.client.util.KeyBindHelper;
-import com.blamejared.controlling.api.ComboModifier;
-import com.blamejared.controlling.api.ControllingApi;
 import net.minecraft.client.settings.KeyBinding;
 
 import org.lwjgl.input.Keyboard;
 
+import com.blamejared.controlling.api.ComboModifier;
+import com.blamejared.controlling.api.ControllingApi;
+
+import betterquesting.client.util.KeyBindHelper;
 import betterquesting.core.BetterQuesting;
 import cpw.mods.fml.client.registry.ClientRegistry;
 
