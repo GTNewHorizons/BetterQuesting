@@ -37,6 +37,14 @@
         "padding": [1, 1, 1, 1],
         "sliceMode": 1
       },
+      "betterquesting:btn_selected":
+      {
+        "textureType": "betterquesting:texture_sliced",
+        "atlas": "betterquesting:textures/gui/gui_themes.png",
+        "bounds": [8, 48, 8, 8],
+        "padding": [1, 1, 1, 1],
+        "sliceMode": 1
+      },
       "betterquesting:scroll_v_bg":
       {
         "textureType": "betterquesting:texture_sliced",
@@ -388,6 +396,14 @@
         "textureType": "betterquesting:texture_sliced",
         "atlas": "betterquesting:textures/gui/gui_themes.png",
         "bounds": [88, 48, 8, 8],
+        "padding": [1, 1, 1, 1],
+        "sliceMode": 1
+      },
+      "betterquesting:btn_selected":
+      {
+        "textureType": "betterquesting:texture_sliced",
+        "atlas": "betterquesting:textures/gui/gui_themes.png",
+        "bounds": [56, 48, 8, 8],
         "padding": [1, 1, 1, 1],
         "sliceMode": 1
       },
@@ -745,6 +761,14 @@
         "padding": [1, 1, 1, 1],
         "sliceMode": 1
       },
+      "betterquesting:btn_selected":
+      {
+        "textureType": "betterquesting:texture_sliced",
+        "atlas": "betterquesting:textures/gui/gui_themes.png",
+        "bounds": [104, 48, 8, 8],
+        "padding": [1, 1, 1, 1],
+        "sliceMode": 1
+      },
       "betterquesting:scroll_v_bg":
       {
         "textureType": "betterquesting:texture_sliced",
@@ -953,6 +977,14 @@
         "padding": [1, 1, 1, 1],
         "sliceMode": 1
       },
+      "betterquesting:btn_selected":
+      {
+        "textureType": "betterquesting:texture_sliced",
+        "atlas": "betterquesting:textures/gui/gui_themes.png",
+        "bounds": [152, 48, 8, 8],
+        "padding": [1, 1, 1, 1],
+        "sliceMode": 1
+      },
       "betterquesting:scroll_v_bg":
       {
         "textureType": "betterquesting:texture_sliced",
@@ -1154,6 +1186,14 @@
         "textureType": "betterquesting:texture_sliced",
         "atlas": "betterquesting:textures/gui/gui_themes.png",
         "bounds": [232, 48, 8, 8],
+        "padding": [1, 1, 1, 1],
+        "sliceMode": 1
+      },
+      "betterquesting:btn_selected":
+      {
+        "textureType": "betterquesting:texture_sliced",
+        "atlas": "betterquesting:textures/gui/gui_themes.png",
+        "bounds": [200, 48, 8, 8],
         "padding": [1, 1, 1, 1],
         "sliceMode": 1
       },
@@ -1362,6 +1402,14 @@
         "textureType": "betterquesting:texture_sliced",
         "atlas": "betterquesting:textures/gui/gui_themes.png",
         "bounds": [40, 128, 8, 8],
+        "padding": [1, 1, 1, 1],
+        "sliceMode": 1
+      },
+      "betterquesting:btn_selected":
+      {
+        "textureType": "betterquesting:texture_sliced",
+        "atlas": "betterquesting:textures/gui/gui_themes.png",
+        "bounds": [8, 128, 8, 8],
         "padding": [1, 1, 1, 1],
         "sliceMode": 1
       },
@@ -1576,6 +1624,14 @@
         "textureType": "betterquesting:texture_sliced",
         "atlas": "betterquesting:textures/gui/gui_themes.png",
         "bounds": [88, 128, 8, 8],
+        "padding": [2, 2, 2, 3],
+        "sliceMode": 1
+      },
+      "betterquesting:btn_selected":
+      {
+        "textureType": "betterquesting:texture_sliced",
+        "atlas": "betterquesting:textures/gui/gui_themes.png",
+        "bounds": [56, 128, 8, 8],
         "padding": [2, 2, 2, 3],
         "sliceMode": 1
       },
@@ -1864,6 +1920,14 @@
         "textureType": "betterquesting:texture_sliced",
         "atlas": "betterquesting:textures/gui/new_gui.png",
         "bounds": [48, 16, 8, 8],
+        "padding": [3, 3, 3, 3],
+        "sliceMode": 1
+      },
+      "betterquesting:btn_selected":
+      {
+        "textureType": "betterquesting:texture_sliced",
+        "atlas": "betterquesting:textures/gui/new_gui.png",
+        "bounds": [88, 0, 8, 8],
         "padding": [3, 3, 3, 3],
         "sliceMode": 1
       },
