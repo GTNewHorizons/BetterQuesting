@@ -169,6 +169,7 @@ betterquesting.msg.copy_quest_failed=§cCould not copy to clipboard!
 key.betterquesting.quests=Open Quests
 key.betterquesting.party=Party Manager
 key.betterquesting.themes=Change Theme
+key.betterquesting.search=Search Quests
 
 itemGroup.betterquesting=Better Questing
 

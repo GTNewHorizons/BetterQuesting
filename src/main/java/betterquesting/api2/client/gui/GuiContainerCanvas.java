@@ -33,6 +33,7 @@ import betterquesting.api2.client.gui.popups.PopChoice;
 import betterquesting.api2.client.gui.themes.presets.PresetIcon;
 import betterquesting.api2.utils.QuestTranslation;
 import betterquesting.client.BQ_Keybindings;
+import betterquesting.client.util.KeyBindHelper;
 
 // This will probably be rewritten at a later date once I reimplement Minecraft's inventory controls natively into their
 // own isolated canvas elements
@@ -335,8 +336,8 @@ public class GuiContainerCanvas extends GuiContainer implements IScene {
             }
         }
 
-        if (!used && (BQ_Keybindings.openQuests.getKeyCode() == keycode
-            || mc.gameSettings.keyBindInventory.getKeyCode() == keycode)) {
+        if (!used && (KeyBindHelper.matchesBinding(BQ_Keybindings.openQuests, keycode)
+            || KeyBindHelper.matchesBinding(mc.gameSettings.keyBindInventory, keycode))) {
             if (this.isVolatile || this instanceof IVolatileScreen) {
                 openPopup(
                     new PopChoice(
