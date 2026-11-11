@@ -33,6 +33,7 @@ import betterquesting.client.QuestNotification;
 import betterquesting.client.gui2.GuiHome;
 import betterquesting.commands.admin.QuestCommandDefaults;
 import betterquesting.core.BetterQuesting;
+import betterquesting.integration.PosteaCustomData;
 import betterquesting.questing.QuestDatabase;
 import betterquesting.questing.QuestInstance;
 import betterquesting.questing.QuestLineDatabase;
@@ -232,7 +233,7 @@ public class SaveLoadHandler {
                     new File(BQ_Settings.curWorldDir + "/backup/" + fsVer, "LifeDatabase_backup_" + fsVer + ".json"));
             }
 
-            QuestCommandDefaults.loadLegacy(null, null, fileDatabase, true);
+            QuestCommandDefaults.loadLegacy(null, null, fileDatabase, true, true);
         } else { // LOAD DEFAULTS
             if (defaultDatabaseDir.exists()) {
                 QuestCommandDefaults.load(null, null, defaultDatabaseDir, true);
@@ -311,6 +312,7 @@ public class SaveLoadHandler {
                 .activeModContainer()
                 .getVersion());
 
+        PosteaCustomData.stamp(json);
         return JsonHelper.WriteToFile2(fileDatabase, out -> NBTConverter.NBTtoJSON_Compound(json, out, true));
     }
 
