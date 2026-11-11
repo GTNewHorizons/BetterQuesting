@@ -374,7 +374,7 @@ public class QuestRecipeHandler extends TemplateRecipeHandler {
 
             // Add Pattern Placeholder to every quest. (NEI Only)
             ItemStack pattern = new ItemStack(BetterQuesting.patternPlaceholder);
-            pattern.setStackDisplayName(questName);
+            pattern.setStackDisplayName(QuestTranslation.translate("bq_standard.nei.quest_placeholder", questName));
             outputs.add(new PositionedStack(pattern, xOffset, yOffset));
             index++;
             for (IReward reward : getRewards(quest)) {
