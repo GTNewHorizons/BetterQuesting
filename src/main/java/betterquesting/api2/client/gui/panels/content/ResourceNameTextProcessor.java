@@ -26,17 +26,17 @@ import cpw.mods.fml.common.registry.GameRegistry;
  * If the item or fluid cannot be found (for example because the mod providing it is disabled), the
  * identifier itself is displayed instead.
  */
-public class ItemNameTextProcessor {
+public class ResourceNameTextProcessor {
 
-    public static final ResourceLocation ID = new ResourceLocation(BetterQuesting.MODID, "item_names");
+    public static final ResourceLocation ID = new ResourceLocation(BetterQuesting.MODID, "resource_names");
 
     private static final Pattern ITEM_TAG = Pattern.compile("\\[item(?: meta=(\\d+))?] *([^\\[\\] ]+) *\\[/item]");
     private static final Pattern FLUID_TAG = Pattern.compile("\\[fluid] *([^\\[\\] ]+) *\\[/fluid]");
 
-    private ItemNameTextProcessor() {}
+    private ResourceNameTextProcessor() {}
 
     public static void register() {
-        PanelTextBox.registerTextProcessor(ID, ItemNameTextProcessor::process);
+        PanelTextBox.registerTextProcessor(ID, ResourceNameTextProcessor::process);
     }
 
     public static String process(String text) {

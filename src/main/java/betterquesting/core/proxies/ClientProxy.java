@@ -11,7 +11,7 @@ import net.minecraftforge.common.MinecraftForge;
 import betterquesting.api.placeholders.EntityPlaceholder;
 import betterquesting.api2.client.gui.SceneController;
 import betterquesting.api2.client.gui.events.PEventBroadcaster;
-import betterquesting.api2.client.gui.panels.content.ItemNameTextProcessor;
+import betterquesting.api2.client.gui.panels.content.ResourceNameTextProcessor;
 import betterquesting.client.BQ_Keybindings;
 import betterquesting.client.QuestNotification;
 import betterquesting.client.renderer.EntityPlaceholderRenderer;
@@ -50,7 +50,7 @@ public class ClientProxy extends CommonProxy {
          * }
          */
 
-        ItemNameTextProcessor.register();
+        ResourceNameTextProcessor.register();
 
         MinecraftForge.EVENT_BUS.register(PEventBroadcaster.INSTANCE);
         MinecraftForge.EVENT_BUS.register(new SceneController());
