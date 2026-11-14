@@ -30,8 +30,9 @@ public class ResourceNameTextProcessor {
 
     public static final ResourceLocation ID = new ResourceLocation(BetterQuesting.MODID, "resource_names");
 
-    private static final Pattern ITEM_TAG = Pattern.compile("\\[item(?: meta=(\\d+))?] *([^\\[\\] ]+) *\\[/item]");
-    private static final Pattern FLUID_TAG = Pattern.compile("\\[fluid] *([^\\[\\] ]+) *\\[/fluid]");
+    private static final Pattern RESOURCE_TAG = Pattern
+        .compile("\\[(item|fluid)(?: meta=(\\d+))?] *([^\\[\\] ]+) *\\[/(item|fluid)]");
+    private static final String ITEM = "item";
 
     private ResourceNameTextProcessor() {}
 
@@ -41,24 +42,18 @@ public class ResourceNameTextProcessor {
 
     public static String process(String text) {
         if (text == null || text.indexOf('[') < 0) return text;
-        return processFluids(processItems(text));
-    }
 
-    private static String processItems(String text) {
-        Matcher matcher = ITEM_TAG.matcher(text);
+        Matcher matcher = RESOURCE_TAG.matcher(text);
         StringBuffer out = new StringBuffer(text.length());
         while (matcher.find()) {
-            matcher.appendReplacement(out, Matcher.quoteReplacement(resolveItem(matcher.group(2), matcher.group(1))));
-        }
-        matcher.appendTail(out);
-        return out.toString();
-    }
+            String tag = matcher.group(1);
+            // A tag closed by the other kind is left untouched, so the text keeps whatever the author wrote.
+            if (!tag.equals(matcher.group(4))) continue;
 
-    private static String processFluids(String text) {
-        Matcher matcher = FLUID_TAG.matcher(text);
-        StringBuffer out = new StringBuffer(text.length());
-        while (matcher.find()) {
-            matcher.appendReplacement(out, Matcher.quoteReplacement(resolveFluid(matcher.group(1))));
+            String id = matcher.group(3);
+            String meta = matcher.group(2);
+            String name = ITEM.equals(tag) ? resolveItem(id, meta) : resolveFluid(id, meta);
+            matcher.appendReplacement(out, Matcher.quoteReplacement(name));
         }
         matcher.appendTail(out);
         return out.toString();
@@ -85,7 +80,11 @@ public class ResourceNameTextProcessor {
         }
     }
 
-    private static String resolveFluid(String id) {
+    private static String resolveFluid(String id, String meta) {
+        if (meta != null) {
+            BetterQuesting.logger.warn("Fluid name tag in quest text has a meta value, ignoring it: {}", id);
+        }
+
         Fluid fluid = FluidRegistry.getFluid(id);
         if (fluid == null) {
             BetterQuesting.logger.warn("Unknown fluid in quest text: {}", id);
