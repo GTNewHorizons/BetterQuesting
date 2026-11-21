@@ -14,6 +14,7 @@ public class BQ_Settings {
     public static String defaultDir = "config/betterquesting/";
 
     public static boolean useBookmark = true;
+    public static boolean mouseBackButton = true;
     public static boolean skipHome = false;
     public static String curTheme = "betterquesting:light";
     public static int guiWidth = -1;

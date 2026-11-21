@@ -100,6 +100,12 @@ public class ConfigHandler {
             false,
             "If true will skip home gui and open quests at startup. This property will be changed by the mod itself.");
 
+        BQ_Settings.mouseBackButton = config.getBoolean(
+            "Mouse back button",
+            CATEGORY_GENERAL,
+            true,
+            "If true, the mouse's back thumb button returns to the previous quest book screen.");
+
         BQ_Settings.lockTray = config
             .getBoolean("Lock tray", CATEGORY_GENERAL, false, "Is quest chapters list locked and opened on start.");
         BQ_Settings.hideLockedQuestLines = config.getBoolean(
