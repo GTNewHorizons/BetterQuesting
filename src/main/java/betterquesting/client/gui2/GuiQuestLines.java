@@ -75,9 +75,11 @@ import betterquesting.api2.client.gui.themes.presets.PresetTexture;
 import betterquesting.api2.storage.DBEntry;
 import betterquesting.api2.utils.QuestTranslation;
 import betterquesting.api2.utils.Tuple2;
+import betterquesting.client.BQ_Keybindings;
 import betterquesting.client.BookmarkHandler;
 import betterquesting.client.gui2.editors.GuiQuestLinesEditor;
 import betterquesting.client.gui2.editors.designer.GuiDesigner;
+import betterquesting.client.util.KeyBindHelper;
 import betterquesting.core.BetterQuesting;
 import betterquesting.handlers.ConfigHandler;
 import betterquesting.network.handlers.NetQuestAction;
@@ -869,6 +871,18 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
                 scrollPosition.setChapterScrollY(cvLines.getScrollY());
             }
         }
+    }
+
+    @Override
+    public boolean onKeyTyped(char c, int keycode) {
+        if (super.onKeyTyped(c, keycode)) return true;
+
+        if (KeyBindHelper.matchesBinding(BQ_Keybindings.focusQuestSearch, keycode)) {
+            mc.displayGuiScreen(this.searchGui);
+            return true;
+        }
+
+        return false;
     }
 
     private Pair<List<UUID>, Integer> getAllPossibleClaims() {

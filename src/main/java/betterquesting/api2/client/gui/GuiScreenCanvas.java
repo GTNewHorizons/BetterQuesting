@@ -37,6 +37,7 @@ import betterquesting.api2.utils.QuestTranslation;
 import betterquesting.client.BQ_Keybindings;
 import betterquesting.client.gui2.GuiHome;
 import betterquesting.client.gui2.GuiQuestLines;
+import betterquesting.client.util.KeyBindHelper;
 import betterquesting.core.BetterQuesting;
 
 public class GuiScreenCanvas extends GuiScreen implements IScene {
@@ -384,8 +385,8 @@ public class GuiScreenCanvas extends GuiScreen implements IScene {
             }
         }
 
-        if (!used && (BQ_Keybindings.openQuests.getKeyCode() == keycode
-            || mc.gameSettings.keyBindInventory.getKeyCode() == keycode)) {
+        if (!used && (KeyBindHelper.matchesBinding(BQ_Keybindings.openQuests, keycode)
+            || KeyBindHelper.matchesBinding(mc.gameSettings.keyBindInventory, keycode))) {
             if (this.isVolatile || this instanceof IVolatileScreen) {
                 openPopup(
                     new PopChoice(
