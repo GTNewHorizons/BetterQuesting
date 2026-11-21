@@ -1,8 +1,10 @@
 package bq_standard.tasks;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import net.minecraft.block.Block;
@@ -17,6 +19,8 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.oredict.OreDictionary;
+
+import com.google.common.collect.MapMaker;
 
 import betterquesting.api.questing.IQuest;
 import betterquesting.api.utils.ItemComparison;
@@ -34,11 +38,21 @@ import cpw.mods.fml.relauncher.SideOnly;
 
 public class TaskBlockBreak extends TaskProgressableBase<int[]> {
 
+    private static final Set<TaskBlockBreak> INSTANCES = Collections.newSetFromMap(
+        new MapMaker().weakKeys()
+            .<TaskBlockBreak, Boolean>makeMap());
+
     // region Properties
     public final List<NbtBlockType> blockTypes = new ArrayList<>();
 
     public TaskBlockBreak() {
         blockTypes.add(new NbtBlockType());
+        INSTANCES.add(this);
+    }
+
+    public static boolean hasInstances() {
+        return !INSTANCES.isEmpty() && INSTANCES.iterator()
+            .hasNext();
     }
 
     @Override

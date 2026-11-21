@@ -1,3 +1,5 @@
+bq_standard.nei.title=BetterQuesting
+
 bq_standard.task.retrieval=Retrieval Task
 bq_standard.task.optional_retrieval=Optional Task
 bq_standard.task.crafting=Crafting Task
@@ -64,6 +66,8 @@ bq_standard.importer.hqm_quest.name=HQM Quest Importer
 bq_standard.importer.hqm_quest.desc=Imports HQM quest lines exported in json format. Due to the strange nature in which HQM quests are indexed post export, errors may occur between quests with duplicate names or conditional unlocks.
 
 item.bq_standard.loot_chest.name=Loot Chest
+
+bq_standard.nei.quest_placeholder=Quest - %s
 
 bq_standard.tooltip.fixed_loot=Loot Set: %s
 bq_standard.tooltip.fixed_loot_size=Contains %s items
