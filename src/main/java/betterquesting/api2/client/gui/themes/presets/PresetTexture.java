@@ -24,6 +24,7 @@ public enum PresetTexture {
     BTN_NORMAL_0("btn_normal_0"),
     BTN_NORMAL_1("btn_normal_1"),
     BTN_NORMAL_2("btn_normal_2"),
+    BTN_SELECTED("btn_selected"),
 
     BTN_CLEAN_0("btn_clean_0"),
     BTN_CLEAN_1("btn_clean_1"),
@@ -92,6 +93,10 @@ public enum PresetTexture {
 
     public IGuiTexture getTexture() {
         return ThemeRegistry.INSTANCE.getTexture(this.key);
+    }
+
+    public IGuiTexture getTexture(PresetTexture fallback) {
+        return ThemeRegistry.INSTANCE.getTexture(this.key, fallback.key);
     }
 
     public ResourceLocation getKey() {

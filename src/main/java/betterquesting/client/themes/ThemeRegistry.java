@@ -410,6 +410,11 @@ public class ThemeRegistry implements IThemeRegistry {
         return tex == null ? NULL_TEXTURE : tex;
     }
 
+    public IGuiTexture getTexture(ResourceLocation key, ResourceLocation fallbackKey) {
+        IGuiTexture tex = getCurrentTheme() == null ? null : activeTheme.getTexture(key);
+        return tex != null ? tex : getTexture(fallbackKey);
+    }
+
     @Override
     public IGuiLine getLine(ResourceLocation key) {
         if (key == null) return NULL_LINE;
@@ -430,6 +435,11 @@ public class ThemeRegistry implements IThemeRegistry {
         if (getCurrentTheme() != null) color = activeTheme.getColor(key);
         if (color == null) color = defColors.get(key);
         return color == null ? NULL_COLOR : color;
+    }
+
+    public IGuiColor getColor(ResourceLocation key, ResourceLocation fallbackKey) {
+        IGuiColor color = getCurrentTheme() == null ? null : activeTheme.getColor(key);
+        return color != null ? color : getColor(fallbackKey);
     }
 
     @Override

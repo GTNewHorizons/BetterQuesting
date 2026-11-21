@@ -28,9 +28,14 @@ public class PanelButton implements IPanelButton {
     private final IGuiRect transform;
     private boolean enabled = true;
 
-    private final IGuiTexture[] texStates = new IGuiTexture[3];
+    private static final int STATE_DISABLED = 0;
+    private static final int STATE_IDLE = 1;
+    private static final int STATE_HOVER = 2;
+    private static final int STATE_SELECTED = 3;
+
+    private final IGuiTexture[] texStates = new IGuiTexture[4];
     private IGuiColor[] colStates = new IGuiColor[] { new GuiColorStatic(128, 128, 128, 255),
-        new GuiColorStatic(255, 255, 255, 255), new GuiColorStatic(16777120) };
+        new GuiColorStatic(255, 255, 255, 255), new GuiColorStatic(16777120), new GuiColorStatic(16777120) };
     private IGuiTexture texIcon = null;
     private IGuiColor colIcon = null;
     private int icoPadding = 0;
@@ -39,6 +44,7 @@ public class PanelButton implements IPanelButton {
     private String btnText;
     private int textAlign = 1;
     private boolean isActive = true;
+    private boolean selected = false;
     private final int btnID;
 
     private boolean pendingRelease = false;
@@ -53,11 +59,13 @@ public class PanelButton implements IPanelButton {
         this.setTextures(
             PresetTexture.BTN_NORMAL_0.getTexture(),
             PresetTexture.BTN_NORMAL_1.getTexture(),
-            PresetTexture.BTN_NORMAL_2.getTexture());
+            PresetTexture.BTN_NORMAL_2.getTexture(),
+            PresetTexture.BTN_SELECTED.getTexture(PresetTexture.BTN_NORMAL_2));
         this.setTextHighlight(
             PresetColor.BTN_DISABLED.getColor(),
             PresetColor.BTN_IDLE.getColor(),
-            PresetColor.BTN_HOVER.getColor());
+            PresetColor.BTN_HOVER.getColor(),
+            PresetColor.BTN_SELECTED.getColor(PresetColor.BTN_HOVER));
     }
 
     public PanelButton setClickAction(Consumer<PanelButton> action) {
@@ -66,10 +74,15 @@ public class PanelButton implements IPanelButton {
     }
 
     public PanelButton setTextHighlight(IGuiColor disabled, IGuiColor idle, IGuiColor hover) {
-        this.colStates[0] = disabled;
-        this.colStates[1] = idle;
-        this.colStates[2] = hover;
+        this.colStates[STATE_DISABLED] = disabled;
+        this.colStates[STATE_IDLE] = idle;
+        this.colStates[STATE_HOVER] = hover;
         return this;
+    }
+
+    public PanelButton setTextHighlight(IGuiColor disabled, IGuiColor idle, IGuiColor hover, IGuiColor selected) {
+        this.colStates[STATE_SELECTED] = selected;
+        return this.setTextHighlight(disabled, idle, hover);
     }
 
     public PanelButton setTextShadow(boolean enabled) {
@@ -83,10 +96,15 @@ public class PanelButton implements IPanelButton {
     }
 
     public PanelButton setTextures(IGuiTexture disabled, IGuiTexture idle, IGuiTexture hover) {
-        this.texStates[0] = disabled;
-        this.texStates[1] = idle;
-        this.texStates[2] = hover;
+        this.texStates[STATE_DISABLED] = disabled;
+        this.texStates[STATE_IDLE] = idle;
+        this.texStates[STATE_HOVER] = hover;
         return this;
+    }
+
+    public PanelButton setTextures(IGuiTexture disabled, IGuiTexture idle, IGuiTexture hover, IGuiTexture selected) {
+        this.texStates[STATE_SELECTED] = selected;
+        return this.setTextures(disabled, idle, hover);
     }
 
     public PanelButton setIcon(IGuiTexture icon) {
@@ -115,6 +133,15 @@ public class PanelButton implements IPanelButton {
 
     public String getText() {
         return this.btnText;
+    }
+
+    public PanelButton setSelected(boolean selected) {
+        this.selected = selected;
+        return this;
+    }
+
+    public boolean isSelected() {
+        return this.selected;
     }
 
     @Override
@@ -150,15 +177,21 @@ public class PanelButton implements IPanelButton {
     @Override
     public void initPanel() {}
 
+    private int getCurrentState(boolean hovered) {
+        if (selected) return STATE_SELECTED;
+        if (!isActive()) return STATE_DISABLED;
+        return hovered ? STATE_HOVER : STATE_IDLE;
+    }
+
     @Override
     public void drawPanel(int mx, int my, float partialTick) {
         IGuiRect bounds = this.getTransform();
         GL11.glPushMatrix();
         GL11.glColor4f(1F, 1F, 1F, 1F);
-        int curState = !isActive() ? 0 : (bounds.contains(mx, my) ? 2 : 1);
+        int curState = getCurrentState(bounds.contains(mx, my));
 
-        if (curState == 2 && pendingRelease && Mouse.isButtonDown(0)) {
-            curState = 0;
+        if (curState == STATE_HOVER && pendingRelease && Mouse.isButtonDown(0)) {
+            curState = STATE_DISABLED;
         }
 
         IGuiTexture t = texStates[curState];
