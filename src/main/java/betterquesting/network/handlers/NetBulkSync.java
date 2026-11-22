@@ -7,7 +7,6 @@ import java.util.UUID;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ResourceLocation;
@@ -19,6 +18,7 @@ import betterquesting.api2.storage.DBEntry;
 import betterquesting.api2.utils.Tuple2;
 import betterquesting.core.BetterQuesting;
 import betterquesting.handlers.SaveLoadHandler;
+import betterquesting.network.IntegratedServerHost;
 import betterquesting.network.PacketSender;
 import betterquesting.network.PacketTypeRegistry;
 import betterquesting.questing.party.PartyInvitations;
@@ -88,9 +88,8 @@ public class NetBulkSync {
 
     @SideOnly(Side.CLIENT)
     private static void onClient(NBTTagCompound message) {
-        // DON'T do this on LAN hosts
-        if (message.getBoolean("reset") && !Minecraft.getMinecraft()
-            .isIntegratedServerRunning()) {
+        // DON'T do this on LAN hosts: they share the server's databases
+        if (message.getBoolean("reset") && !IntegratedServerHost.isHost()) {
             SaveLoadHandler.INSTANCE.unloadDatabases();
         }
 

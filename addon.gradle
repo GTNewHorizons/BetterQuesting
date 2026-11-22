@@ -2,6 +2,14 @@ compileJava {
     options.encoding = "UTF-8"
 }
 
+tasks.withType(Test).configureEach {
+    useJUnitPlatform()
+    testLogging {
+        events "passed", "failed", "skipped"
+        exceptionFormat "full"
+    }
+}
+
 task apiJarExtension(type: Jar) {
     from (sourceSets.main.allJava) {
         include modGroup.toString().replaceAll("\\.", "/") + "/api2/**"

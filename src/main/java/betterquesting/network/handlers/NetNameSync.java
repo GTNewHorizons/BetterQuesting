@@ -23,6 +23,7 @@ import betterquesting.api.network.QuestingPacket;
 import betterquesting.api.questing.party.IParty;
 import betterquesting.api2.utils.Tuple2;
 import betterquesting.core.BetterQuesting;
+import betterquesting.network.IntegratedServerHost;
 import betterquesting.network.PacketSender;
 import betterquesting.network.PacketTypeRegistry;
 import betterquesting.questing.party.PartyManager;
@@ -152,6 +153,12 @@ public class NetNameSync {
 
     @SideOnly(Side.CLIENT)
     private static void onClient(NBTTagCompound payload) {
+        // The integrated server host shares the server's databases: the server already applied this data.
+        if (IntegratedServerHost.isHost()) {
+            MinecraftForge.EVENT_BUS.post(new DatabaseEvent.Update(DBType.NAMES));
+            return;
+        }
+
         NameCache.INSTANCE
             .readFromNBT(payload.getTagList(TAG_NAME_CACHE, Constants.NBT.TAG_COMPOUND), payload.getBoolean(TAG_MERGE));
         MinecraftForge.EVENT_BUS.post(new DatabaseEvent.Update(DBType.NAMES));

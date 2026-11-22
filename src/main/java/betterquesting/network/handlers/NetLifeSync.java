@@ -11,6 +11,7 @@ import net.minecraft.util.ResourceLocation;
 
 import betterquesting.api.network.QuestingPacket;
 import betterquesting.core.BetterQuesting;
+import betterquesting.network.IntegratedServerHost;
 import betterquesting.network.PacketSender;
 import betterquesting.network.PacketTypeRegistry;
 import betterquesting.storage.LifeDatabase;
@@ -44,6 +45,11 @@ public class NetLifeSync {
 
     @SideOnly(Side.CLIENT)
     private static void onClient(NBTTagCompound message) {
+        // The integrated server host shares the server's databases: the server already applied this data.
+        if (IntegratedServerHost.isHost()) {
+            return;
+        }
+
         LifeDatabase.INSTANCE.readFromNBT(message.getCompoundTag("data"), message.getBoolean("merge"));
     }
 }

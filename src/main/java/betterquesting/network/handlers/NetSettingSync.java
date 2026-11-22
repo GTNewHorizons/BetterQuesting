@@ -13,6 +13,7 @@ import betterquesting.api.network.QuestingPacket;
 import betterquesting.api2.utils.Tuple2;
 import betterquesting.core.BetterQuesting;
 import betterquesting.handlers.SaveLoadHandler;
+import betterquesting.network.IntegratedServerHost;
 import betterquesting.network.PacketSender;
 import betterquesting.network.PacketTypeRegistry;
 import betterquesting.storage.QuestSettings;
@@ -53,6 +54,11 @@ public class NetSettingSync {
 
     @SideOnly(Side.CLIENT)
     private static void onClient(NBTTagCompound payload) {
+        // The integrated server host shares the server's databases: the server already applied this data.
+        if (IntegratedServerHost.isHost()) {
+            return;
+        }
+
         QuestSettings.INSTANCE.readFromNBT(payload.getCompoundTag(TAG_SETTINGS));
     }
 

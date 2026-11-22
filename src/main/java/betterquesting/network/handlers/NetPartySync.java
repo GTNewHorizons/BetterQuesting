@@ -22,6 +22,7 @@ import betterquesting.api.questing.party.IParty;
 import betterquesting.api2.storage.DBEntry;
 import betterquesting.api2.utils.Tuple2;
 import betterquesting.core.BetterQuesting;
+import betterquesting.network.IntegratedServerHost;
 import betterquesting.network.PacketSender;
 import betterquesting.network.PacketTypeRegistry;
 import betterquesting.questing.party.PartyManager;
@@ -117,6 +118,12 @@ public class NetPartySync {
 
     @SideOnly(Side.CLIENT)
     private static void onClient(NBTTagCompound payload) {
+        // The integrated server host shares the server's databases: the server already applied this data.
+        if (IntegratedServerHost.isHost()) {
+            MinecraftForge.EVENT_BUS.post(new DatabaseEvent.Update(DBType.PARTY));
+            return;
+        }
+
         NBTTagList partyList = payload.getTagList(TAG_PARTY_LIST, Constants.NBT.TAG_COMPOUND);
         if (!payload.getBoolean(TAG_MERGE)) PartyManager.INSTANCE.reset();
 

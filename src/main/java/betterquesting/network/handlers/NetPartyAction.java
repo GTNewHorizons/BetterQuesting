@@ -22,6 +22,7 @@ import betterquesting.api.questing.party.IParty;
 import betterquesting.api2.storage.DBEntry;
 import betterquesting.api2.utils.Tuple2;
 import betterquesting.core.BetterQuesting;
+import betterquesting.network.IntegratedServerHost;
 import betterquesting.network.PacketSender;
 import betterquesting.network.PacketTypeRegistry;
 import betterquesting.questing.party.PartyInvitations;
@@ -303,6 +304,13 @@ public class NetPartyAction {
         int action = message.hasKey(TAG_ACTION, Constants.NBT.TAG_ANY_NUMERIC) ? message.getInteger(TAG_ACTION) : -1;
         int partyID = message.hasKey(TAG_PARTY_ID, Constants.NBT.TAG_ANY_NUMERIC) ? message.getInteger(TAG_PARTY_ID)
             : -1;
+        // The integrated server host shares the server's databases: the server already applied this change.
+        if (IntegratedServerHost.isHost()) {
+            if (action == ACTION_DELETE || action == ACTION_KICK) {
+                MinecraftForge.EVENT_BUS.post(new DatabaseEvent.Update(DBType.PARTY));
+            }
+            return;
+        }
 
         switch (action) {
             case ACTION_DELETE -> {
