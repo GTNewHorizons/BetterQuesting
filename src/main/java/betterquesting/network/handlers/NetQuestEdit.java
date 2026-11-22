@@ -33,6 +33,7 @@ import betterquesting.api2.storage.DBEntry;
 import betterquesting.api2.utils.Tuple2;
 import betterquesting.core.BetterQuesting;
 import betterquesting.handlers.SaveLoadHandler;
+import betterquesting.network.IntegratedServerHost;
 import betterquesting.network.PacketSender;
 import betterquesting.network.PacketTypeRegistry;
 import betterquesting.questing.QuestDatabase;
@@ -306,6 +307,11 @@ public class NetQuestEdit {
         int action = payload.hasKey(TAG_ACTION, Constants.NBT.TAG_ANY_NUMERIC) ? payload.getInteger(TAG_ACTION) : -1;
 
         if (action == ACTION_DELETE) {
+            // The integrated server host shares the server's databases: the server already applied this change.
+            if (IntegratedServerHost.isHost()) {
+                MinecraftForge.EVENT_BUS.post(new DatabaseEvent.Update(DBType.CHAPTER));
+                return;
+            }
             for (UUID uuid : NBTConverter.UuidValueType.QUEST.readIds(payload, TAG_QUEST_IDS)) {
                 QuestDatabase.INSTANCE.remove(uuid);
                 QuestLineDatabase.INSTANCE.removeQuest(uuid);

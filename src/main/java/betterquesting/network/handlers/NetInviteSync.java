@@ -17,6 +17,7 @@ import betterquesting.api.events.DatabaseEvent;
 import betterquesting.api.events.DatabaseEvent.DBType;
 import betterquesting.api.network.QuestingPacket;
 import betterquesting.core.BetterQuesting;
+import betterquesting.network.IntegratedServerHost;
 import betterquesting.network.PacketSender;
 import betterquesting.network.PacketTypeRegistry;
 import betterquesting.questing.party.PartyInvitations;
@@ -55,9 +56,15 @@ public class NetInviteSync {
     private static void onClient(NBTTagCompound message) {
         int action = message.getInteger("action");
         if (action == 0) {
-            PartyInvitations.INSTANCE.readFromNBT(message.getTagList("data", 10), true);
+            // The integrated server host shares the server's databases: the server already applied this data.
+            if (!IntegratedServerHost.isHost())
+                PartyInvitations.INSTANCE.readFromNBT(message.getTagList("data", 10), true);
             MinecraftForge.EVENT_BUS.post(new DatabaseEvent.Update(DBType.PARTY));
         } else if (action == 1) {
+            if (IntegratedServerHost.isHost()) {
+                MinecraftForge.EVENT_BUS.post(new DatabaseEvent.Update(DBType.PARTY));
+                return;
+            }
             UUID playerID = QuestingAPI.getQuestingUUID(Minecraft.getMinecraft().thePlayer);
             PartyInvitations.INSTANCE.revokeInvites(playerID, message.getIntArray("IDs"));
             MinecraftForge.EVENT_BUS.post(new DatabaseEvent.Update(DBType.PARTY));

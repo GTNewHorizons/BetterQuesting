@@ -24,6 +24,7 @@ import betterquesting.api.utils.NBTConverter;
 import betterquesting.api2.utils.BQThreadedIO;
 import betterquesting.api2.utils.Tuple2;
 import betterquesting.core.BetterQuesting;
+import betterquesting.network.IntegratedServerHost;
 import betterquesting.network.PacketSender;
 import betterquesting.network.PacketTypeRegistry;
 import betterquesting.questing.QuestLineDatabase;
@@ -97,6 +98,12 @@ public class NetChapterSync {
 
     @SideOnly(Side.CLIENT)
     private static void onClient(NBTTagCompound message) {
+        // The integrated server host shares the server's databases: the server already applied this data.
+        if (IntegratedServerHost.isHost()) {
+            MinecraftForge.EVENT_BUS.post(new DatabaseEvent.Update(DBType.CHAPTER));
+            return;
+        }
+
         NBTTagList data = message.getTagList("data", 10);
         if (!message.getBoolean("merge")) {
             QuestLineDatabase.INSTANCE.clear();

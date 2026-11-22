@@ -21,6 +21,7 @@ import betterquesting.api.questing.IQuest;
 import betterquesting.api.questing.rewards.IReward;
 import betterquesting.api.utils.NBTConverter;
 import betterquesting.api2.utils.Tuple2;
+import betterquesting.network.IntegratedServerHost;
 import bq_standard.core.BQ_Standard;
 import bq_standard.rewards.RewardChoice;
 import cpw.mods.fml.relauncher.Side;
@@ -91,6 +92,12 @@ public class NetRewardChoice {
         int sel = message.hasKey("selection", 99) ? message.getInteger("selection") : -1;
 
         if (!qID.isPresent() || rID < 0) {
+            return;
+        }
+
+        // The integrated server host shares the server's databases: the server already applied this change.
+        if (IntegratedServerHost.isHost()) {
+            MinecraftForge.EVENT_BUS.post(new DatabaseEvent.Update(DBType.QUEST));
             return;
         }
 

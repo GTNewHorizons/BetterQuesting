@@ -24,6 +24,7 @@ import betterquesting.api.utils.NBTConverter;
 import betterquesting.api2.utils.Tuple2;
 import betterquesting.core.BetterQuesting;
 import betterquesting.handlers.SaveLoadHandler;
+import betterquesting.network.IntegratedServerHost;
 import betterquesting.network.PacketSender;
 import betterquesting.network.PacketTypeRegistry;
 import betterquesting.questing.QuestLineDatabase;
@@ -201,6 +202,13 @@ public class NetChapterEdit {
     @SideOnly(Side.CLIENT)
     private static void onClient(NBTTagCompound message) {
         int action = message.hasKey(TAG_ACTION, Constants.NBT.TAG_ANY_NUMERIC) ? message.getInteger(TAG_ACTION) : -1;
+        // The integrated server host shares the server's databases: the server already applied this change.
+        if (IntegratedServerHost.isHost()) {
+            if (action == ACTION_DELETE || action == ACTION_REORDER) {
+                MinecraftForge.EVENT_BUS.post(new DatabaseEvent.Update(DBType.CHAPTER));
+            }
+            return;
+        }
 
         switch (action) {
             case ACTION_DELETE -> {

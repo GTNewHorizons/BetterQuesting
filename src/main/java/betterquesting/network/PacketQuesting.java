@@ -110,8 +110,15 @@ public class PacketQuesting implements IMessage {
                     .log(Level.WARN, "Recieved a packet server side with an invalid ID: " + message.getString("ID"));
                 return null;
             } else {
+                // Classify on arrival: by the time the handler runs, the connection may already be gone.
+                final boolean fromHost = IntegratedServerHost.isHostConnection(
+                    ctx.getClientHandler() == null ? null
+                        : ctx.getClientHandler()
+                            .getNetworkManager());
                 Minecraft.getMinecraft()
-                    .func_152343_a(Executors.callable(() -> method.accept(message)));
+                    .func_152343_a(
+                        Executors
+                            .callable(() -> IntegratedServerHost.runHandler(fromHost, () -> method.accept(message))));
             }
 
             return null;
