@@ -15,6 +15,10 @@ public class TextEditorSyntaxHighlighter implements Function<String, PanelTextFi
     private static final Pattern TAG_CANDIDATE = Pattern.compile("\\[[^\\]\\r\\n]*]");
     private static final Pattern IMAGE_OPENING_TAG = Pattern.compile("\\[img height=[1-9]\\d*]");
     private static final String IMAGE_CLOSING_TAG = "[/img]";
+    private static final Pattern ITEM_OPENING_TAG = Pattern.compile("\\[item(?: meta=\\d+)?]");
+    private static final String ITEM_CLOSING_TAG = "[/item]";
+    private static final String FLUID_OPENING_TAG = "[fluid]";
+    private static final String FLUID_CLOSING_TAG = "[/fluid]";
 
     @Override
     public PanelTextField.TextDisplayText apply(String text) {
@@ -56,7 +60,12 @@ public class TextEditorSyntaxHighlighter implements Function<String, PanelTextFi
                 .isPresent()
             || IMAGE_OPENING_TAG.matcher(tag)
                 .matches()
-            || IMAGE_CLOSING_TAG.equals(tag);
+            || IMAGE_CLOSING_TAG.equals(tag)
+            || ITEM_OPENING_TAG.matcher(tag)
+                .matches()
+            || ITEM_CLOSING_TAG.equals(tag)
+            || FLUID_OPENING_TAG.equals(tag)
+            || FLUID_CLOSING_TAG.equals(tag);
     }
 
     private static String appendSource(String text, int start, int end, StringBuilder renderedText,
