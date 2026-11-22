@@ -1069,9 +1069,7 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
                 QuestTranslation.translateQuestLineName(entry),
                 entry);
             btnLine.setTextAlignment(0);
-            btnLine.setActive(
-                (vis & 4) == 0 && !entry.getKey()
-                    .equals(selectedLineId));
+            updateChapterButtonState(btnLine, vis);
             btnLine.setCallback(this::openQuestLine);
             cvLines.addPanel(btnLine);
             btnListRef.add(btnLine);
@@ -1081,6 +1079,14 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
 
         cvLines.refreshScrollBounds();
         updateQuestLineScrollbar(row);
+    }
+
+    private void updateChapterButtonState(PanelButtonStorage<Map.Entry<UUID, IQuestLine>> btn, int vis) {
+        boolean selected = btn.getStoredValue()
+            .getKey()
+            .equals(selectedLineId);
+        btn.setActive((vis & 4) == 0 && !selected);
+        btn.setSelected(selected);
     }
 
     private void updateQuestLineScrollbar(int rows) {
@@ -1192,12 +1198,7 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
         selectedLine = q.getValue();
         selectedLineId = q.getKey();
         for (int i = 0; i < btnListRef.size(); i++) {
-            btnListRef.get(i)
-                .setActive(
-                    (btnVisibilityRef.get(i) & 4) == 0 && !btnListRef.get(i)
-                        .getStoredValue()
-                        .getKey()
-                        .equals(selectedLineId));
+            updateChapterButtonState(btnListRef.get(i), btnVisibilityRef.get(i));
         }
 
         cvQuest.setQuestLine(q.getValue());

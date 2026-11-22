@@ -31,6 +31,7 @@ public enum PresetColor {
     BTN_DISABLED("btn_disabled"),
     BTN_IDLE("btn_idle"),
     BTN_HOVER("btn_hover"),
+    BTN_SELECTED("btn_selected"),
 
     QUEST_LINE_LOCKED("quest_line_locked"),
     QUEST_LINE_UNLOCKED("quest_line_unlocked"),
@@ -53,6 +54,10 @@ public enum PresetColor {
 
     public IGuiColor getColor() {
         return ThemeRegistry.INSTANCE.getColor(this.key);
+    }
+
+    public IGuiColor getColor(PresetColor fallback) {
+        return ThemeRegistry.INSTANCE.getColor(this.key, fallback.key);
     }
 
     public ResourceLocation getKey() {
