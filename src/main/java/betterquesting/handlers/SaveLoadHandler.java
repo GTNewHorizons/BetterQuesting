@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryIteratorException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -81,6 +82,7 @@ public class SaveLoadHandler {
     private final Set<UUID> failedReads = new HashSet<>();
     private final Map<UUID, Future<Void>> pendingWrites = new HashMap<>();
     private final Striped<Lock> progressFileLocks = Striped.lazyWeakLock(256);
+    private CompletableFuture<ProgressRewriteResult> progressRewrite;
     private boolean allProgressLoaded;
 
     public boolean hasUpdate() {
@@ -395,8 +397,89 @@ public class SaveLoadHandler {
         }
     }
 
+    /**
+     * Converts saved per-player records without loading them into the running quest database.
+     */
+    public synchronized CompletableFuture<ProgressRewriteResult> rewriteSavedProgress() {
+        File directory = dirProgress;
+        if (directory == null) throw new IllegalStateException("No BetterQuesting world is loaded");
+        if (progressRewrite != null && !progressRewrite.isDone()) {
+            throw new IllegalStateException("A BetterQuesting progress migration is already running");
+        }
+
+        CompletableFuture<ProgressRewriteResult> result = new CompletableFuture<>();
+        BQThreadedIO.DISK_IO.enqueue(() -> {
+            try {
+                result.complete(rewriteProgressFiles(directory));
+            } catch (Exception failure) {
+                result.completeExceptionally(failure);
+            }
+        });
+        progressRewrite = result;
+        return result;
+    }
+
+    private ProgressRewriteResult rewriteProgressFiles(File directory) throws IOException {
+        int converted = 0;
+        int current = 0;
+        List<String> failures = new ArrayList<>();
+        try (DirectoryStream<Path> files = Files.newDirectoryStream(directory.toPath(), "*.json")) {
+            for (Path file : files) {
+                checkProgressDirectory(directory);
+                UUID player = playerId(file);
+                if (player == null || !Files.isRegularFile(file, LinkOption.NOFOLLOW_LINKS)) continue;
+                try {
+                    if (rewriteProgressFile(directory, file, player)) converted++;
+                    else current++;
+                } catch (IOException | RuntimeException failure) {
+                    checkProgressDirectory(directory);
+                    String reason = failure.getMessage();
+                    failures.add(
+                        file + ": "
+                            + (reason == null ? failure.getClass()
+                                .getSimpleName() : reason));
+                }
+            }
+        } catch (NoSuchFileException ignored) {
+            // A new world has no progress directory
+        }
+        return new ProgressRewriteResult(converted, current, failures);
+    }
+
+    private boolean rewriteProgressFile(File directory, Path file, UUID player) throws IOException {
+        Lock lock = progressFileLocks.get(player);
+        lock.lock();
+        try {
+            checkProgressDirectory(directory);
+            PlayerProgressJson.ReadResult record;
+            try (BufferedReader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
+                record = PlayerProgressJson.readRecord(reader, player);
+            }
+            if (!record.needsRewrite()) return false;
+            writePlayerProgress(directory, file, player, record.progress());
+            return true;
+        } finally {
+            lock.unlock();
+        }
+    }
+
     private void checkProgressDirectory(File directory) {
         if (dirProgress != directory) throw new CancellationException("The BetterQuesting world was unloaded");
+    }
+
+    public static final class ProgressRewriteResult {
+
+        public final int converted;
+        public final int current;
+        public final int failed;
+        public final List<String> failures;
+
+        private ProgressRewriteResult(int converted, int current, List<String> failures) {
+            this.converted = converted;
+            this.current = current;
+            this.failures = Collections.unmodifiableList(failures);
+            this.failed = failures.size();
+        }
     }
 
     private void LoadParties() {

@@ -17,6 +17,7 @@ import betterquesting.commands.admin.QuestCommandDelete;
 import betterquesting.commands.admin.QuestCommandEdit;
 import betterquesting.commands.admin.QuestCommandHardcore;
 import betterquesting.commands.admin.QuestCommandLives;
+import betterquesting.commands.admin.QuestCommandMigrateProgress;
 import betterquesting.commands.admin.QuestCommandPurge;
 import betterquesting.commands.admin.QuestCommandReportAllProgress;
 import betterquesting.commands.admin.QuestCommandReset;
@@ -40,6 +41,7 @@ public class BQ_CommandAdmin extends CommandBase {
         coms.add(new QuestCommandCheckCompletion());
         coms.add(new QuestCommandReportAllProgress());
         coms.add(new QuestCommandCleanupQuestLine());
+        coms.add(new QuestCommandMigrateProgress());
     }
 
     @Override
