@@ -15,8 +15,6 @@ import javax.annotation.Nonnull;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTBase;
-import net.minecraft.nbt.NBTBase.NBTPrimitive;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.ResourceLocation;
@@ -30,7 +28,6 @@ import betterquesting.api.questing.IQuest;
 import betterquesting.api.questing.tasks.IFluidTask;
 import betterquesting.api.questing.tasks.IItemTask;
 import betterquesting.api.utils.JsonHelper;
-import betterquesting.api.utils.NBTConverter;
 import betterquesting.api2.client.gui.misc.IGuiRect;
 import betterquesting.api2.client.gui.panels.IGuiPanel;
 import betterquesting.api2.utils.ParticipantInfo;
@@ -118,16 +115,6 @@ public class TaskFluid extends TaskProgressableBase<int[]> implements ITaskInven
     @SuppressWarnings("DuplicatedCode")
     @Override
     public int[] readUserProgressFromNBT(NBTTagCompound nbt) {
-        // region Legacy
-        if (nbt.hasKey("data", Constants.NBT.TAG_LIST)) {
-            int[] data = new int[requiredFluids.size()];
-            List<NBTBase> dNbt = NBTConverter.getTagList(nbt.getTagList("data", Constants.NBT.TAG_INT));
-            for (int i = 0; i < data.length && i < dNbt.size(); i++) {
-                data[i] = ((NBTPrimitive) dNbt.get(i)).func_150287_d();
-            }
-            return data;
-        }
-        // endregion Legacy
         final int[] data = nbt.getIntArray("data");
         final int[] progress = new int[requiredFluids.size()];
         System.arraycopy(data, 0, progress, 0, Math.min(data.length, progress.length));

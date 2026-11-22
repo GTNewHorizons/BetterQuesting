@@ -167,13 +167,7 @@ public class PartyInstance implements IParty {
 
     @Override
     public void readFromNBT(NBTTagCompound jObj) {
-        if (jObj.hasKey("properties", 10)) {
-            pInfo.readFromNBT(jObj.getCompoundTag("properties"));
-        } else // Legacy stuff
-        {
-            pInfo.readFromNBT(new NBTTagCompound());
-            pInfo.setProperty(NativeProps.NAME, jObj.getString("name"));
-        }
+        pInfo.readFromNBT(jObj.getCompoundTag("properties"));
 
         members.clear();
         NBTTagList memList = jObj.getTagList("members", 10);
