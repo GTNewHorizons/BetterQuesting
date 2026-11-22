@@ -22,6 +22,9 @@ import betterquesting.api2.utils.QuestTranslation;
 
 public class PopContextMenuHoverSub extends CanvasEmpty {
 
+    public static final int ENTRY_HEIGHT = 16;
+    public static final int TEXT_WIDTH_PADDING = 20;
+
     private final List<MenuEntry> entries = new ArrayList<>();
     private final GuiRectangle rect;
     private final boolean autoClose;
@@ -48,8 +51,8 @@ public class PopContextMenuHoverSub extends CanvasEmpty {
     public void initPanel() {
         super.initPanel();
 
-        int listH = Math.min(entries.size() * 16, rect.getHeight());
-        boolean needsScroll = (entries.size() * 16) > listH;
+        int listH = Math.min(entries.size() * ENTRY_HEIGHT, rect.getHeight());
+        boolean needsScroll = (entries.size() * ENTRY_HEIGHT) > listH;
         int scrollBarW = needsScroll ? 8 : 0;
         int buttonWidth = rect.w - scrollBarW;
 
@@ -75,7 +78,7 @@ public class PopContextMenuHoverSub extends CanvasEmpty {
         for (int i = 0; i < entries.size(); i++) {
             MenuEntry entry = entries.get(i);
             PanelButton eBtn = new PanelButton(
-                new GuiRectangle(0, i * 16, buttonWidth, 16, 0),
+                new GuiRectangle(0, i * ENTRY_HEIGHT, buttonWidth, ENTRY_HEIGHT, 0),
                 -1,
                 QuestTranslation.translate(entry.text));
             if (entry.action != null) {
@@ -106,8 +109,8 @@ public class PopContextMenuHoverSub extends CanvasEmpty {
             MenuEntry entry = entries.get(i);
             if (entry.subEntries == null) continue;
 
-            int btnY = rect.getY() + i * 16;
-            int btnH = 16;
+            int btnY = rect.getY() + i * ENTRY_HEIGHT;
+            int btnH = ENTRY_HEIGHT;
             if (mx >= rect.getX() && mx < rect.getX() + rect.getWidth() && my >= btnY && my < btnY + btnH) {
                 newActiveIndex = i;
                 break;
@@ -156,9 +159,9 @@ public class PopContextMenuHoverSub extends CanvasEmpty {
         subMaxWidth += 12;
 
         int subX = rect.getX() + rect.getWidth();
-        int subY = rect.getY() + index * 16;
-        int subH = Math.min(entry.subEntries.size() * 16, 160);
-        boolean needsScroll = (entry.subEntries.size() * 16) > subH;
+        int subY = rect.getY() + index * ENTRY_HEIGHT;
+        int subH = Math.min(entry.subEntries.size() * ENTRY_HEIGHT, 160);
+        boolean needsScroll = (entry.subEntries.size() * ENTRY_HEIGHT) > subH;
         int scrollBarW = needsScroll ? 8 : 0;
         int buttonWidth = subMaxWidth;
         int totalWidth = subMaxWidth + scrollBarW;
@@ -194,7 +197,10 @@ public class PopContextMenuHoverSub extends CanvasEmpty {
 
         for (int i = 0; i < entry.subEntries.size(); i++) {
             SubMenuEntry sub = entry.subEntries.get(i);
-            PanelButton subBtn = new PanelButton(new GuiRectangle(0, i * 16, buttonWidth, 16, 0), -1, sub.text);
+            PanelButton subBtn = new PanelButton(
+                new GuiRectangle(0, i * ENTRY_HEIGHT, buttonWidth, ENTRY_HEIGHT, 0),
+                -1,
+                sub.text);
             if (sub.action != null) {
                 subBtn.setClickAction((b) -> sub.action.run());
             }

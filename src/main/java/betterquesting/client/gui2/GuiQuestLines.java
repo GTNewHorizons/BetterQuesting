@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -25,6 +26,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.lwjgl.util.vector.Vector4f;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Maps;
 
 import betterquesting.api.api.ApiReference;
 import betterquesting.api.api.QuestingAPI;
@@ -55,8 +57,10 @@ import betterquesting.api2.client.gui.misc.GuiAlign;
 import betterquesting.api2.client.gui.misc.GuiPadding;
 import betterquesting.api2.client.gui.misc.GuiRectangle;
 import betterquesting.api2.client.gui.misc.GuiTransform;
+import betterquesting.api2.client.gui.misc.IGuiRect;
 import betterquesting.api2.client.gui.panels.CanvasEmpty;
 import betterquesting.api2.client.gui.panels.CanvasTextured;
+import betterquesting.api2.client.gui.panels.IGuiPanel;
 import betterquesting.api2.client.gui.panels.bars.PanelVScrollBar;
 import betterquesting.api2.client.gui.panels.content.PanelGeneric;
 import betterquesting.api2.client.gui.panels.content.PanelTextBox;
@@ -86,6 +90,20 @@ import betterquesting.questing.QuestLineDatabase;
 import bq_standard.rewards.RewardChoice;
 
 public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, INeedsRefresh {
+
+    private static final int FRAME_MARGIN = 8;
+    private static final int FRAME_TOP = 24;
+    private static final int CHAPTER_ROW_HEIGHT = 16;
+    private static final int CHAPTER_MARK_SIZE = 8;
+    private static final int CHAPTER_MARK_INSET = 2;
+    private static final int BOOKMARK_SIZE = 20;
+    private static final int BOOKMARK_ICON_PADDING = 4;
+    private static final int BOOKMARK_INSET_X = 1;
+    private static final int BOOKMARK_SPACING = 2;
+    private static final int BOOKMARK_GROUP_SPACING = 6;
+    private static final int BOOKMARK_RAIL_COLUMN = BOOKMARK_SIZE + (2 * BOOKMARK_INSET_X);
+    private static final int BOOKMARK_RAIL_GAP = 2;
+    private static final int BOOKMARK_RAIL_WIDTH = BOOKMARK_RAIL_COLUMN + BOOKMARK_RAIL_GAP;
 
     private ScrollPosition scrollPosition;
 
@@ -121,6 +139,9 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
     private CanvasScrolling cvDesc;
     private PanelVScrollBar scDesc;
     private CanvasScrolling cvLines;
+    private CanvasScrolling cvBookmarkRail;
+    private final Map<IGuiPanel, Runnable> bookmarkRailToggles = new LinkedHashMap<>();
+    private boolean bookmarkRailShown;
     private PanelVScrollBar scLines;
 
     private PanelGeneric icoChapter;
@@ -260,15 +281,25 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
         icoChapter = new PanelGeneric(new GuiTransform(GuiAlign.TOP_LEFT, 40, 8, 16, 16, 0), null);
         cvBackground.addPanel(icoChapter);
 
+        bookmarkRailShown = BookmarkHandler.hasAnyBookmarks();
+        int frameRight = FRAME_MARGIN + (bookmarkRailShown ? BOOKMARK_RAIL_WIDTH : 0);
+
         cvFrame = new CanvasHoverTray(
-            new GuiTransform(GuiAlign.FULL_BOX, new GuiPadding(40 + 150 + 24, 24, 8, 8), 0),
-            new GuiTransform(GuiAlign.FULL_BOX, new GuiPadding(40, 24, 8, 8), 0),
+            new GuiTransform(GuiAlign.FULL_BOX, new GuiPadding(40 + 150 + 24, FRAME_TOP, frameRight, FRAME_MARGIN), 0),
+            new GuiTransform(GuiAlign.FULL_BOX, new GuiPadding(40, FRAME_TOP, frameRight, FRAME_MARGIN), 0),
             PresetTexture.AUX_FRAME_0.getTexture());
         cvFrame.setManualOpen(true);
         // CanvasTextured cvFrame = new CanvasTextured(new GuiTransform(GuiAlign.FULL_BOX, new GuiPadding(40, 24, 8, 8),
         // 0), PresetTexture.AUX_FRAME_0.getTexture());
         cvBackground.addPanel(cvFrame);
         cvFrame.setTrayState(!preOpen, 1);
+
+        cvBookmarkRail = new CanvasScrolling(
+            new GuiTransform(
+                GuiAlign.RIGHT_EDGE,
+                new GuiPadding(-(FRAME_MARGIN + BOOKMARK_RAIL_COLUMN), FRAME_TOP, FRAME_MARGIN, FRAME_MARGIN),
+                0));
+        cvBackground.addPanel(cvBookmarkRail);
         // These would probably be more annoying than useful if you just wanted to check a tray but not lose your
         // position
         // cvFrame.setOpenAction(() -> cvQuest.fitToWindow());
@@ -282,8 +313,8 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
         // === CHAPTER TRAY ===
 
         cvChapterTray = new CanvasHoverTray(
-            new GuiTransform(GuiAlign.LEFT_EDGE, new GuiPadding(40, 24, -24, 8), -1),
-            new GuiTransform(GuiAlign.LEFT_EDGE, new GuiPadding(40, 24, -40 - 150 - 24, 8), -1),
+            new GuiTransform(GuiAlign.LEFT_EDGE, new GuiPadding(40, FRAME_TOP, -24, FRAME_MARGIN), -1),
+            new GuiTransform(GuiAlign.LEFT_EDGE, new GuiPadding(40, FRAME_TOP, -40 - 150 - 24, FRAME_MARGIN), -1),
             PresetTexture.PANEL_INNER.getTexture());
         cvChapterTray.setManualOpen(true);
         cvChapterTray.setOpenAction(() -> {
@@ -335,8 +366,8 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
         // === DESCRIPTION TRAY ===
 
         cvDescTray = new CanvasHoverTray(
-            new GuiTransform(GuiAlign.LEFT_EDGE, new GuiPadding(40, 24, -24, 8), -1),
-            new GuiTransform(GuiAlign.LEFT_EDGE, new GuiPadding(40, 24, -40 - 150 - 24, 8), -1),
+            new GuiTransform(GuiAlign.LEFT_EDGE, new GuiPadding(40, FRAME_TOP, -24, FRAME_MARGIN), -1),
+            new GuiTransform(GuiAlign.LEFT_EDGE, new GuiPadding(40, FRAME_TOP, -40 - 150 - 24, FRAME_MARGIN), -1),
             PresetTexture.PANEL_INNER.getTexture());
         cvDescTray.setManualOpen(true);
         cvDescTray.setOpenAction(() -> {
@@ -376,7 +407,7 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
             .addPanel(scDesc);
 
         // === LEFT SIDEBAR ===
-        int yOff = 24;
+        int yOff = FRAME_TOP;
         PanelButton btnTrayToggle = new PanelButton(new GuiTransform(GuiAlign.TOP_LEFT, 8, yOff, 32, 16, 0), -1, "");
         btnTrayToggle.setIcon(
             PresetIcon.ICON_QUEST.getTexture(),
@@ -659,13 +690,18 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
                         int menuItemCount = 5 + QuestContextMenuRegistry.getEntries()
                             .size(); // bookmark, share, copy, deps, dependants + external
                         PopContextMenuHoverSub popup = new PopContextMenuHoverSub(
-                            new GuiRectangle(mx, my, maxWidth + 20, menuItemCount * 16),
+                            new GuiRectangle(
+                                mx,
+                                my,
+                                maxWidth + PopContextMenuHoverSub.TEXT_WIDTH_PADDING,
+                                menuItemCount * PopContextMenuHoverSub.ENTRY_HEIGHT),
                             true);
 
                         Runnable pinQuest = () -> {
                             boolean bookmarked = BookmarkHandler.bookmarkQuest(questId);
                             btnQuest.setBookmarked(bookmarked);
                             closePopup();
+                            onBookmarksChanged();
                         };
 
                         String pinPopupText;
@@ -1003,6 +1039,7 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
         }
 
         if (cvChapterTray.isTrayOpen()) buildChapterList();
+        buildBookmarkRail();
 
         computeGlobalCompletion();
     }
@@ -1044,7 +1081,7 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
 
             cvLines.addPanel(
                 new PanelGeneric(
-                    new GuiRectangle(0, row * 16, 16, 16, 0),
+                    new GuiRectangle(0, row * CHAPTER_ROW_HEIGHT, CHAPTER_ROW_HEIGHT, CHAPTER_ROW_HEIGHT, 0),
                     new OreDictTexture(
                         1F,
                         entry.getValue()
@@ -1055,16 +1092,32 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
             if ((vis & 1) > 0) {
                 cvLines.addPanel(
                     new PanelGeneric(
-                        new GuiRectangle(8, row * 16 + 8, 8, 8, -1),
+                        new GuiRectangle(8, (row * CHAPTER_ROW_HEIGHT) + 8, 8, 8, -1),
                         new GuiTextureColored(PresetIcon.ICON_NOTICE.getTexture(), new GuiColorStatic(0xFFFFFF00))));
             } else if ((vis & 2) > 0) {
                 cvLines.addPanel(
                     new PanelGeneric(
-                        new GuiRectangle(8, row * 16 + 8, 8, 8, -1),
+                        new GuiRectangle(8, (row * CHAPTER_ROW_HEIGHT) + 8, 8, 8, -1),
                         new GuiTextureColored(PresetIcon.ICON_TICK.getTexture(), new GuiColorStatic(0xFF00FF00))));
             }
+            if (BookmarkHandler.isChapterBookmarked(entry.getKey())) {
+                cvLines.addPanel(
+                    new PanelGeneric(
+                        new GuiRectangle(
+                            listW - CHAPTER_MARK_SIZE - CHAPTER_MARK_INSET,
+                            (row * CHAPTER_ROW_HEIGHT) + CHAPTER_MARK_INSET,
+                            CHAPTER_MARK_SIZE,
+                            CHAPTER_MARK_SIZE,
+                            -1),
+                        PresetIcon.ICON_BOOKMARK.getTexture()));
+            }
             PanelButtonStorage<Map.Entry<UUID, IQuestLine>> btnLine = new PanelButtonStorage<>(
-                new GuiRectangle(16, row * 16, listW - 16, 16, 0),
+                new GuiRectangle(
+                    CHAPTER_ROW_HEIGHT,
+                    row * CHAPTER_ROW_HEIGHT,
+                    listW - CHAPTER_ROW_HEIGHT,
+                    CHAPTER_ROW_HEIGHT,
+                    0),
                 1,
                 QuestTranslation.translateQuestLineName(entry),
                 entry);
@@ -1086,7 +1139,7 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
     private void updateQuestLineScrollbar(int rows) {
         int viewHeight = cvLines.getTransform()
             .getHeight();
-        int contentHeight = rows * 16;
+        int contentHeight = rows * CHAPTER_ROW_HEIGHT;
         boolean scrollable = contentHeight > viewHeight;
 
         scLines.setEnabled(scrollable);
@@ -1211,6 +1264,7 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
             null);
         txTitle.setText(QuestTranslation.translateQuestLineName(q));
         refreshQuestCompletion();
+        buildBookmarkRail();
 
         if (!trayLock) {
             cvFrame.setTrayState(true, 200);
@@ -1287,6 +1341,155 @@ public class GuiQuestLines extends GuiScreenCanvas implements IPEventListener, I
         panelButtonQuest.setTextures(newTexture, newTexture, newTexture);
         cvQuest.setZoom(2f);
         cvQuest.centerOn(panelButtonQuest);
+    }
+
+    private void onBookmarksChanged() {
+        if (BookmarkHandler.hasAnyBookmarks() != bookmarkRailShown) {
+            // The strip appears or disappears, so the quest canvas has to be laid out again
+            initGui();
+            return;
+        }
+
+        buildBookmarkRail();
+        if (cvChapterTray.isTrayOpen()) buildChapterList();
+    }
+
+    private void buildBookmarkRail() {
+        cvBookmarkRail.resetCanvas();
+        bookmarkRailToggles.clear();
+        UUID playerID = QuestingAPI.getQuestingUUID(mc.thePlayer);
+        int y = 0;
+
+        for (UUID chapterId : BookmarkHandler.getBookmarkedChapterIds()) {
+            IQuestLine chapter = QuestLineDatabase.INSTANCE.get(chapterId);
+            if (chapter == null) continue;
+
+            PanelButtonStorage<Map.Entry<UUID, IQuestLine>> bookmark = createChapterBookmark(
+                Maps.immutableEntry(chapterId, chapter),
+                y);
+            cvBookmarkRail.addPanel(bookmark);
+            bookmarkRailToggles.put(bookmark, () -> BookmarkHandler.bookmarkChapter(chapterId));
+            y += BOOKMARK_SIZE + BOOKMARK_SPACING;
+        }
+
+        // Keep chapters and quests visibly apart
+        if (y > 0) y += BOOKMARK_GROUP_SPACING;
+
+        for (UUID questId : BookmarkHandler.getBookmarkedQuestIds()) {
+            IQuest quest = QuestDatabase.INSTANCE.get(questId);
+            if (quest == null || !QuestCache.isQuestShown(quest, playerID, mc.thePlayer)) continue;
+
+            PanelButtonQuest bookmark = new PanelButtonQuest(
+                new GuiRectangle(BOOKMARK_INSET_X, y, BOOKMARK_SIZE, BOOKMARK_SIZE, 0),
+                -1,
+                "",
+                Maps.immutableEntry(questId, quest));
+            bookmark.setBookmarked(false);
+            // Locked quests are inactive and would ignore clicks, so they only get focused in their chapter
+            boolean openable = bookmark.isActive();
+            bookmark.setActive(true);
+            bookmark.setCallback(entry -> {
+                if (openable) {
+                    openBookmarkedQuest(entry.getKey());
+                } else {
+                    navigateToQuest(entry.getKey());
+                }
+            });
+            cvBookmarkRail.addPanel(bookmark);
+            bookmarkRailToggles.put(bookmark, () -> BookmarkHandler.bookmarkQuest(questId));
+            y += BOOKMARK_SIZE + BOOKMARK_SPACING;
+        }
+
+        cvBookmarkRail.refreshScrollBounds();
+    }
+
+    private void openBookmarkedQuest(UUID questId) {
+        navigateToQuest(questId);
+        GuiHome.bookmark = new GuiQuest(this, questId);
+        mc.displayGuiScreen(GuiHome.bookmark);
+    }
+
+    private PanelButtonStorage<Map.Entry<UUID, IQuestLine>> createChapterBookmark(Map.Entry<UUID, IQuestLine> chapter,
+        int y) {
+        PanelButtonStorage<Map.Entry<UUID, IQuestLine>> bookmark = new PanelButtonStorage<>(
+            new GuiRectangle(BOOKMARK_INSET_X, y, BOOKMARK_SIZE, BOOKMARK_SIZE, 0),
+            -1,
+            "",
+            chapter);
+        bookmark.setIcon(
+            new OreDictTexture(
+                1F,
+                chapter.getValue()
+                    .getProperty(NativeProps.ICON),
+                false,
+                true),
+            BOOKMARK_ICON_PADDING);
+        bookmark.setTooltip(Collections.singletonList(QuestTranslation.translateQuestLineName(chapter)));
+        bookmark.setCallback(this::openQuestLine);
+        return bookmark;
+    }
+
+    @Override
+    public boolean onMouseClick(int mx, int my, int click) {
+        if (click == 1 && (openRailContextMenu(mx, my) || openChapterContextMenu(mx, my))) return true;
+        return super.onMouseClick(mx, my, click);
+    }
+
+    private boolean openRailContextMenu(int mx, int my) {
+        if (cvBookmarkRail == null) return false;
+
+        IGuiRect rail = cvBookmarkRail.getTransform();
+        if (!rail.contains(mx, my)) return false;
+
+        int railX = mx - rail.getX() + cvBookmarkRail.getScrollX();
+        int railY = my - rail.getY() + cvBookmarkRail.getScrollY();
+        for (Map.Entry<IGuiPanel, Runnable> entry : bookmarkRailToggles.entrySet()) {
+            if (entry.getKey()
+                .getTransform()
+                .contains(railX, railY)) {
+                openBookmarkMenu(mx, my, "betterquesting.btn.unbookmark_quest", entry.getValue());
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void openBookmarkMenu(int mx, int my, String langKey, Runnable toggleBookmark) {
+        String text = QuestTranslation.translate(langKey);
+        int width = RenderUtils.getStringWidth(text, mc.fontRenderer) + PopContextMenuHoverSub.TEXT_WIDTH_PADDING;
+
+        PopContextMenuHoverSub popup = new PopContextMenuHoverSub(
+            new GuiRectangle(mx, my, width, PopContextMenuHoverSub.ENTRY_HEIGHT),
+            true);
+        popup.addButton(text, null, () -> {
+            toggleBookmark.run();
+            closePopup();
+            onBookmarksChanged();
+        });
+        openPopup(popup);
+    }
+
+    private boolean openChapterContextMenu(int mx, int my) {
+        if (cvChapterTray == null || !cvChapterTray.isTrayOpen()) return false;
+
+        IGuiRect list = cvLines.getTransform();
+        if (!list.contains(mx, my)) return false;
+
+        int index = (my - list.getY() + cvLines.getScrollY()) / CHAPTER_ROW_HEIGHT;
+        if (index < 0 || index >= btnListRef.size()) return false;
+
+        if ((btnVisibilityRef.get(index) & 4) > 0) return false;
+
+        UUID chapterId = btnListRef.get(index)
+            .getStoredValue()
+            .getKey();
+        openBookmarkMenu(
+            mx,
+            my,
+            BookmarkHandler.isChapterBookmarked(chapterId) ? "betterquesting.btn.unbookmark_quest"
+                : "betterquesting.btn.bookmark_quest",
+            () -> BookmarkHandler.bookmarkChapter(chapterId));
+        return true;
     }
 
     public void navigateToQuest(UUID targetQuestId) {
