@@ -1,6 +1,7 @@
 package betterquesting.handlers;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -175,20 +176,15 @@ public class SaveLoadHandler {
         int packVer = 0;
         String packName = "";
 
-        File defaultDatabaseFile = new File(BQ_Settings.defaultDir, QuestCommandDefaults.DEFAULT_FILE + ".json");
-        File defaultDatabaseDir = new File(BQ_Settings.defaultDir, QuestCommandDefaults.DEFAULT_FILE);
-        File defaultDatabaseSettingsFile = new File(defaultDatabaseDir, QuestCommandDefaults.SETTINGS_FILE);
-
         if (fileDatabase.exists()) {
-            boolean legacySettings = !defaultDatabaseSettingsFile.exists();
-            File settingsFile = legacySettings ? defaultDatabaseFile : defaultDatabaseSettingsFile;
-            JsonObject settingsJson = JsonHelper.ReadFromFile(settingsFile);
-            NBTTagCompound settingsTag = NBTConverter.JSONtoNBT_Object(settingsJson, new NBTTagCompound(), true);
-
-            QuestSettings tmpSettings = new QuestSettings();
-            tmpSettings.readFromNBT(legacySettings ? settingsTag.getCompoundTag("questSettings") : settingsTag);
-            packVer = tmpSettings.getProperty(NativeProps.PACK_VER);
-            packName = tmpSettings.getProperty(NativeProps.PACK_NAME);
+            try {
+                QuestSettings settings = new QuestSettings();
+                settings.readFromNBT(QuestCommandDefaults.readDefaultSettings());
+                packVer = settings.getProperty(NativeProps.PACK_VER);
+                packName = settings.getProperty(NativeProps.PACK_NAME);
+            } catch (IOException failure) {
+                BetterQuesting.logger.error("Could not read default quest settings", failure);
+            }
 
             // Getting the build version like this is a bit wasteful, as we read the JSON twice.
             // Perhaps we should improve this.
@@ -234,13 +230,7 @@ public class SaveLoadHandler {
 
             QuestCommandDefaults.loadLegacy(null, null, fileDatabase, true);
         } else { // LOAD DEFAULTS
-            if (defaultDatabaseDir.exists()) {
-                QuestCommandDefaults.load(null, null, defaultDatabaseDir, true);
-            } else {
-                QuestCommandDefaults.loadLegacy(null, null, defaultDatabaseFile, true);
-            }
-
-            isDirty = true;
+            isDirty = QuestCommandDefaults.loadDefaults(null, true);
             QuestSettings.INSTANCE.setProperty(NativeProps.EDIT_MODE, false); // Force edit off
         }
 

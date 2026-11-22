@@ -1,6 +1,5 @@
 package betterquesting.client.gui2;
 
-import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.concurrent.Executors;
@@ -217,26 +216,12 @@ public class GuiHome extends GuiScreenCanvas implements IPEventListener {
                     }));
         } else if (btn.getButtonID() == 5) // Update me
         {
-            final File qDir = new File(BQ_Settings.defaultDir, "DefaultQuests");
-            final File qFile = new File(BQ_Settings.defaultDir, "DefaultQuests.json");
-
-            if (qDir.exists()) {
-                BetterQuesting.proxy.scheduleServerTask(Executors.callable(() -> {
-                    QuestCommandDefaults.load(null, null, qDir, false);
+            BetterQuesting.proxy.scheduleServerTask(Executors.callable(() -> {
+                if (QuestCommandDefaults.loadDefaults(null, false)) {
                     SaveLoadHandler.INSTANCE.resetUpdate();
-                }), true);
-
-                // this.initGui(); // Reset the whole thing
-                doClose();
-            } else if (qFile.exists()) {
-                BetterQuesting.proxy.scheduleServerTask(Executors.callable(() -> {
-                    QuestCommandDefaults.loadLegacy(null, null, qDir, false);
-                    SaveLoadHandler.INSTANCE.resetUpdate();
-                }), true);
-
-                // this.initGui(); // Reset the whole thing
-                doClose();
-            }
+                }
+            }), true);
+            doClose();
         } else if (btn.getButtonID() == 420) // Notification Settings
         {
             mc.displayGuiScreen(new GuiNotificationSettings(this));
