@@ -10,7 +10,10 @@ import com.google.common.primitives.Longs;
 
 public class UuidConverter {
 
-    /** Converts a legacy integer ID to a UUID. */
+    /**
+     * Converts a legacy integer ID to a UUID. Remove the numeric readers once supported
+     * quest definitions, player progress, and saved references have been rewritten as UUIDs.
+     */
     public static UUID convertLegacyId(int legacyId) {
         // Negative legacy IDs are invalid, and are used to indicate an unset ID.
         Preconditions.checkArgument(legacyId >= 0);
