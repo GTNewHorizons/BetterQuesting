@@ -5,7 +5,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.Collection;
+
+import javax.annotation.Nullable;
 
 import net.minecraft.nbt.CompressedStreamTools;
 import net.minecraft.nbt.NBTTagCompound;
@@ -15,6 +16,8 @@ import net.minecraftforge.common.util.Constants;
 import com.google.common.hash.Hashing;
 
 import betterquesting.api.network.QuestingPacket;
+import betterquesting.api.storage.BQ_Settings;
+import betterquesting.api2.utils.BQThreadedIO;
 import betterquesting.client.QuestDatabaseCache;
 import betterquesting.core.BetterQuesting;
 import betterquesting.network.PacketTypeRegistry;
@@ -26,8 +29,8 @@ import cpw.mods.fml.relauncher.SideOnly;
 /**
  * Synchronizes quest and chapter definitions on login.
  * <p>
- * The server sends the snapshot hash on every login and includes the definitions when the client lacks a matching
- * snapshot. The server sends player progress separately.
+ * The server offers the hash of the active definitions. The client confirms a matching copy or requests the
+ * definitions. The server sends player progress separately.
  */
 public class NetDatabaseCache {
 
@@ -37,6 +40,8 @@ public class NetDatabaseCache {
     private static final String TAG_DATA = "data";
     private static final String TAG_QUESTS = "quests";
     private static final String TAG_CHAPTERS = "chapters";
+
+    private static ServerSnapshot serverSnapshot;
 
     public static void registerHandler() {
         if (BetterQuesting.proxy.isClient()) {
@@ -51,21 +56,22 @@ public class NetDatabaseCache {
         return snapshot;
     }
 
-    static QuestingPacket createSyncPacket(NBTTagCompound snapshot, Collection<String> clientHashes)
-        throws IOException {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        CompressedStreamTools.write(snapshot, new DataOutputStream(out));
-        byte[] data = out.toByteArray();
-        String hash = hash(data);
-        boolean cached = clientHashes.contains(hash);
-        NBTTagCompound payload = new NBTTagCompound();
-        payload.setString(TAG_HASH, hash);
-        if (!cached) {
-            payload.setByteArray(TAG_DATA, data);
+    public static synchronized void invalidateServerSnapshot() {
+        serverSnapshot = null;
+    }
+
+    /**
+     * Captures one revision on the server thread. Serialization and packet creation use the same network queue.
+     */
+    static synchronized ServerSnapshot getServerSnapshot() {
+        boolean noRewards = BQ_Settings.noRewards;
+        if (serverSnapshot == null || serverSnapshot.noRewards != noRewards) {
+            NBTTagCompound definitions = snapshotDefinitions();
+            ServerSnapshot snapshot = new ServerSnapshot(noRewards);
+            BQThreadedIO.INSTANCE.enqueue(() -> snapshot.encode(definitions));
+            serverSnapshot = snapshot;
         }
-        BetterQuesting.logger
-            .debug("Quest database {}: {} ({} bytes)", hash, cached ? "cached" : "sending", data.length);
-        return new QuestingPacket(ID_NAME, payload);
+        return serverSnapshot;
     }
 
     public static String hash(byte[] data) {
@@ -91,7 +97,7 @@ public class NetDatabaseCache {
             if (data == null) {
                 // Request a fresh snapshot if the local copy is unavailable
                 BetterQuesting.logger.warn("Cached quest database {} is unavailable, requesting a full sync", hash);
-                NetBulkSync.requestSync(false);
+                NetBulkSync.requestSync("");
                 return;
             }
         }
@@ -101,7 +107,7 @@ public class NetDatabaseCache {
             snapshot = readSnapshot(data);
         } catch (IOException e) {
             BetterQuesting.logger.error("Unable to read quest database snapshot", e);
-            if (!received) NetBulkSync.requestSync(false);
+            if (!received) NetBulkSync.requestSync("");
             return;
         }
 
@@ -123,5 +129,50 @@ public class NetDatabaseCache {
             throw new IOException("Missing quest or chapter definitions in snapshot");
         }
         return snapshot;
+    }
+
+    /**
+     * The network queue encodes the snapshot before creating packets. Queued packets keep the captured revision.
+     */
+    static final class ServerSnapshot {
+
+        private final boolean noRewards;
+        private byte[] data;
+        private String hash;
+
+        private ServerSnapshot(boolean noRewards) {
+            this.noRewards = noRewards;
+        }
+
+        private void encode(NBTTagCompound definitions) {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            try {
+                CompressedStreamTools.write(definitions, new DataOutputStream(out));
+                data = out.toByteArray();
+                hash = NetDatabaseCache.hash(data);
+            } catch (IOException failure) {
+                BetterQuesting.logger.error("Could not serialize quest definitions for login sync", failure);
+                // The reset omits the hash and the client requests the usual full sync
+                invalidateFailedSnapshot(this);
+            }
+        }
+
+        @Nullable
+        String hash() {
+            return hash;
+        }
+
+        @Nullable
+        QuestingPacket createSyncPacket(String cachedHash) {
+            if (hash == null) return null;
+            NBTTagCompound payload = new NBTTagCompound();
+            payload.setString(TAG_HASH, hash);
+            if (!hash.equals(cachedHash)) payload.setByteArray(TAG_DATA, data);
+            return new QuestingPacket(ID_NAME, payload);
+        }
+    }
+
+    private static synchronized void invalidateFailedSnapshot(ServerSnapshot failed) {
+        if (serverSnapshot == failed) serverSnapshot = null;
     }
 }

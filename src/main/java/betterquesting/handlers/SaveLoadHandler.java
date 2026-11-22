@@ -56,6 +56,7 @@ import betterquesting.client.QuestNotification;
 import betterquesting.client.gui2.GuiHome;
 import betterquesting.commands.admin.QuestCommandDefaults;
 import betterquesting.core.BetterQuesting;
+import betterquesting.network.handlers.NetDatabaseCache;
 import betterquesting.questing.QuestDatabase;
 import betterquesting.questing.QuestLineDatabase;
 import betterquesting.questing.party.PartyManager;
@@ -95,6 +96,7 @@ public class SaveLoadHandler {
 
     public void markDirty() {
         this.isDirty = true;
+        NetDatabaseCache.invalidateServerSnapshot();
     }
 
     public void addDirtyPlayers(UUID... players) {
@@ -106,6 +108,7 @@ public class SaveLoadHandler {
     }
 
     public void loadDatabases(MinecraftServer server) {
+        NetDatabaseCache.invalidateServerSnapshot();
         hasUpdate = false;
 
         if (BetterQuesting.proxy.isClient()) {
@@ -172,6 +175,7 @@ public class SaveLoadHandler {
     }
 
     public synchronized void unloadDatabases() {
+        NetDatabaseCache.invalidateServerSnapshot();
         BQ_Settings.curWorldDir = null;
         hasUpdate = false;
         isDirty = false;

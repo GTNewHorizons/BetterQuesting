@@ -6,6 +6,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -14,6 +15,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -21,6 +23,7 @@ import java.util.zip.GZIPOutputStream;
 import javax.annotation.Nullable;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ServerData;
 
 import betterquesting.api2.utils.BQThreadedIO;
 import betterquesting.core.BetterQuesting;
@@ -29,7 +32,7 @@ import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
 /**
- * Quest database snapshots received from servers, stored by hash so servers running the same quest book share them.
+ * Stores quest database snapshots by the address chosen by the client and the definition hash.
  */
 @SideOnly(Side.CLIENT)
 public class QuestDatabaseCache {
@@ -39,6 +42,7 @@ public class QuestDatabaseCache {
     private static final String EXTENSION = ".dat";
     // Use only SHA-256 hex digests as cache file names
     private static final Pattern HASH = Pattern.compile("[0-9a-f]{64}");
+    private static final Pattern CACHE_FILE = Pattern.compile("[0-9a-f]{64}-[0-9a-f]{64}\\.dat");
 
     private static File getDir() {
         return new File(Minecraft.getMinecraft().mcDataDir, "betterquesting/cache");
@@ -46,15 +50,20 @@ public class QuestDatabaseCache {
 
     @Nullable
     private static File getFile(String hash) {
-        return HASH.matcher(hash)
-            .matches() ? new File(getDir(), hash + EXTENSION) : null;
+        ServerData server = Minecraft.getMinecraft()
+            .func_147104_D();
+        if (server == null || !HASH.matcher(hash)
+            .matches()) return null;
+        byte[] address = server.serverIP.trim()
+            .toLowerCase(Locale.ROOT)
+            .getBytes(StandardCharsets.UTF_8);
+        return new File(getDir(), NetDatabaseCache.hash(address) + "-" + hash + EXTENSION);
     }
 
     private static List<File> listFiles() {
         File[] files = getDir().listFiles(
-            (dir, name) -> name.endsWith(EXTENSION)
-                && HASH.matcher(name.substring(0, name.length() - EXTENSION.length()))
-                    .matches());
+            (dir, name) -> CACHE_FILE.matcher(name)
+                .matches());
         if (files == null) return Collections.emptyList();
         List<File> list = new ArrayList<>(Arrays.asList(files));
         list.sort(
@@ -63,16 +72,9 @@ public class QuestDatabaseCache {
         return list;
     }
 
-    /**
-     * Hashes of the cached snapshots, most recently used first
-     */
-    public static List<String> listHashes() {
-        List<String> hashes = new ArrayList<>();
-        for (File file : listFiles()) {
-            String name = file.getName();
-            hashes.add(name.substring(0, name.length() - EXTENSION.length()));
-        }
-        return hashes;
+    public static boolean contains(String hash) {
+        File file = getFile(hash);
+        return file != null && file.isFile();
     }
 
     /**

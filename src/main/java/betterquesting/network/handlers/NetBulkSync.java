@@ -1,8 +1,5 @@
 package betterquesting.network.handlers;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.UUID;
@@ -13,8 +10,6 @@ import javax.annotation.Nullable;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraft.nbt.NBTTagString;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.util.Constants;
 
@@ -40,8 +35,7 @@ public class NetBulkSync {
 
     private static final ResourceLocation ID_NAME = new ResourceLocation("betterquesting:main_sync");
 
-    private static final String TAG_CACHED_DATABASES = "cachedDatabases";
-    private static final int MAX_CACHED_DATABASES = 16;
+    private static final String TAG_DEFINITION_HASH = "definitionHash";
 
     public static void registerHandler() {
         PacketTypeRegistry.INSTANCE.registerServerHandler(ID_NAME, NetBulkSync::onServer);
@@ -59,21 +53,29 @@ public class NetBulkSync {
         // Don't use this on a large server unless absolutely necessary!
         if (player == null) {
             PacketSender.INSTANCE.sendToAll(new QuestingPacket(ID_NAME, payload));
-        } else {
-            PacketSender.INSTANCE.sendToPlayers(new QuestingPacket(ID_NAME, payload), player);
-        }
+        } else if (respond && !player.playerNetServerHandler.func_147362_b()
+            .isLocalChannel()) {
+                NetDatabaseCache.ServerSnapshot snapshot = NetDatabaseCache.getServerSnapshot();
+                PacketSender.INSTANCE.sendPreparedToPlayers(() -> {
+                    String hash = snapshot.hash();
+                    if (hash != null) payload.setString(TAG_DEFINITION_HASH, hash);
+                    return new QuestingPacket(ID_NAME, payload);
+                }, player);
+            } else {
+                PacketSender.INSTANCE.sendToPlayers(new QuestingPacket(ID_NAME, payload), player);
+            }
     }
 
     public static void sendSync(@Nonnull EntityPlayerMP player) {
         sendSync(player, null);
     }
 
-    private static void sendSync(@Nonnull EntityPlayerMP player, @Nullable Collection<String> cachedDatabases) {
+    private static void sendSync(@Nonnull EntityPlayerMP player, @Nullable String cachedHash) {
         boolean nameChanged = NameCache.INSTANCE.updateName(player);
         UUID playerID = QuestingAPI.getQuestingUUID(player);
 
         NetSettingSync.sendSync(player);
-        sendQuestData(player, cachedDatabases);
+        sendQuestData(player, cachedHash);
         NetLifeSync.sendSync(new EntityPlayerMP[] { player }, new UUID[] { playerID });
         DBEntry<IParty> party = PartyManager.INSTANCE.getParty(playerID);
         List<Entry<Integer, Long>> invites = PartyInvitations.INSTANCE.getPartyInvites(playerID);
@@ -96,53 +98,30 @@ public class NetBulkSync {
         NetCacheSync.sendSync(player);
     }
 
-    private static void sendQuestData(EntityPlayerMP player, @Nullable Collection<String> cachedDatabases) {
-        if (cachedDatabases == null) {
+    private static void sendQuestData(EntityPlayerMP player, @Nullable String cachedHash) {
+        if (cachedHash == null) {
             NetQuestSync.sendSync(player, null, true, true);
             NetChapterSync.sendSync(player, null);
             return;
         }
 
-        NBTTagCompound definitions = NetDatabaseCache.snapshotDefinitions();
-        // Send the snapshot in the same queue as later quest edits to preserve their order
-        PacketSender.INSTANCE.sendPreparedToPlayers(() -> {
-            try {
-                return NetDatabaseCache.createSyncPacket(definitions, cachedDatabases);
-            } catch (IOException failure) {
-                BetterQuesting.logger.error("Could not serialize quest definitions for login sync", failure);
-                return null;
-            }
-        }, player);
+        NetDatabaseCache.ServerSnapshot snapshot = NetDatabaseCache.getServerSnapshot();
+        PacketSender.INSTANCE.sendPreparedToPlayers(() -> snapshot.createSyncPacket(cachedHash), player);
         NetQuestSync.sendSync(player, null, false, true, true);
     }
 
     private static void onServer(Tuple2<NBTTagCompound, EntityPlayerMP> message) {
         NBTTagCompound payload = message.getFirst();
-        List<String> cachedDatabases = null;
-        if (payload.hasKey(TAG_CACHED_DATABASES, Constants.NBT.TAG_LIST)) {
-            NBTTagList list = payload.getTagList(TAG_CACHED_DATABASES, Constants.NBT.TAG_STRING);
-            cachedDatabases = new ArrayList<>();
-            for (int i = 0; i < Math.min(list.tagCount(), MAX_CACHED_DATABASES); i++) {
-                cachedDatabases.add(list.getStringTagAt(i));
-            }
-        }
-        sendSync(message.getSecond(), cachedDatabases);
+        String cachedHash = payload.hasKey(TAG_DEFINITION_HASH, Constants.NBT.TAG_STRING)
+            ? payload.getString(TAG_DEFINITION_HASH)
+            : null;
+        sendSync(message.getSecond(), cachedHash);
     }
 
-    // Include the cached hashes in the full sync request
     @SideOnly(Side.CLIENT)
-    static void requestSync(boolean advertiseCachedDefinitions) {
+    static void requestSync(@Nullable String cachedHash) {
         NBTTagCompound payload = new NBTTagCompound();
-        if (BQ_Settings.loginDatabaseCache && !Minecraft.getMinecraft()
-            .isIntegratedServerRunning()) {
-            NBTTagList list = new NBTTagList();
-            if (advertiseCachedDefinitions) {
-                for (String hash : QuestDatabaseCache.listHashes()) {
-                    list.appendTag(new NBTTagString(hash));
-                }
-            }
-            payload.setTag(TAG_CACHED_DATABASES, list);
-        }
+        if (cachedHash != null) payload.setString(TAG_DEFINITION_HASH, cachedHash);
         PacketSender.INSTANCE.sendToServer(new QuestingPacket(ID_NAME, payload));
     }
 
@@ -156,7 +135,13 @@ public class NetBulkSync {
 
         // Client doesn't really have to honor this, but it would mess with things otherwise
         if (message.getBoolean("respond")) {
-            requestSync(true);
+            String cachedHash = null;
+            if (BQ_Settings.loginDatabaseCache && !Minecraft.getMinecraft()
+                .isIntegratedServerRunning() && message.hasKey(TAG_DEFINITION_HASH, Constants.NBT.TAG_STRING)) {
+                String offeredHash = message.getString(TAG_DEFINITION_HASH);
+                cachedHash = QuestDatabaseCache.contains(offeredHash) ? offeredHash : "";
+            }
+            requestSync(cachedHash);
         }
     }
 }
