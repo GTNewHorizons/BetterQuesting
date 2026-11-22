@@ -63,4 +63,5 @@ public class BQ_Settings {
     public static boolean logNullQuests = true;
     public static boolean unrestrictAdminCommands = false;
     public static boolean noRewards = false;
+    public static boolean loginDatabaseCache = true;
 }

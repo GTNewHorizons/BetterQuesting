@@ -1,6 +1,7 @@
 package betterquesting.network;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
@@ -17,29 +18,40 @@ public class PacketSender implements IPacketSender {
 
     @Override
     public void sendToPlayers(QuestingPacket payload, EntityPlayerMP... players) {
+        setPacketId(payload);
+        BQThreadedIO.INSTANCE.enqueue(() -> sendFragments(payload, players));
+    }
+
+    /** Prepares and sends a packet in one turn of the network queue. Sends a packet only for a non-null result. */
+    public void sendPreparedToPlayers(Supplier<QuestingPacket> packet, EntityPlayerMP... players) {
+        BQThreadedIO.INSTANCE.enqueue(() -> {
+            QuestingPacket payload = packet.get();
+            if (payload == null) return;
+            setPacketId(payload);
+            sendFragments(payload, players);
+        });
+    }
+
+    private static void setPacketId(QuestingPacket payload) {
         payload.getPayload()
             .setString(
                 "ID",
                 payload.getHandler()
                     .toString());
+    }
 
-        BQThreadedIO.INSTANCE.enqueue(() -> {
-            List<NBTTagCompound> fragments = PacketAssembly.INSTANCE.splitPacket(payload.getPayload());
-            for (EntityPlayerMP p : players) {
-                for (NBTTagCompound tag : fragments) {
-                    BetterQuesting.instance.network.sendTo(new PacketQuesting(tag), p);
-                }
+    private void sendFragments(QuestingPacket payload, EntityPlayerMP[] players) {
+        List<NBTTagCompound> fragments = PacketAssembly.INSTANCE.splitPacket(payload.getPayload());
+        for (EntityPlayerMP p : players) {
+            for (NBTTagCompound tag : fragments) {
+                BetterQuesting.instance.network.sendTo(new PacketQuesting(tag), p);
             }
-        });
+        }
     }
 
     @Override
     public void sendToAll(QuestingPacket payload) {
-        payload.getPayload()
-            .setString(
-                "ID",
-                payload.getHandler()
-                    .toString());
+        setPacketId(payload);
 
         BQThreadedIO.INSTANCE.enqueue(() -> {
             for (NBTTagCompound p : PacketAssembly.INSTANCE.splitPacket(payload.getPayload())) {

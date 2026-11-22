@@ -3,6 +3,11 @@ BetterQuesting
 
 A new and improved questing mod for Minecraft pack creators
 
+When joining a server with quest caching support, the client stores quest and chapter definitions in
+`.minecraft/betterquesting/cache`. It keeps the four most recently used snapshots and downloads definitions again
+when the matching snapshot is missing. Player progress is sent on every login. You can disable caching with the
+`Cache server quest database` client option.
+
 Standard Expansion
 ============
 

@@ -16,6 +16,7 @@ import betterquesting.network.handlers.NetBulkSync;
 import betterquesting.network.handlers.NetCacheSync;
 import betterquesting.network.handlers.NetChapterEdit;
 import betterquesting.network.handlers.NetChapterSync;
+import betterquesting.network.handlers.NetDatabaseCache;
 import betterquesting.network.handlers.NetImport;
 import betterquesting.network.handlers.NetInviteSync;
 import betterquesting.network.handlers.NetLifeSync;
@@ -59,6 +60,7 @@ public class PacketTypeRegistry implements IPacketRegistry {
 
         NetCacheSync.registerHandler();
         NetBulkSync.registerHandler();
+        NetDatabaseCache.registerHandler();
     }
 
     @Override
