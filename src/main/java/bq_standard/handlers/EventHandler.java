@@ -233,6 +233,8 @@ public class EventHandler {
             || event.getPlayer().worldObj.isRemote
             || event.isCanceled()) return;
 
+        if (!TaskBlockBreak.hasInstances()) return;
+
         ParticipantInfo pInfo = new ParticipantInfo(event.getPlayer());
 
         for (Map.Entry<UUID, IQuest> entry : QuestingAPI.getAPI(ApiReference.QUEST_DB)
