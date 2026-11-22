@@ -2,6 +2,7 @@ package betterquesting.api.utils;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -282,6 +283,19 @@ public class NBTConverter {
      * Convert JsonObject to a NBTTagCompound
      */
     public static NBTTagCompound JSONtoNBT_Object(JsonObject jObj, NBTTagCompound tags, boolean format) {
+        return readCompound(jObj, tags, format, null);
+    }
+
+    /** Converts typed JSON without discarding malformed fields. */
+    public static NBTTagCompound readTypedCompound(JsonObject json) throws IOException {
+        try {
+            return readCompound(json, new NBTTagCompound(), true, "$");
+        } catch (IllegalArgumentException failure) {
+            throw new IOException(failure.getMessage(), failure);
+        }
+    }
+
+    private static NBTTagCompound readCompound(JsonObject jObj, NBTTagCompound tags, boolean format, String path) {
         if (jObj == null) {
             return tags;
         }
@@ -290,7 +304,7 @@ public class NBTConverter {
             String key = entry.getKey();
 
             if (!format) {
-                tags.setTag(key, JSONtoNBT_Element(entry.getValue(), (byte) 0, false));
+                tags.setTag(key, readElement(entry.getValue(), (byte) 0, false, null));
             } else {
                 // Optimized key parsing without String.split()
                 byte id = 0;
@@ -304,14 +318,17 @@ public class NBTConverter {
                     }
                 } catch (Exception e) { // Catch all exceptions
                     // Invalid ID format, use original key and id=0
-                    if (tags.hasKey(key)) {
+                    if (tags.hasKey(key) && path == null) {
                         QuestingAPI.getLogger()
                             .log(Level.WARN, "JSON/NBT formatting conflict on key '" + key + "'. Skipping...");
                         continue;
                     }
                 }
 
-                tags.setTag(keyToUse, JSONtoNBT_Element(entry.getValue(), id, true));
+                if (path != null && tags.hasKey(keyToUse)) {
+                    throw new IllegalArgumentException(path + "." + key + ": duplicate NBT key");
+                }
+                tags.setTag(keyToUse, readElement(entry.getValue(), id, true, path == null ? null : path + "." + key));
             }
         }
 
@@ -321,7 +338,7 @@ public class NBTConverter {
     /**
      * Tries to interpret the tagID from the JsonElement's contents
      */
-    private static NBTBase JSONtoNBT_Element(JsonElement jObj, byte id, boolean format) {
+    private static NBTBase readElement(JsonElement jObj, byte id, boolean format, String path) {
         if (jObj == null) {
             return new NBTTagString();
         }
@@ -334,11 +351,15 @@ public class NBTConverter {
             {
                 return new NBTTagByte(jObj.getAsBoolean() ? (byte) 1 : (byte) 0);
             } else if (tagID >= 1 && tagID <= 6) {
-                return instanceNumber(jObj.getAsNumber(), tagID);
+                return path == null ? instanceNumber(jObj.getAsNumber(), tagID) : readStrictNumber(jObj, tagID);
             } else if (tagID == 8) {
+                if (path != null && !jObj.getAsJsonPrimitive()
+                    .isString()) {
+                    throw new IllegalArgumentException("expected a string");
+                }
                 return new NBTTagString(jObj.getAsString());
             } else if (tagID == 10) {
-                return JSONtoNBT_Object(jObj.getAsJsonObject(), new NBTTagCompound(), format);
+                return readCompound(jObj.getAsJsonObject(), new NBTTagCompound(), format, path);
             } else if (tagID == 7) // Byte array
             {
                 JsonArray jAry = jObj.getAsJsonArray();
@@ -346,8 +367,10 @@ public class NBTConverter {
                 byte[] bAry = new byte[jAry.size()];
 
                 for (int i = 0; i < jAry.size(); i++) {
-                    bAry[i] = jAry.get(i)
-                        .getAsByte();
+                    bAry[i] = path == null ? jAry.get(i)
+                        .getAsByte()
+                        : ((NBTTagByte) readElement(jAry.get(i), (byte) 1, format, path + "[" + i + "]"))
+                            .func_150290_f();
                 }
 
                 return new NBTTagByteArray(bAry);
@@ -357,8 +380,10 @@ public class NBTConverter {
                 int[] iAry = new int[jAry.size()];
 
                 for (int i = 0; i < jAry.size(); i++) {
-                    iAry[i] = jAry.get(i)
-                        .getAsInt();
+                    iAry[i] = path == null ? jAry.get(i)
+                        .getAsInt()
+                        : ((NBTTagInt) readElement(jAry.get(i), (byte) 3, format, path + "[" + i + "]"))
+                            .func_150287_d();
                 }
 
                 return new NBTTagIntArray(iAry);
@@ -367,39 +392,96 @@ public class NBTConverter {
 
                 if (jObj.isJsonArray()) {
                     JsonArray jAry = jObj.getAsJsonArray();
-                    // enhanced for-loop for better performance
-                    for (JsonElement jElm : jAry) {
-                        tList.appendTag(JSONtoNBT_Element(jElm, (byte) 0, format));
+                    for (int i = 0; i < jAry.size(); i++) {
+                        appendListElement(
+                            tList,
+                            jAry.get(i),
+                            (byte) 0,
+                            format,
+                            path == null ? null : path + "[" + i + "]");
                     }
                 } else if (jObj.isJsonObject()) {
                     JsonObject jAry = jObj.getAsJsonObject();
 
                     for (Entry<String, JsonElement> entry : jAry.entrySet()) {
-                        try {
-                            // Avoid String.split() for better performance
-                            String key = entry.getKey();
-                            byte id2 = 0;
-                            int lastColonIndex = key.lastIndexOf(':');
-                            if (lastColonIndex != -1) {
-                                id2 = Byte.parseByte(key.substring(lastColonIndex + 1));
+                        String key = entry.getKey();
+                        byte elementType = 0;
+                        int suffix = key.lastIndexOf(':');
+                        if (suffix >= 0) {
+                            try {
+                                elementType = Byte.parseByte(key.substring(suffix + 1));
+                            } catch (NumberFormatException ignored) {
+                                // Historical lists can also contain untyped entries
                             }
-                            tList.appendTag(JSONtoNBT_Element(entry.getValue(), id2, format));
-                        } catch (Exception e) {
-                            tList.appendTag(JSONtoNBT_Element(entry.getValue(), (byte) 0, format));
                         }
+                        appendListElement(
+                            tList,
+                            entry.getValue(),
+                            elementType,
+                            format,
+                            path == null ? null : path + "[" + key + "]");
                     }
                 }
 
+                if (path != null && !jObj.isJsonArray() && !jObj.isJsonObject()) {
+                    throw new IllegalArgumentException("expected a list");
+                }
                 return tList;
             }
         } catch (Exception e) {
+            if (path != null) {
+                if (e instanceof InvalidNBTException invalid) throw invalid;
+                String type = tagID > 0 && tagID < NBTBase.NBTTypes.length ? NBTBase.NBTTypes[tagID]
+                    : Byte.toString(tagID);
+                throw new InvalidNBTException(path, "invalid value for NBT type " + type, e);
+            }
             QuestingAPI.getLogger()
                 .log(Level.ERROR, "An error occured while parsing JsonElement to NBTBase (" + tagID + "):", e);
         }
 
+        if (path != null) throw new InvalidNBTException(path, "unknown NBT type " + tagID, null);
         QuestingAPI.getLogger()
             .log(Level.WARN, "Unknown NBT representation for " + jObj.toString() + " (ID: " + tagID + ")");
         return new NBTTagString();
+    }
+
+    private static void appendListElement(NBTTagList list, JsonElement json, byte type, boolean format, String path) {
+        NBTBase element = readElement(json, type, format, path);
+        if (path != null && list.tagCount() != 0 && list.func_150303_d() != element.getId()) {
+            throw new InvalidNBTException(path, "mixed NBT list element types", null);
+        }
+        list.appendTag(element);
+    }
+
+    private static NBTBase readStrictNumber(JsonElement json, byte type) {
+        String number = json.getAsJsonPrimitive()
+            .getAsString();
+        if (type == 5 || type == 6) {
+            NBTBase result = instanceNumber(json.getAsNumber(), type);
+            if (!Double.isFinite(getNumber(result).doubleValue())) {
+                throw new IllegalArgumentException("expected a finite number");
+            }
+            return result;
+        }
+
+        long value;
+        try {
+            value = Long.parseLong(number);
+        } catch (NumberFormatException failure) {
+            value = new BigDecimal(number).longValueExact();
+        }
+        NBTBase result = instanceNumber(value, type);
+        if (getNumber(result).longValue() != value) {
+            throw new IllegalArgumentException("value is outside the range of NBT type " + type);
+        }
+        return result;
+    }
+
+    private static final class InvalidNBTException extends IllegalArgumentException {
+
+        private InvalidNBTException(String path, String reason, Throwable cause) {
+            super(path + ": " + reason, cause);
+        }
     }
 
     /**
