@@ -19,6 +19,7 @@ import betterquesting.api.utils.UuidConverter;
 import betterquesting.api2.cache.QuestCache;
 import betterquesting.api2.client.gui.misc.IGuiRect;
 import betterquesting.api2.client.gui.panels.IGuiPanel;
+import betterquesting.api2.utils.ParticipantInfo;
 import betterquesting.handlers.EventHandler;
 import betterquesting.questing.QuestDatabase;
 import bq_standard.client.gui.rewards.PanelRewardQuestCompletion;
@@ -61,22 +62,27 @@ public class RewardQuestCompletion extends AbstractReward implements IReward {
             return;
         }
 
-        QuestCache qc = (QuestCache) player.getExtendedProperties(QuestCache.LOC_QUEST_CACHE.toString());
-        if (qc == null) {
-            return;
-        }
-
         UUID questId = QuestDatabase.INSTANCE.lookupKey(targetQuest);
         if (questId == null) {
             return;
         }
 
-        UUID uuid = QuestingAPI.getQuestingUUID(player);
-        if (!targetQuest.isComplete(uuid)) {
-            targetQuest.setComplete(uuid, System.currentTimeMillis());
-            qc.markQuestDirty(questId);
-            qc.updateCache(player);
-            if (!isSilent) EventHandler.postPresetNotice(targetQuest, player, 2);
+        ParticipantInfo pInfo = new ParticipantInfo(player);
+        long timestamp = System.currentTimeMillis();
+
+        for (UUID uuid : pInfo.ALL_UUIDS) {
+            if (!targetQuest.isComplete(uuid)) {
+                targetQuest.setComplete(uuid, timestamp);
+                EntityPlayer member = uuid.equals(pInfo.UUID) ? player : QuestingAPI.getPlayer(uuid);
+                if (member != null) {
+                    QuestCache qc = (QuestCache) member.getExtendedProperties(QuestCache.LOC_QUEST_CACHE.toString());
+                    if (qc != null) {
+                        qc.markQuestDirty(questId);
+                        qc.updateCache(member);
+                    }
+                    if (!isSilent) EventHandler.postPresetNotice(targetQuest, member, 2);
+                }
+            }
         }
     }
 
