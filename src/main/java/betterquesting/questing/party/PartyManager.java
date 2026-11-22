@@ -25,6 +25,7 @@ import betterquesting.api2.cache.QuestCache;
 import betterquesting.api2.storage.DBEntry;
 import betterquesting.api2.storage.SimpleDatabase;
 import betterquesting.core.BetterQuesting;
+import betterquesting.handlers.SaveLoadHandler;
 import betterquesting.questing.QuestDatabase;
 import betterquesting.storage.NameCache;
 import betterquesting.storage.QuestSettings;
@@ -44,9 +45,12 @@ public class PartyManager extends SimpleDatabase<IParty> implements IPartyDataba
     }
 
     private static void SyncPartyQuests(IParty party, List<UUID> targetUUIDs, boolean markClaimed) {
+        List<UUID> partyMembers = party.getMembers();
+        if (!SaveLoadHandler.INSTANCE.ensurePlayerProgressLoaded(partyMembers)
+            || !SaveLoadHandler.INSTANCE.ensurePlayerProgressLoaded(targetUUIDs)) return;
+
         new Thread(() -> {
             BetterQuesting.logger.info("Start force party quest sync");
-            List<UUID> partyMembers = party.getMembers();
 
             List<SyncPlayerContainer> targetPlayers = targetUUIDs.stream()
                 .map(SyncPlayerContainer::new)

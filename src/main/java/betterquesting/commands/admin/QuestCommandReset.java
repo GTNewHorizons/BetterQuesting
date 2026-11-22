@@ -72,6 +72,8 @@ public class QuestCommandReset extends QuestCommandBase {
             }
         }
 
+        requirePlayerProgress(uuid);
+
         String pName = uuid == null ? "NULL" : NameCache.INSTANCE.getName(uuid);
         EntityPlayerMP player = null;
         if (uuid != null) {

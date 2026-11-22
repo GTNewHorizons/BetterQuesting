@@ -43,6 +43,7 @@ import betterquesting.api2.storage.IDatabaseNBT;
 import betterquesting.api2.utils.DirtyPlayerMarker;
 import betterquesting.api2.utils.ParticipantInfo;
 import betterquesting.core.BetterQuesting;
+import betterquesting.handlers.SaveLoadHandler;
 import betterquesting.questing.rewards.RewardStorage;
 import betterquesting.questing.tasks.TaskStorage;
 import betterquesting.storage.PropertyContainer;
@@ -215,8 +216,10 @@ public class QuestInstance implements IQuest {
     public boolean hasClaimed(UUID uuid) {
         if (rewards.size() <= 0) return true;
 
+        boolean globallyClaimed = qInfo.getProperty(NativeProps.GLOBAL) && !qInfo.getProperty(NativeProps.GLOBAL_SHARE);
+        requireProgressLoaded(globallyClaimed ? null : uuid);
         synchronized (completeUsers) {
-            if (qInfo.getProperty(NativeProps.GLOBAL) && !qInfo.getProperty(NativeProps.GLOBAL_SHARE)) {
+            if (globallyClaimed) {
                 for (NBTTagCompound entry : completeUsers.values()) {
                     if (entry.getBoolean("claimed")) {
                         return true;
@@ -226,7 +229,7 @@ public class QuestInstance implements IQuest {
                 return false;
             }
 
-            NBTTagCompound entry = getCompletionInfo(uuid);
+            NBTTagCompound entry = completeUsers.get(uuid);
             return entry != null && entry.getBoolean("claimed");
         }
     }
@@ -254,6 +257,10 @@ public class QuestInstance implements IQuest {
 
     @Override
     public void claimReward(EntityPlayer player, boolean forceChoice) {
+        ParticipantInfo pInfo = new ParticipantInfo(player);
+        List<UUID> playersToMark = QBConfig.syncQuestRewards ? pInfo.ALL_UUIDS : Collections.singletonList(pInfo.UUID);
+        if (!player.worldObj.isRemote && !SaveLoadHandler.INSTANCE.ensurePlayerProgressLoaded(playersToMark)) return;
+
         UUID questID = QuestDatabase.INSTANCE.lookupKey(this);
         Map.Entry<UUID, IQuest> mapEntry = Maps.immutableEntry(questID, this);
         for (DBEntry<IReward> rew : rewards.getEntries()) {
@@ -265,12 +272,9 @@ public class QuestInstance implements IQuest {
             unwrapped.claimReward(player, mapEntry);
         }
 
-        ParticipantInfo pInfo = new ParticipantInfo(player);
-        List<UUID> playersToMark = QBConfig.syncQuestRewards ? pInfo.ALL_UUIDS : Collections.singletonList(pInfo.UUID);
-
         synchronized (completeUsers) {
             for (UUID user : playersToMark) {
-                NBTTagCompound entry = getCompletionInfo(user);
+                NBTTagCompound entry = completeUsers.get(user);
                 if (entry == null) {
                     entry = new NBTTagCompound();
                 }
@@ -297,9 +301,10 @@ public class QuestInstance implements IQuest {
         if (player == null) return false;
 
         UUID playerID = QuestingAPI.getQuestingUUID(player);
+        requireProgressLoaded(playerID);
 
         synchronized (completeUsers) {
-            NBTTagCompound entry = this.getCompletionInfo(playerID);
+            NBTTagCompound entry = completeUsers.get(playerID);
             if (entry == null) return true;
 
             if (!entry.getBoolean("claimed") && getProperty(NativeProps.REPEAT_TIME) >= 0) // Complete but repeatable
@@ -341,8 +346,9 @@ public class QuestInstance implements IQuest {
     @Override
     public void setComplete(UUID uuid, long timestamp) {
         if (uuid == null) return;
+        requireProgressLoaded(uuid);
         synchronized (completeUsers) {
-            NBTTagCompound entry = this.getCompletionInfo(uuid);
+            NBTTagCompound entry = completeUsers.get(uuid);
 
             if (entry == null) {
                 entry = new NBTTagCompound();
@@ -391,7 +397,10 @@ public class QuestInstance implements IQuest {
     @Override
     public boolean isComplete(UUID uuid) {
         if (qInfo.getProperty(NativeProps.GLOBAL)) {
-            return completeUsers.size() > 0;
+            requireProgressLoaded(null);
+            synchronized (completeUsers) {
+                return !completeUsers.isEmpty();
+            }
         } else {
             return getCompletionInfo(uuid) != null;
         }
@@ -416,6 +425,8 @@ public class QuestInstance implements IQuest {
 
     @Override
     public NBTTagCompound getCompletionInfo(UUID uuid) {
+        if (uuid == null) return null;
+        requireProgressLoaded(uuid);
         synchronized (completeUsers) {
             return completeUsers.get(uuid);
         }
@@ -424,6 +435,7 @@ public class QuestInstance implements IQuest {
     @Override
     public void setCompletionInfo(UUID uuid, NBTTagCompound nbt) {
         if (uuid == null) return;
+        requireProgressLoaded(uuid);
 
         synchronized (completeUsers) {
             if (nbt == null) {
@@ -441,6 +453,7 @@ public class QuestInstance implements IQuest {
      */
     @Override
     public void resetUser(@Nullable UUID uuid, boolean fullReset) {
+        requireProgressLoaded(uuid);
         synchronized (completeUsers) {
             HashSet<UUID> dirtyPlayers = new HashSet<>();
             if (uuid == null) {
@@ -461,7 +474,7 @@ public class QuestInstance implements IQuest {
                         value.setLong("timestamp", 0);
                     });
                 } else {
-                    NBTTagCompound entry = getCompletionInfo(uuid);
+                    NBTTagCompound entry = completeUsers.get(uuid);
                     if (entry != null) {
                         entry.setBoolean("claimed", false);
                         entry.setLong("timestamp", 0);
@@ -603,6 +616,11 @@ public class QuestInstance implements IQuest {
 
     @Override
     public NBTTagCompound writeProgressToNBT(NBTTagCompound json, @Nullable List<UUID> users) {
+        if (!QuestDatabase.usesLoadedProgressOnly()) {
+            boolean ready = users == null ? SaveLoadHandler.INSTANCE.ensureAllProgressLoaded()
+                : SaveLoadHandler.INSTANCE.ensurePlayerProgressLoaded(users);
+            if (!ready) throw new IllegalStateException("Could not load BetterQuesting player progress");
+        }
         synchronized (completeUsers) {
             NBTTagList comJson = new NBTTagList();
             for (Entry<UUID, NBTTagCompound> entry : completeUsers.entrySet()) {
@@ -626,6 +644,11 @@ public class QuestInstance implements IQuest {
 
     @Override
     public void readProgressFromNBT(NBTTagCompound json, boolean merge) {
+        if (!QuestDatabase.usesLoadedProgressOnly()) {
+            boolean ready = merge ? SaveLoadHandler.INSTANCE.ensureReferencedProgressLoaded(json)
+                : SaveLoadHandler.INSTANCE.ensureAllProgressLoaded();
+            if (!ready) throw new IllegalStateException("Could not load BetterQuesting player progress");
+        }
         synchronized (completeUsers) {
             if (!merge) completeUsers.clear();
             NBTTagList comList = json.getTagList("completed", 10);
@@ -647,8 +670,10 @@ public class QuestInstance implements IQuest {
 
     @Override
     public void setClaimed(UUID uuid, long timestamp) {
+        if (uuid == null) return;
+        requireProgressLoaded(uuid);
         synchronized (completeUsers) {
-            NBTTagCompound entry = this.getCompletionInfo(uuid);
+            NBTTagCompound entry = completeUsers.get(uuid);
 
             if (entry != null) {
                 entry.setBoolean("claimed", true);
@@ -664,7 +689,14 @@ public class QuestInstance implements IQuest {
         }
     }
 
+    private static void requireProgressLoaded(@Nullable UUID uuid) {
+        boolean ready = uuid == null ? SaveLoadHandler.INSTANCE.ensureAllProgressLoaded()
+            : SaveLoadHandler.INSTANCE.ensurePlayerProgressLoaded(uuid);
+        if (!ready) throw new IllegalStateException("Could not load BetterQuesting player progress");
+    }
+
     public void getUsersWithCompletionData(Set<UUID> targetSet) {
+        requireProgressLoaded(null);
         synchronized (completeUsers) {
             // Take a copy to prevent concurrent modifications to the returned Set
             targetSet.addAll(completeUsers.keySet());

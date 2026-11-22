@@ -34,6 +34,7 @@ import betterquesting.api.utils.NBTConverter;
 import betterquesting.api.utils.UuidConverter;
 import betterquesting.api2.cache.QuestCache;
 import betterquesting.core.BetterQuesting;
+import betterquesting.handlers.SaveLoadHandler;
 import betterquesting.questing.QuestDatabase;
 import betterquesting.storage.QuestSettings;
 
@@ -179,14 +180,17 @@ public class TileSubmitStation extends TileEntity implements IFluidHandler, ISid
 
         IItemTask t = getItemTask();
 
-        return t != null && itemStack[idx] == null && !t.isComplete(owner) && t.canAcceptItem(owner, getQuest(), stack);
+        return t != null && itemStack[idx] == null
+            && ensureOwnerProgressLoaded()
+            && !t.isComplete(owner)
+            && t.canAcceptItem(owner, getQuest(), stack);
     }
 
     @Override
     public int fill(ForgeDirection from, FluidStack fluid, boolean doFill) {
         IFluidTask t = getFluidTask();
 
-        if (!isSetup() || t == null) return 0;
+        if (!isSetup() || t == null || !ensureOwnerProgressLoaded()) return 0;
 
         FluidStack remainder;
         int amount = fluid.amount;
@@ -231,7 +235,9 @@ public class TileSubmitStation extends TileEntity implements IFluidHandler, ISid
     public boolean canFill(ForgeDirection from, Fluid fluid) {
         IFluidTask t = getFluidTask();
 
-        return t != null && !t.isComplete(owner) && t.canAcceptFluid(owner, getQuest(), new FluidStack(fluid, 1));
+        return t != null && ensureOwnerProgressLoaded()
+            && !t.isComplete(owner)
+            && t.canAcceptFluid(owner, getQuest(), new FluidStack(fluid, 1));
     }
 
     @Override
@@ -249,7 +255,7 @@ public class TileSubmitStation extends TileEntity implements IFluidHandler, ISid
         if (worldObj.isRemote || !isSetup() || QuestSettings.INSTANCE.getProperty(NativeProps.EDIT_MODE)) return;
 
         long wtt = worldObj.getTotalWorldTime();
-        if (wtt % 10 == 0 && owner != null) {
+        if (wtt % 10 == 0 && owner != null && ensureOwnerProgressLoaded()) {
             if (wtt % 20 == 0) qCached = null; // Reset and lookup quest again once every second
             Map.Entry<UUID, IQuest> q = getQuest();
             IItemTask t = getItemTask();
@@ -344,6 +350,12 @@ public class TileSubmitStation extends TileEntity implements IFluidHandler, ISid
 
         this.owner = owner;
         this.markDirty();
+    }
+
+    private boolean ensureOwnerProgressLoaded() {
+        return owner == null || worldObj == null
+            || worldObj.isRemote
+            || SaveLoadHandler.INSTANCE.ensureParticipantProgressLoaded(owner);
     }
 
     public boolean isSetup() {

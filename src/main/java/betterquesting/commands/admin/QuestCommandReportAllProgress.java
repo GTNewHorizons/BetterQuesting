@@ -60,6 +60,8 @@ public class QuestCommandReportAllProgress extends QuestCommandBase {
             throw this.getException(command);
         }
 
+        requirePlayerProgress(uuid);
+
         sender.addChatMessage(
             new ChatComponentTranslation("betterquesting.cmd.check_all", NameCache.INSTANCE.getName(uuid)));
 

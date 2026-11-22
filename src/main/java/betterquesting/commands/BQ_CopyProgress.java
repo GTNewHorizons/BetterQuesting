@@ -1,6 +1,7 @@
 package betterquesting.commands;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import com.mojang.authlib.GameProfile;
 
 import betterquesting.api.questing.IQuest;
+import betterquesting.handlers.SaveLoadHandler;
 import betterquesting.network.handlers.NetQuestSync;
 import betterquesting.questing.QuestDatabase;
 
@@ -76,6 +78,11 @@ public class BQ_CopyProgress extends CommandBase {
 
         if (fromUUID == null || toUUID == null) {
             throw new CommandException("Wrong arguments");
+        }
+
+        if (!SaveLoadHandler.INSTANCE.ensurePlayerProgressLoaded(Arrays.asList(fromUUID, toUUID))
+            || !SaveLoadHandler.INSTANCE.ensureGlobalProgressLoaded()) {
+            throw new CommandException("Could not load BetterQuesting progress. Check the server log.");
         }
 
         long now = System.currentTimeMillis();

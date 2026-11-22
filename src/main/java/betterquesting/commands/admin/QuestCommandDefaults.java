@@ -587,14 +587,14 @@ public class QuestCommandDefaults extends QuestCommandBase {
         boolean editMode = QuestSettings.INSTANCE.getProperty(NativeProps.EDIT_MODE);
         boolean hardMode = QuestSettings.INSTANCE.getProperty(NativeProps.HARDCORE);
         NBTTagList progress = loadWorldSettings ? null
-            : QuestDatabase.INSTANCE.writeProgressToNBT(new NBTTagList(), null);
+            : QuestDatabase.INSTANCE.writeLoadedProgressToNBT(new NBTTagList(), null);
 
         QuestSettings.INSTANCE.readFromNBT(database.getCompoundTag("questSettings"));
         QuestDatabase.INSTANCE.readFromNBT(database.getTagList("questDatabase", Constants.NBT.TAG_COMPOUND), false);
         QuestLineDatabase.INSTANCE.readFromNBT(database.getTagList("questLines", Constants.NBT.TAG_COMPOUND), false);
 
         if (!loadWorldSettings) {
-            QuestDatabase.INSTANCE.readProgressFromNBT(progress, false);
+            QuestDatabase.INSTANCE.readLoadedProgressFromNBT(progress, false);
             QuestSettings.INSTANCE.setProperty(NativeProps.EDIT_MODE, editMode);
             QuestSettings.INSTANCE.setProperty(NativeProps.HARDCORE, hardMode);
         }

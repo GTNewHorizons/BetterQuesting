@@ -270,6 +270,7 @@ public class EventHandler {
 
                 if (currentTime >= pendingReset.time && !quest.canSubmit(player)) {
                     if (quest.getProperty(NativeProps.GLOBAL)) {
+                        if (!SaveLoadHandler.INSTANCE.ensureAllProgressLoaded()) continue;
                         quest.resetUser(null, false);
                     } else {
                         quest.resetUser(playerId, false);
@@ -405,6 +406,13 @@ public class EventHandler {
             || !(event.player instanceof EntityPlayerMP)) return;
 
         EntityPlayerMP mpPlayer = (EntityPlayerMP) event.player;
+        UUID questingUUID = QuestingAPI.getQuestingUUID(mpPlayer);
+        if (!SaveLoadHandler.INSTANCE.ensureParticipantProgressLoaded(questingUUID)
+            || !SaveLoadHandler.INSTANCE.ensureGlobalProgressLoaded()) {
+            mpPlayer.playerNetServerHandler
+                .kickPlayerFromServer("Could not load BetterQuesting progress. Check the server log.");
+            return;
+        }
 
         if (BetterQuesting.proxy.isClient() && !MinecraftServer.getServer()
             .isDedicatedServer()
@@ -419,7 +427,6 @@ public class EventHandler {
 
         NetBulkSync.sendReset(mpPlayer, true, true);
 
-        UUID questingUUID = QuestingAPI.getQuestingUUID(mpPlayer);
         DBEntry<IParty> party = PartyManager.INSTANCE.getParty(questingUUID);
         if (party != null) PartyManager.SyncPartyQuests(party.getValue(), false);
     }

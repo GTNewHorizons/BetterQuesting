@@ -25,6 +25,7 @@ import betterquesting.api.questing.IQuest;
 import betterquesting.api.questing.party.IParty;
 import betterquesting.api2.storage.INBTPartial;
 import betterquesting.core.BetterQuesting;
+import betterquesting.handlers.SaveLoadHandler;
 import betterquesting.network.handlers.NetInviteSync;
 import betterquesting.network.handlers.NetQuestSync;
 import betterquesting.questing.QuestDatabase;
@@ -67,6 +68,9 @@ public class PartyInvitations implements INBTPartial<NBTTagList, UUID> {
         boolean valid = expiryTime > System.currentTimeMillis();
 
         if (party != null && valid) {
+            if (!SaveLoadHandler.INSTANCE.ensurePlayerProgressLoaded(playerId)
+                || !SaveLoadHandler.INSTANCE.ensurePlayerProgressLoaded(party.getMembers())) return false;
+
             // Resetting user before joining party
             for (IQuest quest : QuestDatabase.INSTANCE.values()) {
                 quest.resetUser(playerId, true);

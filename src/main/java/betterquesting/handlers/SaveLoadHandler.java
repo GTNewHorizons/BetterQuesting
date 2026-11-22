@@ -1,45 +1,66 @@
 package betterquesting.handlers;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.DirectoryIteratorException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.stream.Collectors;
+import java.util.concurrent.locks.Lock;
 
+import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.server.MinecraftServer;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.common.util.Constants;
 
-import org.apache.commons.io.FileUtils;
-
+import com.google.common.util.concurrent.Striped;
 import com.google.gson.JsonObject;
+import com.google.gson.stream.JsonWriter;
 
 import betterquesting.api.events.DatabaseEvent;
 import betterquesting.api.events.DatabaseEvent.DBType;
 import betterquesting.api.properties.NativeProps;
-import betterquesting.api.questing.IQuest;
+import betterquesting.api.questing.party.IParty;
 import betterquesting.api.storage.BQ_Settings;
 import betterquesting.api.utils.JsonHelper;
 import betterquesting.api.utils.NBTConverter;
+import betterquesting.api2.storage.DBEntry;
+import betterquesting.api2.utils.BQThreadedIO;
 import betterquesting.client.QuestNotification;
 import betterquesting.client.gui2.GuiHome;
 import betterquesting.commands.admin.QuestCommandDefaults;
 import betterquesting.core.BetterQuesting;
 import betterquesting.questing.QuestDatabase;
-import betterquesting.questing.QuestInstance;
 import betterquesting.questing.QuestLineDatabase;
 import betterquesting.questing.party.PartyManager;
 import betterquesting.storage.LifeDatabase;
 import betterquesting.storage.NameCache;
+import betterquesting.storage.PlayerProgressJson;
 import betterquesting.storage.QuestSettings;
 import cpw.mods.fml.common.Loader;
 import io.netty.util.internal.ConcurrentSet;
@@ -51,10 +72,16 @@ public class SaveLoadHandler {
     private boolean hasUpdate = false;
     private boolean isDirty = false;
 
-    private File fileDatabase = null, fileProgress = null, dirProgress = null, fileParties = null, fileLives = null,
-        fileNames = null;
+    private File fileDatabase = null, fileParties = null, fileLives = null, fileNames = null;
+    private volatile File dirProgress;
 
     private final Set<UUID> dirtyPlayers = new ConcurrentSet<>();
+    private final Set<UUID> loadedPlayers = new ConcurrentSet<>();
+    private final Set<UUID> loadingPlayers = new HashSet<>();
+    private final Set<UUID> failedReads = new HashSet<>();
+    private final Map<UUID, Future<Void>> pendingWrites = new HashMap<>();
+    private final Striped<Lock> progressFileLocks = Striped.lazyWeakLock(256);
+    private boolean allProgressLoaded;
 
     public boolean hasUpdate() {
         return this.hasUpdate;
@@ -84,26 +111,18 @@ public class SaveLoadHandler {
             QuestNotification.resetNotices();
         }
 
-        File rootDir;
-
         if (BetterQuesting.proxy.isClient()) {
             BQ_Settings.curWorldDir = server.getFile("saves/" + server.getFolderName() + "/betterquesting");
-            rootDir = server.getFile("saves/" + server.getFolderName());
         } else {
             BQ_Settings.curWorldDir = server.getFile(server.getFolderName() + "/betterquesting");
-            rootDir = server.getFile(server.getFolderName());
         }
 
         fileDatabase = new File(BQ_Settings.curWorldDir, "QuestDatabase.json");
-        fileProgress = new File(BQ_Settings.curWorldDir, "QuestProgress.json");
-        dirProgress = new File(BQ_Settings.curWorldDir, "QuestProgress");
         fileParties = new File(BQ_Settings.curWorldDir, "QuestingParties.json");
         fileLives = new File(BQ_Settings.curWorldDir, "LifeDatabase.json");
         fileNames = new File(BQ_Settings.curWorldDir, "NameCache.json");
 
         loadConfig();
-
-        loadProgress();
 
         LoadParties();
 
@@ -116,6 +135,7 @@ public class SaveLoadHandler {
         BetterQuesting.logger.info("Loaded " + PartyManager.INSTANCE.size() + " parties");
         BetterQuesting.logger.info("Loaded " + NameCache.INSTANCE.size() + " names");
 
+        dirProgress = new File(BQ_Settings.curWorldDir, "QuestProgress");
         MinecraftForge.EVENT_BUS.post(new DatabaseEvent.Load(DBType.ALL));
     }
 
@@ -149,10 +169,17 @@ public class SaveLoadHandler {
         isDirty = false;
     }
 
-    public void unloadDatabases() {
+    public synchronized void unloadDatabases() {
         BQ_Settings.curWorldDir = null;
         hasUpdate = false;
         isDirty = false;
+        dirProgress = null;
+        loadedPlayers.clear();
+        loadingPlayers.clear();
+        dirtyPlayers.clear();
+        failedReads.clear();
+        pendingWrites.clear();
+        allProgressLoaded = false;
 
         QuestSettings.INSTANCE.reset();
         QuestDatabase.INSTANCE.clear();
@@ -213,9 +240,6 @@ public class SaveLoadHandler {
                     fileDatabase,
                     new File(BQ_Settings.curWorldDir + "/backup/" + fsVer, "QuestDatabase_backup_" + fsVer + ".json"));
                 JsonHelper.CopyPaste(
-                    fileProgress,
-                    new File(BQ_Settings.curWorldDir + "/backup/" + fsVer, "QuestProgress_backup_" + fsVer + ".json"));
-                JsonHelper.CopyPaste(
                     fileParties,
                     new File(
                         BQ_Settings.curWorldDir + "/backup/" + fsVer,
@@ -238,30 +262,141 @@ public class SaveLoadHandler {
             && packVer > QuestSettings.INSTANCE.getProperty(NativeProps.PACK_VER);
     }
 
-    private void loadProgress() {
-        if (fileProgress.exists()) {
-            JsonObject json = JsonHelper.ReadFromFile(fileProgress);
+    public boolean ensureReferencedProgressLoaded(NBTBase progress) {
+        if (dirProgress == null) return true;
+        Set<UUID> players = new HashSet<>();
+        collectProgressPlayers(progress, players);
+        return ensurePlayerProgressLoaded(players);
+    }
 
-            NBTTagCompound nbt = NBTConverter.JSONtoNBT_Object(json, new NBTTagCompound(), true);
-            QuestDatabase.INSTANCE.readProgressFromNBT(nbt.getTagList("questProgress", 10), false);
-
-            // Mark all data as dirty to migrate the file to the new format
-            markDirty();
-            HashSet<UUID> usersFound = new HashSet<>();
-            for (IQuest quest : QuestDatabase.INSTANCE.values()) {
-                if (quest instanceof QuestInstance) {
-                    QuestInstance qi = (QuestInstance) quest;
-                    qi.getUsersWithCompletionData(usersFound);
-                }
+    private static void collectProgressPlayers(NBTBase tag, Set<UUID> players) {
+        if (tag instanceof NBTTagCompound compound) {
+            if (compound.hasKey("uuid", Constants.NBT.TAG_STRING)) {
+                recordProgressPlayer(compound.getString("uuid"), players);
             }
-            dirtyPlayers.addAll(usersFound);
+            NBTTagList completed = compound.getTagList("completeUsers", Constants.NBT.TAG_STRING);
+            for (int i = 0; i < completed.tagCount(); i++) {
+                recordProgressPlayer(completed.getStringTagAt(i), players);
+            }
+            for (Object key : compound.func_150296_c()) {
+                collectProgressPlayers(compound.getTag((String) key), players);
+            }
+        } else if (tag instanceof NBTTagList list) {
+            NBTConverter.getTagList(list)
+                .forEach(child -> collectProgressPlayers(child, players));
+        }
+    }
+
+    private static void recordProgressPlayer(String id, Set<UUID> players) {
+        try {
+            players.add(UUID.fromString(id));
+        } catch (IllegalArgumentException ignored) {
+            // Ignore invalid player IDs in typed progress
+        }
+    }
+
+    /** Loads saved progress for the given player. */
+    public boolean ensurePlayerProgressLoaded(UUID player) {
+        if (dirProgress == null || loadedPlayers.contains(player)) return true;
+        synchronized (this) {
+            try {
+                loadPlayerProgress(player);
+                return true;
+            } catch (IOException e) {
+                if (failedReads.add(player)) {
+                    BetterQuesting.logger.error("Could not load BetterQuesting progress for {}", player, e);
+                }
+                return false;
+            }
+        }
+    }
+
+    public boolean ensurePlayerProgressLoaded(Collection<UUID> players) {
+        for (UUID player : players) {
+            if (!ensurePlayerProgressLoaded(player)) return false;
+        }
+        return true;
+    }
+
+    public boolean ensureParticipantProgressLoaded(UUID player) {
+        if (!ensurePlayerProgressLoaded(player)) return false;
+        DBEntry<IParty> party = PartyManager.INSTANCE.getParty(player);
+        return party == null || ensurePlayerProgressLoaded(
+            party.getValue()
+                .getMembers());
+    }
+
+    private void loadPlayerProgress(UUID player) throws IOException {
+        if (dirProgress == null || loadedPlayers.contains(player) || !loadingPlayers.add(player)) return;
+        try {
+            readPlayerProgress(player);
+            loadedPlayers.add(player);
+            failedReads.remove(player);
+        } catch (RuntimeException e) {
+            throw new IOException("Could not apply player progress for " + player, e);
+        } finally {
+            loadingPlayers.remove(player);
+        }
+    }
+
+    private void readPlayerProgress(UUID player) throws IOException {
+        PlayerProgressJson.ReadResult record;
+        try (BufferedReader reader = Files.newBufferedReader(playerProgressFile(player), StandardCharsets.UTF_8)) {
+            record = PlayerProgressJson.readRecord(reader, player);
+        } catch (NoSuchFileException e) {
+            return;
         }
 
-        getPlayerProgressFiles().forEach(file -> {
-            JsonObject json = JsonHelper.ReadFromFile(file);
-            NBTTagCompound nbt = NBTConverter.JSONtoNBT_Object(json, new NBTTagCompound(), true);
-            QuestDatabase.INSTANCE.readProgressFromNBT(nbt.getTagList("questProgress", 10), true);
-        });
+        QuestDatabase.INSTANCE.readLoadedProgressFromNBT(record.progress(), true);
+    }
+
+    public synchronized boolean ensureGlobalProgressLoaded() {
+        return allProgressLoaded || QuestDatabase.INSTANCE.values()
+            .stream()
+            .filter(Objects::nonNull)
+            .noneMatch(quest -> quest.getProperty(NativeProps.GLOBAL)) || ensureAllProgressLoaded();
+    }
+
+    public synchronized boolean ensureAllProgressLoaded() {
+        if (dirProgress == null || allProgressLoaded) return true;
+
+        Set<UUID> players = new HashSet<>();
+        try (DirectoryStream<Path> files = Files.newDirectoryStream(dirProgress.toPath(), "*.json")) {
+            for (Path file : files) {
+                UUID player = playerId(file);
+                if (player != null) players.add(player);
+            }
+        } catch (NoSuchFileException ignored) {
+            // A new world has no progress directory
+        } catch (IOException | DirectoryIteratorException e) {
+            BetterQuesting.logger.error("Could not list BetterQuesting player progress", e);
+            return false;
+        }
+
+        boolean ready = ensurePlayerProgressLoaded(players);
+        allProgressLoaded = ready && loadingPlayers.isEmpty();
+        return ready;
+    }
+
+    private Path playerProgressFile(UUID player) {
+        return dirProgress.toPath()
+            .resolve(player.toString() + ".json");
+    }
+
+    private static UUID playerId(Path file) {
+        String name = file.getFileName()
+            .toString();
+        if (name.length() != 41 || !name.endsWith(".json")) return null;
+        try {
+            UUID player = UUID.fromString(name.substring(0, 36));
+            return name.equals(player + ".json") ? player : null;
+        } catch (IllegalArgumentException ignored) {
+            return null;
+        }
+    }
+
+    private void checkProgressDirectory(File directory) {
+        if (dirProgress != directory) throw new CancellationException("The BetterQuesting world was unloaded");
     }
 
     private void LoadParties() {
@@ -304,21 +439,13 @@ public class SaveLoadHandler {
         return JsonHelper.WriteToFile2(fileDatabase, out -> NBTConverter.NBTtoJSON_Compound(json, out, true));
     }
 
-    private List<Future<Void>> saveProgress() {
-        final List<Future<Void>> futures = dirtyPlayers.stream()
-            .map(this::savePlayerProgress)
-            .collect(Collectors.toList());
-        dirtyPlayers.clear();
-        if (fileProgress != null && fileProgress.exists()) {
-            String backupName = fileProgress.getName()
-                .replace(".json", ".backup.json");
-            try {
-                FileUtils.moveFile(fileProgress, new File(fileProgress.getParentFile(), backupName));
-                // Only remove the file if the backup was successful
-                FileUtils.forceDelete(fileProgress);
-            } catch (Exception e) {
-                BetterQuesting.logger.warn("Could not move old progress data out of the way {}", backupName, e);
-            }
+    private synchronized List<Future<Void>> saveProgress() {
+        pendingWrites.values()
+            .removeIf(Future::isDone);
+        Set<UUID> players = new HashSet<>(dirtyPlayers);
+        List<Future<Void>> futures = new ArrayList<>(players.size());
+        for (UUID player : players) {
+            futures.add(savePlayerProgress(player));
         }
         return futures;
     }
@@ -347,28 +474,89 @@ public class SaveLoadHandler {
         return JsonHelper.WriteToFile2(fileLives, out -> NBTConverter.NBTtoJSON_Compound(json, out, true));
     }
 
-    public Future<Void> savePlayerProgress(UUID player) {
-        NBTTagCompound json = new NBTTagCompound();
+    public synchronized Future<Void> savePlayerProgress(UUID player) {
+        if (dirProgress == null) return CompletableFuture.completedFuture(null);
 
-        json.setTag(
-            "questProgress",
-            QuestDatabase.INSTANCE.writeProgressToNBT(new NBTTagList(), Collections.singletonList(player)));
+        Future<Void> previous = pendingWrites.get(player);
+        if (previous != null && !previous.isDone()) return previous;
+        pendingWrites.remove(player);
 
-        return JsonHelper.WriteToFile2(
-            new File(dirProgress, player.toString() + ".json"),
-            out -> NBTConverter.NBTtoJSON_Compound(json, out, true));
-    }
-
-    private List<File> getPlayerProgressFiles() {
-        final File[] files = dirProgress.listFiles();
-        if (files == null) {
-            return new ArrayList<>();
+        try {
+            if (!loadedPlayers.contains(player)) {
+                Files.readAttributes(playerProgressFile(player), BasicFileAttributes.class);
+                return failedWrite(
+                    player,
+                    new IOException("Refusing to overwrite unread player progress for " + player));
+            }
+        } catch (NoSuchFileException ignored) {
+            // Start a new file for a player without saved progress
+        } catch (IOException e) {
+            return failedWrite(player, e);
         }
-        return Arrays.stream(files)
-            .filter(
-                f -> f.getName()
-                    .endsWith(".json"))
-            .collect(Collectors.toList());
+
+        if (!ensurePlayerProgressLoaded(player)) {
+            return failedWrite(player, new IOException("Cannot save unread player progress for " + player));
+        }
+
+        dirtyPlayers.remove(player);
+        final NBTTagList progress;
+        try {
+            progress = QuestDatabase.INSTANCE
+                .writeLoadedProgressToNBT(new NBTTagList(), Collections.singletonList(player));
+        } catch (RuntimeException e) {
+            return failedWrite(player, e);
+        }
+
+        File saveDirectory = dirProgress;
+        Path destination = playerProgressFile(player);
+        Future<Void> write = BQThreadedIO.DISK_IO.enqueue(() -> {
+            try {
+                Lock lock = progressFileLocks.get(player);
+                lock.lock();
+                try {
+                    writePlayerProgress(saveDirectory, destination, player, progress);
+                } finally {
+                    lock.unlock();
+                }
+            } catch (Exception e) {
+                synchronized (this) {
+                    if (dirProgress == saveDirectory) dirtyPlayers.add(player);
+                }
+                throw e;
+            }
+            return null;
+        });
+        pendingWrites.put(player, write);
+        return write;
     }
 
+    private Future<Void> failedWrite(UUID player, Exception e) {
+        dirtyPlayers.add(player);
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        future.completeExceptionally(e);
+        return future;
+    }
+
+    private void writePlayerProgress(File saveDirectory, Path destination, UUID player, NBTTagList progress)
+        throws IOException {
+        Path directory = destination.getParent();
+        Files.createDirectories(directory);
+        Path temp = Files.createTempFile(directory, player.toString(), ".tmp");
+        try {
+            try (FileOutputStream file = new FileOutputStream(temp.toFile());
+                JsonWriter writer = new JsonWriter(
+                    new BufferedWriter(new OutputStreamWriter(file, StandardCharsets.UTF_8)))) {
+                PlayerProgressJson.write(writer, progress, player);
+                writer.flush();
+                file.getFD()
+                    .sync();
+            }
+            synchronized (this) {
+                checkProgressDirectory(saveDirectory);
+                Files.move(temp, destination, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            }
+        } finally {
+            Files.deleteIfExists(temp);
+        }
+    }
 }

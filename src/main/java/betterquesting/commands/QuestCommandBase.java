@@ -5,12 +5,14 @@ import java.util.List;
 import java.util.UUID;
 
 import net.minecraft.command.CommandBase;
+import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.command.WrongUsageException;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.server.MinecraftServer;
 
 import betterquesting.api.api.QuestingAPI;
+import betterquesting.handlers.SaveLoadHandler;
 import betterquesting.storage.NameCache;
 
 public abstract class QuestCommandBase {
@@ -72,6 +74,13 @@ public abstract class QuestCommandBase {
         }
 
         return playerID;
+    }
+
+    protected static void requirePlayerProgress(UUID player) {
+        boolean ready = player == null ? SaveLoadHandler.INSTANCE.ensureAllProgressLoaded()
+            : SaveLoadHandler.INSTANCE.ensurePlayerProgressLoaded(player)
+                && SaveLoadHandler.INSTANCE.ensureGlobalProgressLoaded();
+        if (!ready) throw new CommandException("Could not load BetterQuesting progress. Check the server log.");
     }
 
     public boolean isArgUsername(String[] args, int index) {
