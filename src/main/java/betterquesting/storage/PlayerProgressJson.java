@@ -57,10 +57,6 @@ public final class PlayerProgressJson {
 
     private PlayerProgressJson() {}
 
-    public static NBTTagList read(Reader reader, UUID player) throws IOException {
-        return readRecord(reader, player).progress();
-    }
-
     public static ReadResult readRecord(Reader reader, UUID player) throws IOException {
         try {
             JsonObject data = JsonHelper.readObject(reader);

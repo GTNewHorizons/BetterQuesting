@@ -238,7 +238,7 @@ public class EventHandler {
                 final UUID questId = entry.getKey();
                 final IQuest quest = entry.getValue();
 
-                if (!quest.isUnlocked(playerId)) {
+                if (!SaveLoadHandler.INSTANCE.canUseQuestProgress(quest) || !quest.isUnlocked(playerId)) {
                     continue; // Although it IS active, it cannot be completed yet
                 }
 
@@ -268,9 +268,9 @@ public class EventHandler {
             for (QResetTime pendingReset : pendingResets) {
                 IQuest quest = QuestDatabase.INSTANCE.get(pendingReset.questID);
 
+                if (quest == null || !SaveLoadHandler.INSTANCE.canUseQuestProgress(quest)) continue;
                 if (currentTime >= pendingReset.time && !quest.canSubmit(player)) {
                     if (quest.getProperty(NativeProps.GLOBAL)) {
-                        if (!SaveLoadHandler.INSTANCE.ensureAllProgressLoaded()) continue;
                         quest.resetUser(null, false);
                     } else {
                         quest.resetUser(playerId, false);
@@ -407,8 +407,7 @@ public class EventHandler {
 
         EntityPlayerMP mpPlayer = (EntityPlayerMP) event.player;
         UUID questingUUID = QuestingAPI.getQuestingUUID(mpPlayer);
-        if (!SaveLoadHandler.INSTANCE.ensureParticipantProgressLoaded(questingUUID)
-            || !SaveLoadHandler.INSTANCE.ensureGlobalProgressLoaded()) {
+        if (questingUUID == null || !SaveLoadHandler.INSTANCE.ensurePlayerProgressLoaded(questingUUID)) {
             mpPlayer.playerNetServerHandler
                 .kickPlayerFromServer("Could not load BetterQuesting progress. Check the server log.");
             return;

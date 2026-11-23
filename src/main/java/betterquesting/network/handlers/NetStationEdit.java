@@ -17,6 +17,7 @@ import betterquesting.api.utils.NBTConverter;
 import betterquesting.api2.utils.Tuple2;
 import betterquesting.blocks.TileSubmitStation;
 import betterquesting.core.BetterQuesting;
+import betterquesting.handlers.SaveLoadHandler;
 import betterquesting.network.PacketSender;
 import betterquesting.network.PacketTypeRegistry;
 import betterquesting.questing.QuestDatabase;
@@ -83,7 +84,7 @@ public class NetStationEdit {
                     : quest.getTasks()
                         .getValue(payload.getInteger(TAG_TASK_ID));
 
-                if (quest != null && task != null) {
+                if (quest != null && task != null && SaveLoadHandler.INSTANCE.canUseQuestProgress(quest)) {
                     if (!quest.isUnlocked(senderId) || !task.isComplete(senderId)) {
                         BetterQuesting.logger.warn(
                             MarkerManager.getMarker("SuspiciousPackets"),

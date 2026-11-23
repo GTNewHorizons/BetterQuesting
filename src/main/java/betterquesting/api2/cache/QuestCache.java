@@ -30,6 +30,7 @@ import betterquesting.api.questing.IQuest;
 import betterquesting.api.storage.BQ_Settings;
 import betterquesting.api.utils.NBTConverter;
 import betterquesting.core.BetterQuesting;
+import betterquesting.handlers.SaveLoadHandler;
 import betterquesting.network.handlers.NetCacheSync;
 import betterquesting.questing.QuestDatabase;
 import bq_standard.integration.vendingmachine.VmAdapter;
@@ -126,6 +127,7 @@ public class QuestCache implements IExtendedEntityProperties {
 
         long currentTime = System.currentTimeMillis();
         for (Map.Entry<UUID, IQuest> entry : questDB) {
+            if (!SaveLoadHandler.INSTANCE.canUseQuestProgress(entry.getValue())) continue;
             if (entry.getValue()
                 .isUnlocked(uuid)
                 || entry.getValue()
@@ -262,7 +264,7 @@ public class QuestCache implements IExtendedEntityProperties {
     // TODO: Make this based on a fixed state stored on the quest instead of calculated on demand
     // TODO: Also make this thread safe
     public static boolean isQuestShown(IQuest quest, UUID uuid, EntityPlayer player) {
-        if (quest == null || uuid == null) {
+        if (quest == null || uuid == null || !SaveLoadHandler.INSTANCE.canUseQuestProgress(quest)) {
             return false;
         }
 

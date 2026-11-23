@@ -58,6 +58,8 @@ public class PartyManager extends SimpleDatabase<IParty> implements IPartyDataba
 
             for (Map.Entry<UUID, IQuest> questEntry : QuestDatabase.INSTANCE.entrySet()) {
                 IQuest quest = questEntry.getValue();
+                if (quest.getProperty(NativeProps.GLOBAL) && !SaveLoadHandler.INSTANCE.ensureAllProgressLoaded())
+                    continue;
                 long completionTime = -1;
 
                 for (UUID member : partyMembers) {

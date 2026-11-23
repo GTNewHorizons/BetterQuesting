@@ -18,9 +18,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import betterquesting.api.api.QuestingAPI;
+import betterquesting.api.questing.IQuest;
 import betterquesting.api.questing.party.IParty;
 import betterquesting.api2.cache.QuestCache;
 import betterquesting.api2.storage.DBEntry;
+import betterquesting.handlers.SaveLoadHandler;
+import betterquesting.questing.QuestDatabase;
 import betterquesting.questing.party.PartyManager;
 
 public class ParticipantInfo {
@@ -94,11 +97,17 @@ public class ParticipantInfo {
     /** Returns an array of all quests which one or more participants have unlocked */
     @NotNull
     public Set<UUID> getSharedQuests() {
+        if (!PLAYER.worldObj.isRemote && !SaveLoadHandler.INSTANCE.ensurePlayerProgressLoaded(ALL_UUIDS))
+            return Collections.emptySet();
         return ACTIVE_PLAYERS.stream()
             .map(p -> (QuestCache) p.getExtendedProperties(QuestCache.LOC_QUEST_CACHE.toString()))
             .filter(Objects::nonNull)
             .map(QuestCache::getActiveQuests)
             .flatMap(Set::stream)
+            .filter(id -> {
+                IQuest quest = QuestDatabase.INSTANCE.get(id);
+                return quest != null && SaveLoadHandler.INSTANCE.canUseQuestProgress(quest);
+            })
             .collect(Collectors.toCollection(HashSet::new));
     }
 }

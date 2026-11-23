@@ -30,6 +30,7 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 
 import net.minecraft.nbt.NBTBase;
@@ -46,6 +47,7 @@ import com.google.gson.stream.JsonWriter;
 import betterquesting.api.events.DatabaseEvent;
 import betterquesting.api.events.DatabaseEvent.DBType;
 import betterquesting.api.properties.NativeProps;
+import betterquesting.api.questing.IQuest;
 import betterquesting.api.questing.party.IParty;
 import betterquesting.api.storage.BQ_Settings;
 import betterquesting.api.utils.JsonHelper;
@@ -79,11 +81,14 @@ public class SaveLoadHandler {
     private final Set<UUID> dirtyPlayers = new ConcurrentSet<>();
     private final Set<UUID> loadedPlayers = new ConcurrentSet<>();
     private final Set<UUID> loadingPlayers = new HashSet<>();
-    private final Set<UUID> failedReads = new HashSet<>();
+    private final Map<UUID, Long> failedReads = new HashMap<>();
+    private static final long READ_RETRY_NANOS = TimeUnit.SECONDS.toNanos(10);
     private final Map<UUID, Future<Void>> pendingWrites = new HashMap<>();
     private final Striped<Lock> progressFileLocks = Striped.lazyWeakLock(256);
     private CompletableFuture<ProgressRewriteResult> progressRewrite;
-    private boolean allProgressLoaded;
+    private volatile boolean allProgressLoaded;
+    private long lastFailedGlobalRead;
+    private boolean globalReadFailed;
 
     public boolean hasUpdate() {
         return this.hasUpdate;
@@ -182,6 +187,7 @@ public class SaveLoadHandler {
         failedReads.clear();
         pendingWrites.clear();
         allProgressLoaded = false;
+        globalReadFailed = false;
 
         QuestSettings.INSTANCE.reset();
         QuestDatabase.INSTANCE.clear();
@@ -301,12 +307,15 @@ public class SaveLoadHandler {
     public boolean ensurePlayerProgressLoaded(UUID player) {
         if (dirProgress == null || loadedPlayers.contains(player)) return true;
         synchronized (this) {
+            Long lastFailure = failedReads.get(player);
+            if (lastFailure != null && System.nanoTime() - lastFailure < READ_RETRY_NANOS) return false;
             try {
                 loadPlayerProgress(player);
                 return true;
             } catch (IOException e) {
-                if (failedReads.add(player)) {
-                    BetterQuesting.logger.error("Could not load BetterQuesting progress for {}", player, e);
+                if (failedReads.put(player, System.nanoTime()) == null) {
+                    BetterQuesting.logger
+                        .error("Could not load BetterQuesting progress from {}", playerProgressFile(player), e);
                 }
                 return false;
             }
@@ -333,7 +342,7 @@ public class SaveLoadHandler {
         try {
             readPlayerProgress(player);
             loadedPlayers.add(player);
-            failedReads.remove(player);
+            if (failedReads.remove(player) != null) globalReadFailed = false;
         } catch (RuntimeException e) {
             throw new IOException("Could not apply player progress for " + player, e);
         } finally {
@@ -352,6 +361,16 @@ public class SaveLoadHandler {
         QuestDatabase.INSTANCE.readLoadedProgressFromNBT(record.progress(), true);
     }
 
+    public boolean canUseQuestProgress(IQuest quest) {
+        if (dirProgress == null || allProgressLoaded) return true;
+        if (quest.getProperty(NativeProps.GLOBAL)) return ensureAllProgressLoaded();
+        for (UUID id : quest.getRequirements()) {
+            IQuest parent = QuestDatabase.INSTANCE.get(id);
+            if (parent != null && parent.getProperty(NativeProps.GLOBAL)) return ensureAllProgressLoaded();
+        }
+        return true;
+    }
+
     public synchronized boolean ensureGlobalProgressLoaded() {
         return allProgressLoaded || QuestDatabase.INSTANCE.values()
             .stream()
@@ -362,6 +381,7 @@ public class SaveLoadHandler {
     public synchronized boolean ensureAllProgressLoaded() {
         if (dirProgress == null || allProgressLoaded) return true;
 
+        if (globalReadFailed && System.nanoTime() - lastFailedGlobalRead < READ_RETRY_NANOS) return false;
         Set<UUID> players = new HashSet<>();
         try (DirectoryStream<Path> files = Files.newDirectoryStream(dirProgress.toPath(), "*.json")) {
             for (Path file : files) {
@@ -371,11 +391,18 @@ public class SaveLoadHandler {
         } catch (NoSuchFileException ignored) {
             // A new world has no progress directory
         } catch (IOException | DirectoryIteratorException e) {
+            globalReadFailed = true;
+            lastFailedGlobalRead = System.nanoTime();
             BetterQuesting.logger.error("Could not list BetterQuesting player progress", e);
             return false;
         }
 
-        boolean ready = ensurePlayerProgressLoaded(players);
+        boolean ready = true;
+        for (UUID player : players) {
+            if (!ensurePlayerProgressLoaded(player)) ready = false;
+        }
+        globalReadFailed = !ready;
+        if (!ready) lastFailedGlobalRead = System.nanoTime();
         allProgressLoaded = ready && loadingPlayers.isEmpty();
         return ready;
     }

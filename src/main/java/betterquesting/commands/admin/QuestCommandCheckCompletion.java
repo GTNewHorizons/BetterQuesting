@@ -14,6 +14,7 @@ import betterquesting.api.properties.NativeProps;
 import betterquesting.api.questing.IQuest;
 import betterquesting.api.utils.UuidConverter;
 import betterquesting.commands.QuestCommandBase;
+import betterquesting.handlers.SaveLoadHandler;
 import betterquesting.questing.QuestDatabase;
 import betterquesting.storage.NameCache;
 
@@ -69,6 +70,9 @@ public class QuestCommandCheckCompletion extends QuestCommandBase {
         UUID id = UuidConverter.decodeUuid(args[2].trim());
         IQuest quest = QuestDatabase.INSTANCE.get(id);
         if (quest == null) throw getException(command);
+        boolean ready = quest.getProperty(NativeProps.GLOBAL) ? SaveLoadHandler.INSTANCE.ensureAllProgressLoaded()
+            : SaveLoadHandler.INSTANCE.ensurePlayerProgressLoaded(uuid);
+        if (!ready) throw new CommandException("Could not load BetterQuesting progress. Check the server log.");
         sender.addChatMessage(
             new ChatComponentTranslation(
                 "betterquesting.cmd.check." + quest.isComplete(uuid),

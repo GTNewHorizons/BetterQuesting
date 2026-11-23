@@ -17,6 +17,7 @@ import betterquesting.api.utils.NBTConverter;
 import betterquesting.api2.cache.QuestCache;
 import betterquesting.api2.utils.ParticipantInfo;
 import betterquesting.api2.utils.Tuple2;
+import betterquesting.handlers.SaveLoadHandler;
 import betterquesting.network.PacketSender;
 import betterquesting.network.PacketTypeRegistry;
 import betterquesting.questing.QuestDatabase;
@@ -61,6 +62,9 @@ public class NetTaskCheckbox {
 
         ParticipantInfo pInfo = new ParticipantInfo(sender);
         List<UUID> playerIdsToMark = pInfo.ALL_UUIDS;
+
+        if (!SaveLoadHandler.INSTANCE.canUseQuestProgress(quest)
+            || !SaveLoadHandler.INSTANCE.ensurePlayerProgressLoaded(playerIdsToMark)) return;
 
         for (UUID playerId : playerIdsToMark) {
             task.setComplete(playerId);

@@ -156,6 +156,8 @@ public class QuestInstance implements IQuest {
 
         UUID questID = QuestDatabase.INSTANCE.lookupKey(this);
 
+        if (!SaveLoadHandler.INSTANCE.canUseQuestProgress(this)
+            || !SaveLoadHandler.INSTANCE.ensureParticipantProgressLoaded(playerID)) return;
         if (isComplete(playerID) && (qInfo.getProperty(NativeProps.REPEAT_TIME) < 0 || rewards.size() <= 0)) {
             return;
         } else if (!canSubmit(player)) {
@@ -236,6 +238,7 @@ public class QuestInstance implements IQuest {
 
     @Override
     public boolean canClaimBasically(EntityPlayer player) {
+        if (!SaveLoadHandler.INSTANCE.canUseQuestProgress(this)) return false;
         UUID pID = QuestingAPI.getQuestingUUID(player);
         NBTTagCompound entry = getCompletionInfo(pID);
 
@@ -257,6 +260,7 @@ public class QuestInstance implements IQuest {
 
     @Override
     public void claimReward(EntityPlayer player, boolean forceChoice) {
+        if (!SaveLoadHandler.INSTANCE.canUseQuestProgress(this)) return;
         ParticipantInfo pInfo = new ParticipantInfo(player);
         List<UUID> playersToMark = QBConfig.syncQuestRewards ? pInfo.ALL_UUIDS : Collections.singletonList(pInfo.UUID);
         if (!player.worldObj.isRemote && !SaveLoadHandler.INSTANCE.ensurePlayerProgressLoaded(playersToMark)) return;
@@ -298,6 +302,7 @@ public class QuestInstance implements IQuest {
 
     @Override
     public boolean canSubmit(EntityPlayer player) {
+        if (!SaveLoadHandler.INSTANCE.canUseQuestProgress(this)) return false;
         if (player == null) return false;
 
         UUID playerID = QuestingAPI.getQuestingUUID(player);
@@ -332,6 +337,7 @@ public class QuestInstance implements IQuest {
 
     @Override
     public boolean isUnlocked(UUID uuid) {
+        if (!SaveLoadHandler.INSTANCE.canUseQuestProgress(this)) return false;
         if (preRequisites.isEmpty()) {
             return true;
         }
@@ -373,6 +379,7 @@ public class QuestInstance implements IQuest {
 
     @Override
     public boolean isUnlockable(UUID uuid) {
+        if (!SaveLoadHandler.INSTANCE.canUseQuestProgress(this)) return false;
         // TODO: determine if we need to recursively lookup parents
         // glease: currently we do not have whole chains mutually exclusive with each other here in gtnh,
         // but this might be useful for more quest driven packs. the performance implication dissuade me from

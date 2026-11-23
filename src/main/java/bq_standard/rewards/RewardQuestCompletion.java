@@ -20,6 +20,7 @@ import betterquesting.api2.cache.QuestCache;
 import betterquesting.api2.client.gui.misc.IGuiRect;
 import betterquesting.api2.client.gui.panels.IGuiPanel;
 import betterquesting.handlers.EventHandler;
+import betterquesting.handlers.SaveLoadHandler;
 import betterquesting.questing.QuestDatabase;
 import bq_standard.client.gui.rewards.PanelRewardQuestCompletion;
 import bq_standard.rewards.factory.FactoryRewardQuestCompletion;
@@ -41,7 +42,8 @@ public class RewardQuestCompletion extends AbstractReward implements IReward {
 
     @Override
     public boolean canClaim(EntityPlayer player, Map.Entry<UUID, IQuest> quest) {
-        return true;
+        IQuest target = questNum == null ? null : QuestDatabase.INSTANCE.get(questNum);
+        return target == null || SaveLoadHandler.INSTANCE.canUseQuestProgress(target);
     }
 
     @Override
@@ -57,7 +59,7 @@ public class RewardQuestCompletion extends AbstractReward implements IReward {
 
         IQuest targetQuest = QuestingAPI.getAPI(ApiReference.QUEST_DB)
             .get(questNum);
-        if (targetQuest == null) {
+        if (targetQuest == null || !SaveLoadHandler.INSTANCE.canUseQuestProgress(targetQuest)) {
             return;
         }
 
