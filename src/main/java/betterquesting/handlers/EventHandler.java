@@ -558,7 +558,10 @@ public class EventHandler {
 
         // === FIX FOR OnLivingUpdate FIRING MULTIPLE TIMES PER TICK ===
         for (EntityPlayerMP player : server.getConfigurationManager().playerEntityList) {
-            MinecraftForge.EVENT_BUS.post(new BQLivingUpdateEvent(player));
+            UUID playerId = QuestingAPI.getQuestingUUID(player);
+            if (playerId != null && SaveLoadHandler.INSTANCE.ensurePlayerProgressLoaded(playerId)) {
+                MinecraftForge.EVENT_BUS.post(new BQLivingUpdateEvent(player));
+            }
         }
     }
 
