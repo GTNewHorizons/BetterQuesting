@@ -219,7 +219,11 @@ public class QuestInstance implements IQuest {
         if (rewards.size() <= 0) return true;
 
         boolean globallyClaimed = qInfo.getProperty(NativeProps.GLOBAL) && !qInfo.getProperty(NativeProps.GLOBAL_SHARE);
-        requireProgressLoaded(globallyClaimed ? null : uuid);
+        if (globallyClaimed) {
+            if (!SaveLoadHandler.INSTANCE.ensureAllProgressLoaded()) return true;
+        } else {
+            requireProgressLoaded(uuid);
+        }
         synchronized (completeUsers) {
             if (globallyClaimed) {
                 for (NBTTagCompound entry : completeUsers.values()) {
@@ -404,7 +408,7 @@ public class QuestInstance implements IQuest {
     @Override
     public boolean isComplete(UUID uuid) {
         if (qInfo.getProperty(NativeProps.GLOBAL)) {
-            requireProgressLoaded(null);
+            if (!SaveLoadHandler.INSTANCE.ensureAllProgressLoaded()) return false;
             synchronized (completeUsers) {
                 return !completeUsers.isEmpty();
             }
@@ -415,6 +419,7 @@ public class QuestInstance implements IQuest {
 
     @Override
     public EnumQuestState getState(EntityPlayer player) {
+        if (!SaveLoadHandler.INSTANCE.canUseQuestProgress(this)) return EnumQuestState.LOCKED;
         UUID uuid = QuestingAPI.getQuestingUUID(player);
         if (this.isComplete(uuid)) {
             if (canClaimBasically(player)) {
