@@ -92,6 +92,7 @@ public class SaveLoadHandler {
     public void loadDatabases(MinecraftServer server) {
         hasUpdate = false;
         loaded = false;
+        dirtyPlayers.clear();
 
         if (BetterQuesting.proxy.isClient()) {
             GuiHome.bookmark = null;
@@ -173,6 +174,7 @@ public class SaveLoadHandler {
         loaded = false;
         isDirty = false;
         databaseStamps = null;
+        dirtyPlayers.clear();
 
         QuestSettings.INSTANCE.reset();
         QuestDatabase.INSTANCE.clear();
