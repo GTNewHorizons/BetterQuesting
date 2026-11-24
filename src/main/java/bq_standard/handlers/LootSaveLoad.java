@@ -9,6 +9,7 @@ import com.google.gson.JsonObject;
 
 import betterquesting.api.utils.JsonHelper;
 import betterquesting.api.utils.NBTConverter;
+import betterquesting.integration.PosteaCustomData;
 import bq_standard.core.BQ_Standard;
 import bq_standard.rewards.loot.LootRegistry;
 
@@ -16,19 +17,24 @@ public class LootSaveLoad {
 
     public static LootSaveLoad INSTANCE = new LootSaveLoad();
 
+    /// The directory of the world whose loot has loaded, or null. The loot is saved only while it is set.
     public File worldDir;
 
+    private NBTTagCompound savedStamps;
+
     public void LoadLoot(MinecraftServer server) {
+        File dir;
         if (BQ_Standard.proxy.isClient()) {
-            worldDir = server.getFile("saves/" + server.getFolderName());
+            dir = server.getFile("saves/" + server.getFolderName());
         } else {
-            worldDir = server.getFile(server.getFolderName());
+            dir = server.getFile(server.getFolderName());
         }
 
-        File f1 = new File(worldDir, "QuestLoot.json");
+        File f1 = new File(dir, "QuestLoot.json");
         JsonObject j1 = new JsonObject();
+        boolean worldData = f1.exists();
 
-        if (f1.exists()) {
+        if (worldData) {
             j1 = JsonHelper.ReadFromFile(f1);
         } else {
             f1 = server.getFile("config/betterquesting/DefaultLoot.json");
@@ -38,21 +44,33 @@ public class LootSaveLoad {
             }
         }
 
-        LootRegistry.INSTANCE.readFromNBT(NBTConverter.JSONtoNBT_Object(j1, new NBTTagCompound(), true), false);
+        NBTTagCompound root = NBTConverter.JSONtoNBT_Object(j1, new NBTTagCompound(), true);
+        if (worldData) {
+            PosteaCustomData.transform("bq_standard:questLoot", root);
+        }
+        savedStamps = worldData ? PosteaCustomData.savedStamps(root) : null;
+
+        LootRegistry.INSTANCE.readFromNBT(root, false);
+        worldDir = dir;
     }
 
     public void SaveLoot() {
+        NBTTagCompound root = LootRegistry.INSTANCE.writeToNBT(new NBTTagCompound(), null);
+        PosteaCustomData.stamp(root, savedStamps);
         JsonHelper.WriteToFile(
             new File(worldDir, "QuestLoot.json"),
-            NBTConverter.NBTtoJSON_Compound(
-                LootRegistry.INSTANCE.writeToNBT(new NBTTagCompound(), null),
-                new JsonObject(),
-                true));
+            NBTConverter.NBTtoJSON_Compound(root, new JsonObject(), true));
+    }
+
+    /// Drops the Postea stamps read with the world's loot. Call when the loot is replaced from another source.
+    public void forgetSavedStamps() {
+        savedStamps = null;
     }
 
     public void UnloadLoot() {
         LootRegistry.INSTANCE.reset();
         LootRegistry.INSTANCE.updateUI = false;
         worldDir = null;
+        savedStamps = null;
     }
 }
