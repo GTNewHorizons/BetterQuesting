@@ -372,6 +372,7 @@ public class QuestCommandDefaults extends QuestCommandBase {
             sendChatMessage(sender, "betterquesting.cmd.error");
             return;
         }
+        SaveLoadHandler.INSTANCE.setDatabaseStamps(null);
         QuestSettings.INSTANCE.readFromNBT(readNbt.apply(settingsFile));
 
         File questLineDir = new File(dataDir, QUEST_LINE_DIR);
@@ -502,6 +503,7 @@ public class QuestCommandDefaults extends QuestCommandBase {
             if (worldData) {
                 PosteaCustomData.transform("betterquesting:questDatabase", nbt1);
             }
+            SaveLoadHandler.INSTANCE.setDatabaseStamps(worldData ? PosteaCustomData.savedStamps(nbt1) : null);
 
             QuestSettings.INSTANCE.readFromNBT(nbt1.getCompoundTag("questSettings"));
             QuestDatabase.INSTANCE.readFromNBT(nbt1.getTagList("questDatabase", Constants.NBT.TAG_COMPOUND), false);

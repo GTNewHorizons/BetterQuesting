@@ -13,6 +13,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
+import javax.annotation.Nullable;
+
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.server.MinecraftServer;
@@ -54,6 +56,8 @@ public class SaveLoadHandler {
     /// Whether every database of the current world has loaded. [#saveDatabases] writes nothing while false.
     private boolean loaded = false;
 
+    private NBTTagCompound databaseStamps = null;
+
     private File fileDatabase = null, fileProgress = null, dirProgress = null, fileParties = null, fileLives = null,
         fileNames = null;
 
@@ -69,6 +73,12 @@ public class SaveLoadHandler {
 
     public void markDirty() {
         this.isDirty = true;
+    }
+
+    /// Sets the Postea stamps carried into the saved quest database. These are the stamps read with the world's own
+    /// database file, or null for a database loaded from defaults.
+    public void setDatabaseStamps(@Nullable NBTTagCompound stamps) {
+        this.databaseStamps = stamps;
     }
 
     public void addDirtyPlayers(UUID... players) {
@@ -162,6 +172,7 @@ public class SaveLoadHandler {
         hasUpdate = false;
         loaded = false;
         isDirty = false;
+        databaseStamps = null;
 
         QuestSettings.INSTANCE.reset();
         QuestDatabase.INSTANCE.clear();
@@ -321,7 +332,7 @@ public class SaveLoadHandler {
                 .activeModContainer()
                 .getVersion());
 
-        PosteaCustomData.stamp(json);
+        PosteaCustomData.stamp(json, databaseStamps);
         return JsonHelper.WriteToFile2(fileDatabase, out -> NBTConverter.NBTtoJSON_Compound(json, out, true));
     }
 
