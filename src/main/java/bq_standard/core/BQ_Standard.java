@@ -33,7 +33,7 @@ import cpw.mods.fml.common.registry.GameRegistry;
     modid = BQ_Standard.MODID,
     name = BQ_Standard.NAME,
     version = BQ_Standard.VERSION,
-    dependencies = "required-after:betterquesting",
+    dependencies = "required-after:betterquesting;after:postea@[1.4.0,)",
     guiFactory = "bq_standard.handlers.ConfigGuiFactory")
 public class BQ_Standard {
 
