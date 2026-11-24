@@ -75,8 +75,7 @@ public class SaveLoadHandler {
         this.isDirty = true;
     }
 
-    /// Sets the Postea stamps carried into the saved quest database. These are the stamps read with the world's own
-    /// database file, or null for a database loaded from defaults.
+    /// Sets the Postea stamps carried into the saved quest database. Null drops them.
     public void setDatabaseStamps(@Nullable NBTTagCompound stamps) {
         this.databaseStamps = stamps;
     }
