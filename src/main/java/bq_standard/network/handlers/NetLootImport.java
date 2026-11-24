@@ -13,6 +13,7 @@ import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.network.QuestingPacket;
 import betterquesting.api2.utils.Tuple2;
 import bq_standard.core.BQ_Standard;
+import bq_standard.handlers.LootSaveLoad;
 import bq_standard.rewards.loot.LootRegistry;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -56,6 +57,7 @@ public class NetLootImport {
         }
 
         LootRegistry.INSTANCE.readFromNBT(tag.getCompoundTag("data"), false);
+        LootSaveLoad.INSTANCE.forgetSavedStamps();
         NetLootSync.sendSync(null);
     }
 }

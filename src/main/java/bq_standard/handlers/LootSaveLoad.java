@@ -23,6 +23,7 @@ public class LootSaveLoad {
     private NBTTagCompound savedStamps;
 
     public void LoadLoot(MinecraftServer server) {
+        worldDir = null;
         File dir;
         if (BQ_Standard.proxy.isClient()) {
             dir = server.getFile("saves/" + server.getFolderName());
