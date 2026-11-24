@@ -51,6 +51,9 @@ public class SaveLoadHandler {
     private boolean hasUpdate = false;
     private boolean isDirty = false;
 
+    /// Whether every database of the current world has loaded. [#saveDatabases] writes nothing while false.
+    private boolean loaded = false;
+
     private File fileDatabase = null, fileProgress = null, dirProgress = null, fileParties = null, fileLives = null,
         fileNames = null;
 
@@ -78,6 +81,7 @@ public class SaveLoadHandler {
 
     public void loadDatabases(MinecraftServer server) {
         hasUpdate = false;
+        loaded = false;
 
         if (BetterQuesting.proxy.isClient()) {
             GuiHome.bookmark = null;
@@ -111,6 +115,8 @@ public class SaveLoadHandler {
 
         loadLives();
 
+        loaded = true;
+
         BetterQuesting.logger.info("Loaded " + QuestDatabase.INSTANCE.size() + " quests");
         BetterQuesting.logger.info("Loaded " + QuestLineDatabase.INSTANCE.size() + " quest lines");
         BetterQuesting.logger.info("Loaded " + PartyManager.INSTANCE.size() + " parties");
@@ -120,6 +126,8 @@ public class SaveLoadHandler {
     }
 
     public void saveDatabases() {
+        if (!loaded) return;
+
         List<Future<Void>> allFutures = new ArrayList<>(5);
 
         if (!BQ_Settings.dirtyMode || isDirty || QuestSettings.INSTANCE.getProperty(NativeProps.EDIT_MODE)) {
@@ -152,6 +160,7 @@ public class SaveLoadHandler {
     public void unloadDatabases() {
         BQ_Settings.curWorldDir = null;
         hasUpdate = false;
+        loaded = false;
         isDirty = false;
 
         QuestSettings.INSTANCE.reset();
