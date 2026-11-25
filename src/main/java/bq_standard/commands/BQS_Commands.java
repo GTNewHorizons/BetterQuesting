@@ -15,6 +15,7 @@ import com.google.gson.JsonObject;
 
 import betterquesting.api.utils.JsonHelper;
 import betterquesting.api.utils.NBTConverter;
+import bq_standard.handlers.LootSaveLoad;
 import bq_standard.network.handlers.NetLootSync;
 import bq_standard.rewards.loot.LootRegistry;
 
@@ -59,6 +60,7 @@ public class BQS_Commands extends CommandBase {
                 if (f1.exists()) {
                     j1 = NBTConverter.JSONtoNBT_Object(JsonHelper.ReadFromFile(f1), new NBTTagCompound(), true);
                     LootRegistry.INSTANCE.readFromNBT(j1, false);
+                    LootSaveLoad.INSTANCE.forgetSavedStamps();
                     NetLootSync.sendSync(null);
                     sender.addChatMessage(new ChatComponentText("Reloaded default loot database"));
                 } else {

@@ -53,6 +53,7 @@ import betterquesting.api2.utils.TextFormattingUtils;
 import betterquesting.commands.QuestCommandBase;
 import betterquesting.core.BetterQuesting;
 import betterquesting.handlers.SaveLoadHandler;
+import betterquesting.integration.PosteaCustomData;
 import betterquesting.network.handlers.NetChapterSync;
 import betterquesting.network.handlers.NetQuestSync;
 import betterquesting.network.handlers.NetSettingSync;
@@ -371,6 +372,7 @@ public class QuestCommandDefaults extends QuestCommandBase {
             sendChatMessage(sender, "betterquesting.cmd.error");
             return;
         }
+        SaveLoadHandler.INSTANCE.setDatabaseStamps(null);
         QuestSettings.INSTANCE.readFromNBT(readNbt.apply(settingsFile));
 
         File questLineDir = new File(dataDir, QUEST_LINE_DIR);
@@ -483,6 +485,14 @@ public class QuestCommandDefaults extends QuestCommandBase {
 
     public static void loadLegacy(@Nullable ICommandSender sender, @Nullable String databaseName, File legacyFile,
         boolean loadWorldSettings) {
+        loadLegacy(sender, databaseName, legacyFile, loadWorldSettings, false);
+    }
+
+    /// `worldData` marks `legacyFile` as the world's own database: Postea then brings its stacks up to the
+    /// current content versions. Default databases are authored against the current content and are never
+    /// transformed.
+    public static void loadLegacy(@Nullable ICommandSender sender, @Nullable String databaseName, File legacyFile,
+        boolean loadWorldSettings, boolean worldData) {
         if (legacyFile.exists()) {
             boolean editMode = QuestSettings.INSTANCE.getProperty(NativeProps.EDIT_MODE);
             boolean hardMode = QuestSettings.INSTANCE.getProperty(NativeProps.HARDCORE);
@@ -490,6 +500,10 @@ public class QuestCommandDefaults extends QuestCommandBase {
 
             JsonObject j1 = JsonHelper.ReadFromFile(legacyFile);
             NBTTagCompound nbt1 = NBTConverter.JSONtoNBT_Object(j1, new NBTTagCompound(), true);
+            if (worldData) {
+                PosteaCustomData.transform("betterquesting:questDatabase", nbt1);
+            }
+            SaveLoadHandler.INSTANCE.setDatabaseStamps(worldData ? PosteaCustomData.savedStamps(nbt1) : null);
 
             QuestSettings.INSTANCE.readFromNBT(nbt1.getCompoundTag("questSettings"));
             QuestDatabase.INSTANCE.readFromNBT(nbt1.getTagList("questDatabase", Constants.NBT.TAG_COMPOUND), false);

@@ -13,6 +13,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
+import javax.annotation.Nullable;
+
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.server.MinecraftServer;
@@ -33,6 +35,7 @@ import betterquesting.client.QuestNotification;
 import betterquesting.client.gui2.GuiHome;
 import betterquesting.commands.admin.QuestCommandDefaults;
 import betterquesting.core.BetterQuesting;
+import betterquesting.integration.PosteaCustomData;
 import betterquesting.questing.QuestDatabase;
 import betterquesting.questing.QuestInstance;
 import betterquesting.questing.QuestLineDatabase;
@@ -49,6 +52,11 @@ public class SaveLoadHandler {
 
     private boolean hasUpdate = false;
     private boolean isDirty = false;
+
+    /// Whether every database of the current world has loaded. [#saveDatabases] writes nothing while false.
+    private boolean loaded = false;
+
+    private NBTTagCompound databaseStamps = null;
 
     private File fileDatabase = null, fileProgress = null, dirProgress = null, fileParties = null, fileLives = null,
         fileNames = null;
@@ -67,6 +75,11 @@ public class SaveLoadHandler {
         this.isDirty = true;
     }
 
+    /// Sets the Postea stamps carried into the saved quest database. Null drops them.
+    public void setDatabaseStamps(@Nullable NBTTagCompound stamps) {
+        this.databaseStamps = stamps;
+    }
+
     public void addDirtyPlayers(UUID... players) {
         this.dirtyPlayers.addAll(Arrays.asList(players));
     }
@@ -77,6 +90,8 @@ public class SaveLoadHandler {
 
     public void loadDatabases(MinecraftServer server) {
         hasUpdate = false;
+        loaded = false;
+        dirtyPlayers.clear();
 
         if (BetterQuesting.proxy.isClient()) {
             GuiHome.bookmark = null;
@@ -110,6 +125,8 @@ public class SaveLoadHandler {
 
         loadLives();
 
+        loaded = true;
+
         BetterQuesting.logger.info("Loaded " + QuestDatabase.INSTANCE.size() + " quests");
         BetterQuesting.logger.info("Loaded " + QuestLineDatabase.INSTANCE.size() + " quest lines");
         BetterQuesting.logger.info("Loaded " + PartyManager.INSTANCE.size() + " parties");
@@ -119,6 +136,8 @@ public class SaveLoadHandler {
     }
 
     public void saveDatabases() {
+        if (!loaded) return;
+
         List<Future<Void>> allFutures = new ArrayList<>(5);
 
         if (!BQ_Settings.dirtyMode || isDirty || QuestSettings.INSTANCE.getProperty(NativeProps.EDIT_MODE)) {
@@ -151,7 +170,10 @@ public class SaveLoadHandler {
     public void unloadDatabases() {
         BQ_Settings.curWorldDir = null;
         hasUpdate = false;
+        loaded = false;
         isDirty = false;
+        databaseStamps = null;
+        dirtyPlayers.clear();
 
         QuestSettings.INSTANCE.reset();
         QuestDatabase.INSTANCE.clear();
@@ -232,7 +254,7 @@ public class SaveLoadHandler {
                     new File(BQ_Settings.curWorldDir + "/backup/" + fsVer, "LifeDatabase_backup_" + fsVer + ".json"));
             }
 
-            QuestCommandDefaults.loadLegacy(null, null, fileDatabase, true);
+            QuestCommandDefaults.loadLegacy(null, null, fileDatabase, true, true);
         } else { // LOAD DEFAULTS
             if (defaultDatabaseDir.exists()) {
                 QuestCommandDefaults.load(null, null, defaultDatabaseDir, true);
@@ -311,6 +333,7 @@ public class SaveLoadHandler {
                 .activeModContainer()
                 .getVersion());
 
+        PosteaCustomData.stamp(json, databaseStamps);
         return JsonHelper.WriteToFile2(fileDatabase, out -> NBTConverter.NBTtoJSON_Compound(json, out, true));
     }
 
