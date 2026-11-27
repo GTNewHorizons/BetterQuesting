@@ -2,9 +2,11 @@ package betterquesting.handlers;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryIteratorException;
@@ -14,6 +16,7 @@ import java.nio.file.LinkOption;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -48,9 +51,11 @@ import betterquesting.api.events.DatabaseEvent;
 import betterquesting.api.events.DatabaseEvent.DBType;
 import betterquesting.api.properties.NativeProps;
 import betterquesting.api.questing.IQuest;
+import betterquesting.api.questing.party.IParty;
 import betterquesting.api.storage.BQ_Settings;
 import betterquesting.api.utils.JsonHelper;
 import betterquesting.api.utils.NBTConverter;
+import betterquesting.api2.storage.DBEntry;
 import betterquesting.api2.utils.BQThreadedIO;
 import betterquesting.client.QuestNotification;
 import betterquesting.client.gui2.GuiHome;
@@ -333,6 +338,61 @@ public class SaveLoadHandler {
             if (ensurePlayerProgressLoaded(player)) readable.add(player);
         }
         return readable;
+    }
+
+    public boolean hasFailedProgressRead(UUID player) {
+        if (dirProgress == null || loadedPlayers.contains(player)) return false;
+        synchronized (this) {
+            return failedReads.containsKey(player);
+        }
+    }
+
+    /** Replaces an unreadable record only after its owner requests recovery. */
+    public int recoverPartyProgress(UUID player) throws IOException {
+        File directory = dirProgress;
+        if (directory == null || loadedPlayers.contains(player)) return -1;
+        Lock lock = progressFileLocks.get(player);
+        lock.lock();
+        try {
+            synchronized (this) {
+                checkProgressDirectory(directory);
+                if (loadedPlayers.contains(player) || !failedReads.containsKey(player)) return -1;
+                Path file = playerProgressFile(player);
+                byte[] original = Files.readAllBytes(file);
+                try (InputStreamReader reader = new InputStreamReader(
+                    new ByteArrayInputStream(original),
+                    StandardCharsets.UTF_8.newDecoder())) {
+                    PlayerProgressJson.readRecord(reader, player);
+                } catch (PlayerProgressJson.UnsupportedVersionException failure) {
+                    throw failure;
+                } catch (IOException invalidRecord) {
+                    DBEntry<IParty> party = PartyManager.INSTANCE.getParty(player);
+                    if (party == null) throw new IllegalStateException("betterquesting.cmd.recover.no_source");
+                    List<UUID> members = new ArrayList<>(
+                        party.getValue()
+                            .getMembers());
+                    members.remove(player);
+                    List<UUID> donors = loadReadablePlayerProgress(members);
+                    if (donors.isEmpty()) throw new IllegalStateException("betterquesting.cmd.recover.no_source");
+                    NBTTagList recovered = QuestDatabase.INSTANCE.recoverPartyCompletions(player, donors);
+                    Path backup = Files.createTempFile(file.getParent(), player + ".", ".bak");
+                    Files.write(backup, original, StandardOpenOption.WRITE, StandardOpenOption.SYNC);
+                    writePlayerProgress(directory, file, player, recovered);
+                    loadPlayerProgress(player);
+                    BetterQuesting.logger.info(
+                        "Recovered {} quests for {}. Original progress saved to {}",
+                        recovered.tagCount(),
+                        player,
+                        backup);
+                    return recovered.tagCount();
+                }
+                // The original file may already have been restored since login
+                loadPlayerProgress(player);
+                return -1;
+            }
+        } finally {
+            lock.unlock();
+        }
     }
 
     private void loadPlayerProgress(UUID player) throws IOException {

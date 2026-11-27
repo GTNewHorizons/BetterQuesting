@@ -56,6 +56,8 @@ import drethic.questbook.config.QBConfig;
 
 public class QuestInstance implements IQuest {
 
+    public static final String REWARD_FORFEITED = "rewardForfeited";
+
     private final TaskStorage tasks = new TaskStorage();
     private final RewardStorage rewards = new RewardStorage();
 
@@ -229,8 +231,10 @@ public class QuestInstance implements IQuest {
         }
         synchronized (completeUsers) {
             if (globallyClaimed) {
+                NBTTagCompound own = completeUsers.get(uuid);
+                if (own != null && own.getBoolean("claimed")) return true;
                 for (NBTTagCompound entry : completeUsers.values()) {
-                    if (entry.getBoolean("claimed")) {
+                    if (entry.getBoolean("claimed") && !entry.getBoolean(REWARD_FORFEITED)) {
                         return true;
                     }
                 }
@@ -295,6 +299,7 @@ public class QuestInstance implements IQuest {
                 if (entry == null) {
                     entry = new NBTTagCompound();
                 }
+                entry.removeTag(REWARD_FORFEITED);
                 entry.setBoolean("claimed", true);
                 entry.setLong("timestamp", System.currentTimeMillis());
                 this.completeUsers.put(user, entry);
@@ -374,6 +379,7 @@ public class QuestInstance implements IQuest {
                 completeUsers.put(uuid, entry);
             }
 
+            entry.removeTag(REWARD_FORFEITED);
             entry.setBoolean("claimed", false);
             entry.setLong("timestamp", timestamp);
 
@@ -697,6 +703,7 @@ public class QuestInstance implements IQuest {
             NBTTagCompound entry = completeUsers.get(uuid);
 
             if (entry != null) {
+                entry.removeTag(REWARD_FORFEITED);
                 entry.setBoolean("claimed", true);
                 entry.setLong("timestamp", timestamp);
             } else {

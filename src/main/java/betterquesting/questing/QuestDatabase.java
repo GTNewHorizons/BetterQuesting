@@ -10,6 +10,7 @@ import javax.annotation.Nullable;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 
+import betterquesting.api.properties.NativeProps;
 import betterquesting.api.questing.IQuest;
 import betterquesting.api.questing.IQuestDatabase;
 import betterquesting.api.storage.BQ_Settings;
@@ -129,6 +130,30 @@ public class QuestDatabase extends UuidDatabase<IQuest> implements IQuestDatabas
             : SaveLoadHandler.INSTANCE.ensurePlayerProgressLoaded(users);
         if (!ready) throw new IllegalStateException("Could not load BetterQuesting player progress");
         return writeLoadedProgressToNBT(json, users);
+    }
+
+    /** Builds a personal progress record from the party's completions without changing its members. */
+    public NBTTagList recoverPartyCompletions(UUID player, List<UUID> members) {
+        NBTTagList recovered = new NBTTagList();
+        long now = System.currentTimeMillis();
+        for (Map.Entry<UUID, IQuest> entry : entrySet()) {
+            IQuest quest = entry.getValue();
+            if (quest == null || members.stream()
+                .noneMatch(member -> quest.getCompletionInfo(member) != null)) continue;
+            NBTTagCompound completion = new NBTTagCompound();
+            completion.setString("uuid", player.toString());
+            completion.setLong("timestamp", now);
+            completion.setBoolean("claimed", true);
+            if (quest.getProperty(NativeProps.GLOBAL) && !quest.getProperty(NativeProps.GLOBAL_SHARE)) {
+                completion.setBoolean(QuestInstance.REWARD_FORFEITED, true);
+            }
+            NBTTagList completed = new NBTTagList();
+            completed.appendTag(completion);
+            NBTTagCompound record = NBTConverter.UuidValueType.QUEST.writeId(entry.getKey());
+            record.setTag("completed", completed);
+            recovered.appendTag(record);
+        }
+        return recovered;
     }
 
     /** Takes a snapshot for definition reloads without hydrating dormant players. */

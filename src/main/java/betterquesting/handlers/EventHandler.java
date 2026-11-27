@@ -2,8 +2,10 @@ package betterquesting.handlers;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 
@@ -25,6 +27,7 @@ import net.minecraft.util.ChatComponentTranslation;
 import net.minecraft.util.IChatComponent;
 import net.minecraft.util.IIcon;
 import net.minecraftforge.client.event.ClientChatReceivedEvent;
+import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.client.event.TextureStitchEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.CommandEvent;
@@ -49,6 +52,7 @@ import betterquesting.api.utils.BigItemStack;
 import betterquesting.api.utils.UuidConverter;
 import betterquesting.api2.cache.QuestCache;
 import betterquesting.api2.cache.QuestCache.QResetTime;
+import betterquesting.api2.client.gui.GuiScreenCanvas;
 import betterquesting.api2.client.gui.themes.gui_args.GArgsNone;
 import betterquesting.api2.client.gui.themes.presets.PresetGUIs;
 import betterquesting.api2.storage.DBEntry;
@@ -400,6 +404,24 @@ public class EventHandler {
         }
     }
 
+    private final Set<UUID> awaitingQuestLogin = new HashSet<>();
+
+    @SubscribeEvent
+    public void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
+        if (!event.player.worldObj.isRemote) awaitingQuestLogin.remove(QuestingAPI.getQuestingUUID(event.player));
+    }
+
+    @SubscribeEvent
+    @SideOnly(Side.CLIENT)
+    public void onQuestGuiOpen(GuiOpenEvent event) {
+        Minecraft mc = Minecraft.getMinecraft();
+        if (event.gui instanceof GuiScreenCanvas && mc.isIntegratedServerRunning()
+            && mc.thePlayer != null
+            && SaveLoadHandler.INSTANCE.hasFailedProgressRead(QuestingAPI.getQuestingUUID(mc.thePlayer))) {
+            event.setCanceled(true);
+        }
+    }
+
     @SubscribeEvent
     public void onPlayerJoin(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.player.worldObj.isRemote || MinecraftServer.getServer() == null
@@ -408,17 +430,27 @@ public class EventHandler {
         EntityPlayerMP mpPlayer = (EntityPlayerMP) event.player;
         UUID questingUUID = QuestingAPI.getQuestingUUID(mpPlayer);
         if (questingUUID == null || !SaveLoadHandler.INSTANCE.ensurePlayerProgressLoaded(questingUUID)) {
-            mpPlayer.playerNetServerHandler
-                .kickPlayerFromServer("Could not load BetterQuesting progress. Check the server log.");
+            if (questingUUID != null && PartyManager.INSTANCE.getParty(questingUUID) != null) {
+                awaitingQuestLogin.add(questingUUID);
+                mpPlayer.addChatMessage(
+                    new ChatComponentTranslation("betterquesting.cmd.recover.offer", "/bq_user recover"));
+            } else {
+                mpPlayer.playerNetServerHandler
+                    .kickPlayerFromServer("Could not load BetterQuesting progress. Check the server log.");
+            }
             return;
         }
 
+        finishQuestLogin(mpPlayer, questingUUID);
+    }
+
+    private void finishQuestLogin(EntityPlayerMP mpPlayer, UUID questingUUID) {
         if (BetterQuesting.proxy.isClient() && !MinecraftServer.getServer()
             .isDedicatedServer()
             && MinecraftServer.getServer()
                 .getServerOwner()
                 .equals(
-                    event.player.getGameProfile()
+                    mpPlayer.getGameProfile()
                         .getName())) {
             NameCache.INSTANCE.updateName(mpPlayer);
             return;
@@ -560,6 +592,11 @@ public class EventHandler {
         for (EntityPlayerMP player : server.getConfigurationManager().playerEntityList) {
             UUID playerId = QuestingAPI.getQuestingUUID(player);
             if (playerId != null && SaveLoadHandler.INSTANCE.ensurePlayerProgressLoaded(playerId)) {
+                if (awaitingQuestLogin.remove(playerId)) {
+                    QuestCache cache = (QuestCache) player.getExtendedProperties(QuestCache.LOC_QUEST_CACHE.toString());
+                    if (cache != null) cache.updateCache(player);
+                    finishQuestLogin(player, playerId);
+                }
                 MinecraftForge.EVENT_BUS.post(new BQLivingUpdateEvent(player));
             }
         }

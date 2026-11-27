@@ -64,7 +64,8 @@ public final class PlayerProgressJson {
                 return finishRead(readTyped(data), true);
             }
 
-            require(integer(data.get("version")) == VERSION, "unsupported progress version");
+            int version = integer(data.get("version"));
+            if (version != VERSION) throw new UnsupportedVersionException(version);
             if (data.has("data")) {
                 require(
                     data.entrySet()
@@ -478,6 +479,13 @@ public final class PlayerProgressJson {
 
     private static void require(boolean valid, String message) throws IOException {
         if (!valid) throw new IOException(message);
+    }
+
+    public static final class UnsupportedVersionException extends IOException {
+
+        private UnsupportedVersionException(int version) {
+            super("Unsupported player progress version: " + version);
+        }
     }
 
     public static final class ReadResult {

@@ -12,6 +12,7 @@ import net.minecraft.command.ICommandSender;
 import net.minecraft.command.WrongUsageException;
 
 import betterquesting.commands.user.QuestCommandHelp;
+import betterquesting.commands.user.QuestCommandRecover;
 import betterquesting.commands.user.QuestCommandRefresh;
 import betterquesting.commands.user.QuestCommandSPHardcore;
 import cpw.mods.fml.common.FMLCommonHandler;
@@ -23,6 +24,7 @@ public class BQ_CommandUser extends CommandBase {
     public BQ_CommandUser() {
         coms.add(new QuestCommandHelp());
         coms.add(new QuestCommandRefresh());
+        coms.add(new QuestCommandRecover());
         coms.add(new QuestCommandSPHardcore());
     }
 
