@@ -63,8 +63,7 @@ public class NetTaskCheckbox {
         ParticipantInfo pInfo = new ParticipantInfo(sender);
         List<UUID> playerIdsToMark = pInfo.ALL_UUIDS;
 
-        if (!SaveLoadHandler.INSTANCE.canUseQuestProgress(quest)
-            || !SaveLoadHandler.INSTANCE.ensurePlayerProgressLoaded(playerIdsToMark)) return;
+        if (!SaveLoadHandler.INSTANCE.canUseQuestProgress(quest)) return;
 
         for (UUID playerId : playerIdsToMark) {
             task.setComplete(playerId);

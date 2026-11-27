@@ -19,7 +19,6 @@ import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.util.Constants;
 
-import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.questing.IQuest;
 import betterquesting.api.questing.tasks.IItemTask;
 import betterquesting.api.utils.BigItemStack;
@@ -218,8 +217,7 @@ public class TaskRetrieval extends TaskProgressableBase<int[]> implements ITaskI
     public ItemStack submitItem(UUID owner, Map.Entry<UUID, IQuest> quest, ItemStack input) {
         if (owner == null || input == null || !consume || isComplete(owner)) return input;
 
-        ParticipantInfo pInfo = new ParticipantInfo(QuestingAPI.getPlayer(owner));
-        Detector detector = new Detector(this, pInfo.ALL_UUIDS);
+        Detector detector = new Detector(this, ParticipantInfo.getSubmissionParticipants(owner));
 
         final ItemStack stack = input.copy();
 

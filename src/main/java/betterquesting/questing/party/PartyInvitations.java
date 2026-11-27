@@ -69,7 +69,9 @@ public class PartyInvitations implements INBTPartial<NBTTagList, UUID> {
 
         if (party != null && valid) {
             if (!SaveLoadHandler.INSTANCE.ensurePlayerProgressLoaded(playerId)
-                || !SaveLoadHandler.INSTANCE.ensurePlayerProgressLoaded(party.getMembers())) return false;
+                || SaveLoadHandler.INSTANCE.loadReadablePlayerProgress(party.getMembers())
+                    .isEmpty())
+                return false;
 
             // Resetting user before joining party
             for (IQuest quest : QuestDatabase.INSTANCE.values()) {

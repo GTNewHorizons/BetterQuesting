@@ -23,7 +23,6 @@ import net.minecraftforge.fluids.FluidContainerRegistry;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.IFluidContainerItem;
 
-import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.questing.IQuest;
 import betterquesting.api.questing.tasks.IFluidTask;
 import betterquesting.api.questing.tasks.IItemTask;
@@ -264,8 +263,7 @@ public class TaskFluid extends TaskProgressableBase<int[]> implements ITaskInven
             return input;
         }
 
-        ParticipantInfo pInfo = new ParticipantInfo(QuestingAPI.getPlayer(owner));
-        Detector detector = new Detector(this, pInfo.ALL_UUIDS);
+        Detector detector = new Detector(this, ParticipantInfo.getSubmissionParticipants(owner));
 
         final FluidStack fluid = input.copy();
 
@@ -275,7 +273,7 @@ public class TaskFluid extends TaskProgressableBase<int[]> implements ITaskInven
             removedFluid.amount = removed;
             fluid.amount -= removed;
             return removedFluid;
-        }, pInfo.UUID);
+        }, owner);
 
         if (detector.updated) {
             setBulkProgress(detector.progress);
@@ -321,8 +319,7 @@ public class TaskFluid extends TaskProgressableBase<int[]> implements ITaskInven
     public ItemStack submitItem(UUID owner, Map.Entry<UUID, IQuest> quest, ItemStack input) {
         if (owner == null || input == null || input.stackSize != 1 || !consume || isComplete(owner)) return input;
 
-        ParticipantInfo pInfo = new ParticipantInfo(QuestingAPI.getPlayer(owner));
-        Detector detector = new Detector(this, pInfo.ALL_UUIDS);
+        Detector detector = new Detector(this, ParticipantInfo.getSubmissionParticipants(owner));
 
         final ItemStack[] wrapper = new ItemStack[] { input.copy() };
 
@@ -336,7 +333,7 @@ public class TaskFluid extends TaskProgressableBase<int[]> implements ITaskInven
                 }
                 return fluid;
             }
-        }, pInfo.UUID);
+        }, owner);
 
         if (detector.updated) {
             setBulkProgress(detector.progress);

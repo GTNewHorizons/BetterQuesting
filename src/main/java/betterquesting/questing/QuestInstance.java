@@ -20,6 +20,7 @@ import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraftforge.common.util.Constants;
+import net.minecraftforge.common.util.FakePlayer;
 
 import org.apache.logging.log4j.Level;
 
@@ -32,6 +33,7 @@ import betterquesting.api.enums.EnumQuestVisibility;
 import betterquesting.api.properties.IPropertyType;
 import betterquesting.api.properties.NativeProps;
 import betterquesting.api.questing.IQuest;
+import betterquesting.api.questing.party.IParty;
 import betterquesting.api.questing.rewards.IReward;
 import betterquesting.api.questing.tasks.ITask;
 import betterquesting.api.utils.BigItemStack;
@@ -44,6 +46,7 @@ import betterquesting.api2.utils.DirtyPlayerMarker;
 import betterquesting.api2.utils.ParticipantInfo;
 import betterquesting.core.BetterQuesting;
 import betterquesting.handlers.SaveLoadHandler;
+import betterquesting.questing.party.PartyManager;
 import betterquesting.questing.rewards.RewardStorage;
 import betterquesting.questing.tasks.TaskStorage;
 import betterquesting.storage.PropertyContainer;
@@ -157,7 +160,7 @@ public class QuestInstance implements IQuest {
         UUID questID = QuestDatabase.INSTANCE.lookupKey(this);
 
         if (!SaveLoadHandler.INSTANCE.canUseQuestProgress(this)
-            || !SaveLoadHandler.INSTANCE.ensureParticipantProgressLoaded(playerID)) return;
+            || !SaveLoadHandler.INSTANCE.ensurePlayerProgressLoaded(playerID)) return;
         if (isComplete(playerID) && (qInfo.getProperty(NativeProps.REPEAT_TIME) < 0 || rewards.size() <= 0)) {
             return;
         } else if (!canSubmit(player)) {
@@ -265,8 +268,14 @@ public class QuestInstance implements IQuest {
     @Override
     public void claimReward(EntityPlayer player, boolean forceChoice) {
         if (!SaveLoadHandler.INSTANCE.canUseQuestProgress(this)) return;
-        ParticipantInfo pInfo = new ParticipantInfo(player);
-        List<UUID> playersToMark = QBConfig.syncQuestRewards ? pInfo.ALL_UUIDS : Collections.singletonList(pInfo.UUID);
+        UUID playerId = QuestingAPI.getQuestingUUID(player);
+        List<UUID> playersToMark = Collections.singletonList(playerId);
+        if (QBConfig.syncQuestRewards && !(player instanceof FakePlayer)) {
+            DBEntry<IParty> party = PartyManager.INSTANCE.getParty(playerId);
+            if (party != null) playersToMark = party.getValue()
+                .getMembers();
+        }
+        // A shared reward must be marked claimed for every member before anyone can claim it again
         if (!player.worldObj.isRemote && !SaveLoadHandler.INSTANCE.ensurePlayerProgressLoaded(playersToMark)) return;
 
         UUID questID = QuestDatabase.INSTANCE.lookupKey(this);

@@ -1,6 +1,6 @@
 package betterquesting.questing.party;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,19 +35,20 @@ public class PartyManager extends SimpleDatabase<IParty> implements IPartyDataba
     public static final PartyManager INSTANCE = new PartyManager();
 
     public static void SyncPartyQuests(IParty party, UUID targetPlayer, boolean markClaimed) {
-        ArrayList<UUID> uuids = new ArrayList<>();
-        uuids.add(targetPlayer);
-        SyncPartyQuests(party, uuids, markClaimed);
+        if (!SaveLoadHandler.INSTANCE.ensurePlayerProgressLoaded(targetPlayer)) return;
+        syncPartyQuests(
+            SaveLoadHandler.INSTANCE.loadReadablePlayerProgress(party.getMembers()),
+            Collections.singletonList(targetPlayer),
+            markClaimed);
     }
 
     public static void SyncPartyQuests(IParty party, boolean markClaimed) {
-        SyncPartyQuests(party, party.getMembers(), markClaimed);
+        List<UUID> members = SaveLoadHandler.INSTANCE.loadReadablePlayerProgress(party.getMembers());
+        syncPartyQuests(members, members, markClaimed);
     }
 
-    private static void SyncPartyQuests(IParty party, List<UUID> targetUUIDs, boolean markClaimed) {
-        List<UUID> partyMembers = party.getMembers();
-        if (!SaveLoadHandler.INSTANCE.ensurePlayerProgressLoaded(partyMembers)
-            || !SaveLoadHandler.INSTANCE.ensurePlayerProgressLoaded(targetUUIDs)) return;
+    private static void syncPartyQuests(List<UUID> partyMembers, List<UUID> targetUUIDs, boolean markClaimed) {
+        if (partyMembers.isEmpty()) return;
 
         new Thread(() -> {
             BetterQuesting.logger.info("Start force party quest sync");

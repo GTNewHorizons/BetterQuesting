@@ -48,11 +48,9 @@ import betterquesting.api.events.DatabaseEvent;
 import betterquesting.api.events.DatabaseEvent.DBType;
 import betterquesting.api.properties.NativeProps;
 import betterquesting.api.questing.IQuest;
-import betterquesting.api.questing.party.IParty;
 import betterquesting.api.storage.BQ_Settings;
 import betterquesting.api.utils.JsonHelper;
 import betterquesting.api.utils.NBTConverter;
-import betterquesting.api2.storage.DBEntry;
 import betterquesting.api2.utils.BQThreadedIO;
 import betterquesting.client.QuestNotification;
 import betterquesting.client.gui2.GuiHome;
@@ -329,12 +327,12 @@ public class SaveLoadHandler {
         return true;
     }
 
-    public boolean ensureParticipantProgressLoaded(UUID player) {
-        if (!ensurePlayerProgressLoaded(player)) return false;
-        DBEntry<IParty> party = PartyManager.INSTANCE.getParty(player);
-        return party == null || ensurePlayerProgressLoaded(
-            party.getValue()
-                .getMembers());
+    public List<UUID> loadReadablePlayerProgress(Collection<UUID> players) {
+        List<UUID> readable = new ArrayList<>(players.size());
+        for (UUID player : players) {
+            if (ensurePlayerProgressLoaded(player)) readable.add(player);
+        }
+        return readable;
     }
 
     private void loadPlayerProgress(UUID player) throws IOException {

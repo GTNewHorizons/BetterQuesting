@@ -356,7 +356,7 @@ public class TileSubmitStation extends TileEntity implements IFluidHandler, ISid
         return owner == null || worldObj == null
             || worldObj.isRemote
             || (getQuest() != null && SaveLoadHandler.INSTANCE.canUseQuestProgress(getQuest().getValue())
-                && SaveLoadHandler.INSTANCE.ensureParticipantProgressLoaded(owner));
+                && SaveLoadHandler.INSTANCE.ensurePlayerProgressLoaded(owner));
     }
 
     public boolean isSetup() {
