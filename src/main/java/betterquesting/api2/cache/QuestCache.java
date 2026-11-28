@@ -84,6 +84,10 @@ public class QuestCache implements IExtendedEntityProperties {
         return ImmutableSet.copyOf(autoClaims);
     }
 
+    public synchronized void deferAutoClaimUntilRefresh(UUID questID) {
+        autoClaims.remove(questID);
+    }
+
     public synchronized QResetTime[] getScheduledResets() // Already sorted by time
     {
         return resetSchedule.toArray(new QResetTime[0]);

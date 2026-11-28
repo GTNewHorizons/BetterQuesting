@@ -297,15 +297,15 @@ public class EventHandler {
         // Auto claims
         if (!editMode) {
             for (Map.Entry<UUID, IQuest> entry : pendingAutoClaims.entrySet()) {
-                if (entry.getValue()
-                    .canClaim(player)) {
-                    entry.getValue()
-                        .claimReward(player);
-                    refreshCache = true;
-                    qc.markQuestDirty(entry.getKey());
-                    // Not going to notify of auto-claims anymore.
-                    // Kinda pointless if they're already being pinged for completion
+                IQuest quest = entry.getValue();
+                if (!quest.canClaim(player)) continue;
+                quest.claimReward(player);
+                if (!quest.hasClaimed(playerId)) {
+                    qc.deferAutoClaimUntilRefresh(entry.getKey());
+                    continue;
                 }
+                refreshCache = true;
+                qc.markQuestDirty(entry.getKey());
             }
         }
 
