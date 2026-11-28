@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -103,7 +104,18 @@ public class QuestCommandDefaults extends QuestCommandBase {
             return CommandBase.getListOfStringsMatchingLastWord(args, "save", "load", "set", "exportlang");
         } else if (args.length == 3) {
             if (args[1].equalsIgnoreCase("load")) {
-                return CommandBase.getListOfStringsMatchingLastWord(args, DEFAULT_FILE, JSON_LOAD_ARGUMENT);
+                list.add(DEFAULT_FILE);
+                list.add(JSON_LOAD_ARGUMENT);
+                for (File directory : new File[] { new File(BQ_Settings.defaultDir),
+                    new File(BQ_Settings.defaultDir, "saved_quests") }) {
+                    File[] archives = directory.listFiles(file -> file.isFile() && isArchiveName(file.getName()));
+                    if (archives != null) {
+                        for (File archive : archives) {
+                            if (!list.contains(archive.getName())) list.add(archive.getName());
+                        }
+                    }
+                }
+                return CommandBase.getListOfStringsMatchingLastWord(args, list.toArray(new String[0]));
             }
             list.add(DEFAULT_FILE);
         }
@@ -142,10 +154,12 @@ public class QuestCommandDefaults extends QuestCommandBase {
                 if (loaded) {
                     SaveLoadHandler.INSTANCE.resetUpdate();
                 }
-            } else if (!dataDir.exists() && legacyFile.exists()) {
+            } else if (!isArchiveName(databaseName) && dataDir.isDirectory()) {
+                load(sender, databaseName, dataDir, false);
+            } else if (!isArchiveName(databaseName) && legacyFile.isFile()) {
                 loadLegacy(sender, databaseName, legacyFile, false);
             } else {
-                load(sender, databaseName, dataDir, false);
+                loadNamedArchive(sender, databaseName);
             }
 
         } else if (args[1].equalsIgnoreCase("set") && args.length == 3) {
@@ -173,8 +187,31 @@ public class QuestCommandDefaults extends QuestCommandBase {
             return loadDefaultJson(sender, loadWorldSettings);
         }
         sendChatMessage(sender, "betterquesting.cmd.default.loadarchive");
+        return loadArchive(sender, null, archive, loadWorldSettings);
+    }
+
+    private static boolean isArchiveName(String name) {
+        return name.toLowerCase(Locale.ROOT)
+            .endsWith(".gz");
+    }
+
+    private static void loadNamedArchive(@Nullable ICommandSender sender, String name) {
+        String filename = isArchiveName(name) ? name : name + ".json.gz";
+        if (filename.equals(new File(filename).getName()) && !filename.contains("\\") && !filename.contains(":")) {
+            File archive = new File(BQ_Settings.defaultDir, filename);
+            if (!archive.isFile()) archive = new File(BQ_Settings.defaultDir, "saved_quests/" + filename);
+            if (archive.isFile()) {
+                loadArchive(sender, filename, archive, false);
+                return;
+            }
+        }
+        sendChatMessage(sender, "betterquesting.cmd.default.none");
+    }
+
+    private static boolean loadArchive(@Nullable ICommandSender sender, @Nullable String name, File archive,
+        boolean loadWorldSettings) {
         try {
-            return applyDatabase(sender, null, DefaultQuestArchive.read(archive.toPath()), loadWorldSettings);
+            return applyDatabase(sender, name, DefaultQuestArchive.read(archive.toPath()), loadWorldSettings);
         } catch (IOException failure) {
             QuestingAPI.getLogger()
                 .error("Failed to load default quests from {}", archive, failure);
