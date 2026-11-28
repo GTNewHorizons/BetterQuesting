@@ -10,10 +10,12 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraftforge.common.util.Constants;
+import net.minecraftforge.common.util.FakePlayer;
 
 import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.enums.EnumPartyStatus;
@@ -29,10 +31,21 @@ import betterquesting.handlers.SaveLoadHandler;
 import betterquesting.questing.QuestDatabase;
 import betterquesting.storage.NameCache;
 import betterquesting.storage.QuestSettings;
+import drethic.questbook.config.QBConfig;
 
 public class PartyManager extends SimpleDatabase<IParty> implements IPartyDatabase {
 
     public static final PartyManager INSTANCE = new PartyManager();
+
+    public List<UUID> getRewardClaimants(EntityPlayer player) {
+        UUID id = QuestingAPI.getQuestingUUID(player);
+        if (QBConfig.syncQuestRewards && !(player instanceof FakePlayer)) {
+            DBEntry<IParty> party = getParty(id);
+            if (party != null) return party.getValue()
+                .getMembers();
+        }
+        return Collections.singletonList(id);
+    }
 
     public static void SyncPartyQuests(IParty party, UUID targetPlayer, boolean markClaimed) {
         if (!SaveLoadHandler.INSTANCE.ensurePlayerProgressLoaded(targetPlayer)) return;

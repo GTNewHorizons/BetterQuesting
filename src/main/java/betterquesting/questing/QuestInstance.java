@@ -1,6 +1,5 @@
 package betterquesting.questing;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -20,7 +19,6 @@ import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraftforge.common.util.Constants;
-import net.minecraftforge.common.util.FakePlayer;
 
 import org.apache.logging.log4j.Level;
 
@@ -33,7 +31,6 @@ import betterquesting.api.enums.EnumQuestVisibility;
 import betterquesting.api.properties.IPropertyType;
 import betterquesting.api.properties.NativeProps;
 import betterquesting.api.questing.IQuest;
-import betterquesting.api.questing.party.IParty;
 import betterquesting.api.questing.rewards.IReward;
 import betterquesting.api.questing.tasks.ITask;
 import betterquesting.api.utils.BigItemStack;
@@ -52,7 +49,6 @@ import betterquesting.questing.tasks.TaskStorage;
 import betterquesting.storage.PropertyContainer;
 import betterquesting.storage.QuestSettings;
 import bq_standard.rewards.RewardChoice;
-import drethic.questbook.config.QBConfig;
 
 public class QuestInstance implements IQuest {
 
@@ -272,13 +268,7 @@ public class QuestInstance implements IQuest {
     @Override
     public void claimReward(EntityPlayer player, boolean forceChoice) {
         if (!SaveLoadHandler.INSTANCE.canUseQuestProgress(this)) return;
-        UUID playerId = QuestingAPI.getQuestingUUID(player);
-        List<UUID> playersToMark = Collections.singletonList(playerId);
-        if (QBConfig.syncQuestRewards && !(player instanceof FakePlayer)) {
-            DBEntry<IParty> party = PartyManager.INSTANCE.getParty(playerId);
-            if (party != null) playersToMark = party.getValue()
-                .getMembers();
-        }
+        List<UUID> playersToMark = PartyManager.INSTANCE.getRewardClaimants(player);
         // A shared reward must be marked claimed for every member before anyone can claim it again
         if (!player.worldObj.isRemote && !SaveLoadHandler.INSTANCE.ensurePlayerProgressLoaded(playersToMark)) return;
 
