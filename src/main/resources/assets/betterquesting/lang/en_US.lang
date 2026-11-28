@@ -259,6 +259,7 @@ betterquesting.cmd.default.save2=Quest database saved to %s
 betterquesting.cmd.default.load=Reloaded default quest database
 betterquesting.cmd.default.loadarchive=Loading quests from DefaultQuests.json.gz. If you edited the JSON files, use /bq_admin default load json.
 betterquesting.cmd.default.load2=Loaded quest database from %s
+betterquesting.cmd.default.loaderror=Could not load quest definitions. %s
 betterquesting.cmd.default.invalidsource=Could not set default quests. %s
 betterquesting.cmd.default.set=Set %s as the default quest database
 betterquesting.cmd.default.exportlang=Exported template.lang to default

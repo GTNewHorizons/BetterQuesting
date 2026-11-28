@@ -528,16 +528,16 @@ public class QuestCommandDefaults extends QuestCommandBase {
             return false;
         }
         try {
-            return applyDatabase(sender, databaseName, readDirectory(dataDir, false), loadWorldSettings);
+            return applyDatabase(sender, databaseName, readDirectory(dataDir), loadWorldSettings);
         } catch (IOException failure) {
             QuestingAPI.getLogger()
                 .error("Failed to load default quests from {}", dataDir, failure);
-            sendChatMessage(sender, "betterquesting.cmd.error");
+            sendChatMessage(sender, "betterquesting.cmd.default.loaderror", failure.getMessage());
             return false;
         }
     }
 
-    private static NBTTagCompound readDirectory(File dataDir, boolean validate) throws IOException {
+    private static NBTTagCompound readDirectory(File dataDir) throws IOException {
         File settingsFile = new File(dataDir, SETTINGS_FILE);
         if (!settingsFile.isFile()) throw new IOException("Missing quest settings: " + settingsFile);
 
@@ -553,8 +553,8 @@ public class QuestCommandDefaults extends QuestCommandBase {
             while (files.hasNext()) {
                 File file = files.next()
                     .toFile();
-                NBTTagCompound quest = readDefinition(file, validate);
-                if (validate && !questIds.add(requireQuestId(quest, "questID", file))) {
+                NBTTagCompound quest = readDefinitionStrict(file);
+                if (!questIds.add(requireQuestId(quest, "questID", file))) {
                     throw new IOException("Duplicate quest ID in " + file);
                 }
                 quests.appendTag(quest);
@@ -568,7 +568,7 @@ public class QuestCommandDefaults extends QuestCommandBase {
         for (File folder : folders) {
             File header = new File(folder, QUEST_LINE_FILE);
             if (!header.isFile()) throw new IOException("Missing quest chapter header: " + header);
-            NBTTagCompound chapter = readDefinition(header, validate);
+            NBTTagCompound chapter = readDefinitionStrict(header);
             File[] files = folder.listFiles(
                 file -> file.isFile() && file.getName()
                     .endsWith(".json"));
@@ -577,18 +577,15 @@ public class QuestCommandDefaults extends QuestCommandBase {
             Set<UUID> chapterQuestIds = new HashSet<>();
             for (File file : files) {
                 if (file.equals(header)) continue;
-                NBTTagCompound entry = readDefinition(file, validate);
-                if (validate) {
-                    UUID questId = requireQuestId(entry, "id", file);
-                    if (!questIds.contains(questId)) throw new IOException("Missing quest for " + file);
-                    if (!chapterQuestIds.add(questId)) throw new IOException("Duplicate chapter entry in " + file);
-                }
+                NBTTagCompound entry = readDefinitionStrict(file);
+                UUID questId = requireQuestId(entry, "id", file);
+                if (!questIds.contains(questId)) throw new IOException("Missing quest for " + file);
+                if (!chapterQuestIds.add(questId)) throw new IOException("Duplicate chapter entry in " + file);
                 entries.appendTag(entry);
             }
             chapter.setTag("quests", entries);
-            UUID id = validate ? NBTConverter.UuidValueType.QUEST_LINE.tryReadId(chapter)
-                .orElseThrow(() -> new IOException("Missing chapter ID in " + header))
-                : NBTConverter.UuidValueType.QUEST_LINE.readId(chapter);
+            UUID id = NBTConverter.UuidValueType.QUEST_LINE.tryReadId(chapter)
+                .orElseThrow(() -> new IOException("Missing chapter ID in " + header));
             if (chapters.put(id, chapter) != null) throw new IOException("Duplicate quest chapter: " + folder);
         }
 
@@ -608,15 +605,14 @@ public class QuestCommandDefaults extends QuestCommandBase {
         if (!chapters.isEmpty()) throw new IOException("Missing entries in the quest chapter order");
 
         NBTTagCompound database = new NBTTagCompound();
-        database.setTag("questSettings", readDefinition(settingsFile, validate));
+        database.setTag("questSettings", readDefinitionStrict(settingsFile));
         database.setTag("questDatabase", quests);
         database.setTag("questLines", ordered);
         database.setString("format", BetterQuesting.FORMAT);
         return database;
     }
 
-    private static NBTTagCompound readDefinition(File file, boolean validate) throws IOException {
-        if (!validate) return readDefinition(file);
+    private static NBTTagCompound readDefinitionStrict(File file) throws IOException {
         try (BufferedReader reader = Files.newBufferedReader(file.toPath(), StandardCharsets.UTF_8)) {
             return NBTConverter.readTypedCompound(JsonHelper.readObject(reader));
         } catch (IOException failure) {
@@ -625,7 +621,7 @@ public class QuestCommandDefaults extends QuestCommandBase {
     }
 
     private static UUID requireQuestId(NBTTagCompound quest, String legacyKey, File file) throws IOException {
-        if (quest.hasKey(legacyKey, Constants.NBT.TAG_INT)) {
+        if (quest.hasKey(legacyKey, Constants.NBT.TAG_INT) && quest.getInteger(legacyKey) >= 0) {
             return NBTConverter.UuidValueType.QUEST.tryReadId(quest)
                 .orElseGet(() -> UuidConverter.convertLegacyId(quest.getInteger(legacyKey)));
         }
@@ -717,7 +713,7 @@ public class QuestCommandDefaults extends QuestCommandBase {
         boolean keepBackup = false;
         try {
             FileUtils.copyDirectory(source, next.toFile());
-            NBTTagCompound database = readDirectory(next.toFile(), true);
+            NBTTagCompound database = readDirectory(next.toFile());
             Path nextArchive = staging.resolve(DefaultQuestArchive.FILE_NAME);
             if (updateArchive) DefaultQuestArchive.write(nextArchive, database);
             if (Files.exists(target)) Files.move(target, previous, StandardCopyOption.ATOMIC_MOVE);
