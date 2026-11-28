@@ -224,7 +224,9 @@ public class QuestCommandDefaults extends QuestCommandBase {
             File archive = new File(BQ_Settings.defaultDir, filename);
             if (!archive.isFile()) archive = new File(BQ_Settings.defaultDir, "saved_quests/" + filename);
             if (archive.isFile()) {
-                loadQuestFile(sender, filename, archive, false);
+                if (loadQuestFile(sender, filename, archive, false) && archive.equals(defaultArchive())) {
+                    SaveLoadHandler.INSTANCE.resetUpdate();
+                }
                 return;
             }
         }
