@@ -87,12 +87,12 @@ public class QuestCommandDefaults extends QuestCommandBase {
 
     @Override
     public String getUsageSuffix() {
-        return "[save|load|set|exportlang] [file_name|json (load only)]";
+        return "<help|load|save|set|exportlang> [name]";
     }
 
     @Override
     public boolean validArgs(String[] args) {
-        return args.length == 2 || args.length == 3;
+        return args.length >= 1 && args.length <= 3;
     }
 
     @Override
@@ -101,9 +101,24 @@ public class QuestCommandDefaults extends QuestCommandBase {
         List<String> list = new ArrayList<>();
 
         if (args.length == 2) {
-            return CommandBase.getListOfStringsMatchingLastWord(args, "save", "load", "set", "exportlang");
+            return CommandBase.getListOfStringsMatchingLastWord(args, "help", "save", "load", "set", "exportlang");
         } else if (args.length == 3) {
-            if (args[1].equalsIgnoreCase("load")) {
+            boolean load = args[1].equalsIgnoreCase("load");
+            boolean set = args[1].equalsIgnoreCase("set");
+            if (load || set) {
+                File[] backups = new File(BQ_Settings.defaultDir, "saved_quests").listFiles();
+                if (backups != null) {
+                    for (File backup : backups) {
+                        String name = backup.getName();
+                        if (backup.isDirectory() && new File(backup, SETTINGS_FILE).isFile()) {
+                            list.add(name);
+                        } else if (load && backup.isFile() && name.endsWith(".json")) {
+                            list.add(name.substring(0, name.length() - 5));
+                        }
+                    }
+                }
+            }
+            if (load) {
                 list.add(DEFAULT_FILE);
                 list.add(JSON_LOAD_ARGUMENT);
                 for (File directory : new File[] { new File(BQ_Settings.defaultDir),
@@ -115,9 +130,9 @@ public class QuestCommandDefaults extends QuestCommandBase {
                         }
                     }
                 }
-                return CommandBase.getListOfStringsMatchingLastWord(args, list.toArray(new String[0]));
             }
-            list.add(DEFAULT_FILE);
+            if (args[1].equalsIgnoreCase("exportlang")) list.add(DEFAULT_FILE);
+            return CommandBase.getListOfStringsMatchingLastWord(args, list.toArray(new String[0]));
         }
 
         return list;
@@ -130,6 +145,13 @@ public class QuestCommandDefaults extends QuestCommandBase {
 
     @Override
     public void runCommand(MinecraftServer server, CommandBase command, ICommandSender sender, String[] args) {
+        if (args.length == 1 || (args.length == 2 && args[1].equalsIgnoreCase("help"))) {
+            for (String topic : new String[] { "load", "json", "backup", "archive", "save", "named_save", "set",
+                "exportlang" }) {
+                sendChatMessage(sender, "betterquesting.cmd.default.help." + topic);
+            }
+            return;
+        }
         boolean loadJson = args.length == 3 && args[1].equalsIgnoreCase("load")
             && args[2].equalsIgnoreCase(JSON_LOAD_ARGUMENT);
         String databaseName;
@@ -154,13 +176,14 @@ public class QuestCommandDefaults extends QuestCommandBase {
                 if (loaded) {
                     SaveLoadHandler.INSTANCE.resetUpdate();
                 }
-            } else if (!isArchiveName(databaseName) && dataDir.isDirectory()) {
-                load(sender, databaseName, dataDir, false);
-            } else if (!isArchiveName(databaseName) && legacyFile.isFile()) {
-                loadQuestFile(sender, legacyFile.getName(), legacyFile, false);
-            } else {
-                loadNamedArchive(sender, databaseName);
-            }
+            } else if (dataDir.isDirectory()
+                && (!isArchiveName(databaseName) || new File(dataDir, SETTINGS_FILE).isFile())) {
+                    load(sender, databaseName, dataDir, false);
+                } else if (!isArchiveName(databaseName) && legacyFile.isFile()) {
+                    loadQuestFile(sender, legacyFile.getName(), legacyFile, false);
+                } else {
+                    loadNamedArchive(sender, databaseName);
+                }
 
         } else if (args[1].equalsIgnoreCase("set") && args.length == 3) {
             set(sender, databaseName, dataDir);
@@ -301,6 +324,10 @@ public class QuestCommandDefaults extends QuestCommandBase {
     }
 
     private static boolean rejectReservedBackupName(@Nullable ICommandSender sender, @Nullable String databaseName) {
+        if (databaseName != null && isArchiveName(databaseName)) {
+            sendChatMessage(sender, "betterquesting.cmd.default.archivename");
+            return true;
+        }
         if (!JSON_LOAD_ARGUMENT.equalsIgnoreCase(databaseName)) return false;
         sendChatMessage(sender, "betterquesting.cmd.default.reservedname");
         return true;
