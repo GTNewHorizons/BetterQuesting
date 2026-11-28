@@ -157,7 +157,7 @@ public class QuestCommandDefaults extends QuestCommandBase {
             } else if (!isArchiveName(databaseName) && dataDir.isDirectory()) {
                 load(sender, databaseName, dataDir, false);
             } else if (!isArchiveName(databaseName) && legacyFile.isFile()) {
-                loadLegacy(sender, databaseName, legacyFile, false);
+                loadQuestFile(sender, legacyFile.getName(), legacyFile, false);
             } else {
                 loadNamedArchive(sender, databaseName);
             }
@@ -187,7 +187,7 @@ public class QuestCommandDefaults extends QuestCommandBase {
             return loadDefaultJson(sender, loadWorldSettings);
         }
         sendChatMessage(sender, "betterquesting.cmd.default.loadarchive");
-        return loadArchive(sender, null, archive, loadWorldSettings);
+        return loadQuestFile(sender, null, archive, loadWorldSettings);
     }
 
     private static boolean isArchiveName(String name) {
@@ -201,17 +201,19 @@ public class QuestCommandDefaults extends QuestCommandBase {
             File archive = new File(BQ_Settings.defaultDir, filename);
             if (!archive.isFile()) archive = new File(BQ_Settings.defaultDir, "saved_quests/" + filename);
             if (archive.isFile()) {
-                loadArchive(sender, filename, archive, false);
+                loadQuestFile(sender, filename, archive, false);
                 return;
             }
         }
         sendChatMessage(sender, "betterquesting.cmd.default.none");
     }
 
-    private static boolean loadArchive(@Nullable ICommandSender sender, @Nullable String name, File archive,
+    private static boolean loadQuestFile(@Nullable ICommandSender sender, @Nullable String name, File archive,
         boolean loadWorldSettings) {
         try {
-            return applyDatabase(sender, name, DefaultQuestArchive.read(archive.toPath()), loadWorldSettings);
+            NBTTagCompound database = isArchiveName(archive.getName()) ? DefaultQuestArchive.read(archive.toPath())
+                : DefaultQuestArchive.readJson(archive.toPath());
+            return applyDatabase(sender, name, database, loadWorldSettings);
         } catch (IOException failure) {
             QuestingAPI.getLogger()
                 .error("Failed to load default quests from {}", archive, failure);
@@ -230,7 +232,7 @@ public class QuestCommandDefaults extends QuestCommandBase {
             sendChatMessage(sender, "betterquesting.cmd.default.none");
             return false;
         }
-        return applyDatabase(sender, null, readDefinition(legacyFile), loadWorldSettings);
+        return loadQuestFile(sender, null, legacyFile, loadWorldSettings);
     }
 
     public static NBTTagCompound readDefaultSettings() throws IOException {

@@ -39,19 +39,31 @@ public final class DefaultQuestArchive {
         try (BufferedReader reader = open(path)) {
             JsonObject document = JsonHelper.readObject(reader);
             validate(document);
-            NBTTagCompound database = NBTConverter.readTypedCompound(document);
-            NBTTagList quests = requireCompoundList(database, "questDatabase");
-            requireCompoundList(database, "questLines");
-            for (int index = 0; index < quests.tagCount(); index++) {
-                NBTTagCompound quest = quests.getCompoundTagAt(index);
-                if (!NBTConverter.UuidValueType.QUEST.tryReadId(quest)
-                    .isPresent()
-                    && (!quest.hasKey("questID", NBT.TAG_ANY_NUMERIC) || quest.getInteger("questID") < 0)) {
-                    throw new IOException("Invalid quest ID at questDatabase[" + index + "]");
-                }
-            }
-            return database;
+            return readDatabase(document);
         }
+    }
+
+    public static NBTTagCompound readJson(Path path) throws IOException {
+        try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
+            return readDatabase(JsonHelper.readObject(reader));
+        }
+    }
+
+    private static NBTTagCompound readDatabase(JsonObject document) throws IOException {
+        NBTTagCompound database = NBTConverter.readTypedCompound(document);
+        if (database.hasKey("questSettings") && !database.hasKey("questSettings", NBT.TAG_COMPOUND)) {
+            throw new IOException("Quest settings must be an object");
+        }
+        NBTTagList quests = requireCompoundList(database, "questDatabase");
+        requireCompoundList(database, "questLines");
+        for (int index = 0; index < quests.tagCount(); index++) {
+            NBTTagCompound quest = quests.getCompoundTagAt(index);
+            if (!NBTConverter.UuidValueType.QUEST.tryReadId(quest)
+                .isPresent() && (!quest.hasKey("questID", NBT.TAG_ANY_NUMERIC) || quest.getInteger("questID") < 0)) {
+                throw new IOException("Invalid quest ID at questDatabase[" + index + "]");
+            }
+        }
+        return database;
     }
 
     public static NBTTagCompound readSettings(Path path) throws IOException {
