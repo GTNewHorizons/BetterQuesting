@@ -644,6 +644,20 @@ public class QuestCommandDefaults extends QuestCommandBase {
         }
     }
 
+    /** Loads the world's saved quest definitions and returns the build version recorded in the save. */
+    public static String loadWorldDatabase(Path path) {
+        try {
+            NBTTagCompound database = DefaultQuestArchive.readJson(path);
+            if (!applyDatabase(null, null, database, true)) throw new IOException("Invalid quest definitions");
+            return database.getString("build");
+        } catch (IOException | RuntimeException failure) {
+            throw new IllegalStateException(
+                "Could not load the world's quest database at " + path.toAbsolutePath()
+                    + ". Repair this file or restore it from a backup before restarting.",
+                failure);
+        }
+    }
+
     private static boolean applyDatabase(@Nullable ICommandSender sender, @Nullable String databaseName,
         NBTTagCompound database, boolean loadWorldSettings) {
         QuestDatabase quests = new QuestDatabase();

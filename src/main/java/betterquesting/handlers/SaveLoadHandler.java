@@ -115,6 +115,7 @@ public class SaveLoadHandler {
 
     public void loadDatabases(MinecraftServer server) {
         hasUpdate = false;
+        dirProgress = null;
 
         if (BetterQuesting.proxy.isClient()) {
             GuiHome.bookmark = null;
@@ -150,6 +151,8 @@ public class SaveLoadHandler {
     }
 
     public void saveDatabases() {
+        // Forge can save the world during shutdown after a failed startup
+        if (dirProgress == null) return;
         List<Future<Void>> allFutures = new ArrayList<>(5);
 
         if (!BQ_Settings.dirtyMode || isDirty || QuestSettings.INSTANCE.getProperty(NativeProps.EDIT_MODE)) {
@@ -214,7 +217,9 @@ public class SaveLoadHandler {
         int packVer = 0;
         String packName = "";
 
-        if (fileDatabase.exists()) {
+        Path database = fileDatabase.toPath();
+        if (!Files.notExists(database, LinkOption.NOFOLLOW_LINKS)) {
+            String buildVer = QuestCommandDefaults.loadWorldDatabase(database);
             try {
                 QuestSettings settings = new QuestSettings();
                 settings.readFromNBT(QuestCommandDefaults.readDefaultSettings());
@@ -224,11 +229,6 @@ public class SaveLoadHandler {
                 BetterQuesting.logger.error("Could not read default quest settings", failure);
             }
 
-            // Getting the build version like this is a bit wasteful, as we read the JSON twice.
-            // Perhaps we should improve this.
-            JsonObject databaseJson = JsonHelper.ReadFromFile(fileDatabase);
-            String buildVer = NBTConverter.JSONtoNBT_Object(databaseJson, new NBTTagCompound(), true)
-                .getString("build");
             String currVer = Loader.instance()
                 .activeModContainer()
                 .getVersion();
@@ -262,8 +262,6 @@ public class SaveLoadHandler {
                     fileLives,
                     new File(BQ_Settings.curWorldDir + "/backup/" + fsVer, "LifeDatabase_backup_" + fsVer + ".json"));
             }
-
-            QuestCommandDefaults.loadLegacy(null, null, fileDatabase, true);
         } else { // LOAD DEFAULTS
             isDirty = QuestCommandDefaults.loadDefaults(null, true);
             QuestSettings.INSTANCE.setProperty(NativeProps.EDIT_MODE, false); // Force edit off
