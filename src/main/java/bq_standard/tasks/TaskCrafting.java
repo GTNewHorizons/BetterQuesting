@@ -10,8 +10,6 @@ import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTBase;
-import net.minecraft.nbt.NBTBase.NBTPrimitive;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.stats.StatList;
@@ -19,20 +17,16 @@ import net.minecraft.stats.StatisticsFile;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.util.Constants;
 
-import org.apache.logging.log4j.Level;
-
 import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.questing.IQuest;
 import betterquesting.api.utils.BigItemStack;
 import betterquesting.api.utils.ItemComparison;
 import betterquesting.api.utils.JsonHelper;
-import betterquesting.api.utils.NBTConverter;
 import betterquesting.api2.client.gui.misc.IGuiRect;
 import betterquesting.api2.client.gui.panels.IGuiPanel;
 import betterquesting.api2.utils.ParticipantInfo;
 import betterquesting.api2.utils.Tuple2;
 import bq_standard.client.gui.tasks.PanelTaskCrafting;
-import bq_standard.core.BQ_Standard;
 import bq_standard.tasks.base.TaskProgressableBase;
 import bq_standard.tasks.factory.FactoryTaskCrafting;
 import cpw.mods.fml.relauncher.Side;
@@ -118,20 +112,6 @@ public class TaskCrafting extends TaskProgressableBase<int[]> implements ITaskIt
 
     @Override
     public int[] readUserProgressFromNBT(NBTTagCompound nbt) {
-        // region Legacy
-        if (nbt.hasKey("data", Constants.NBT.TAG_LIST)) {
-            int[] data = new int[requiredItems.size()];
-            List<NBTBase> dJson = NBTConverter.getTagList(nbt.getTagList("data", Constants.NBT.TAG_INT));
-            for (int i = 0; i < data.length && i < dJson.size(); i++) {
-                try {
-                    data[i] = ((NBTPrimitive) dJson.get(i)).func_150287_d();
-                } catch (Exception e) {
-                    BQ_Standard.logger.log(Level.ERROR, "Incorrect task progress format", e);
-                }
-            }
-            return data;
-        }
-        // endregion Legacy
         final int[] data = nbt.getIntArray("data");
         final int[] progress = new int[requiredItems.size()];
         System.arraycopy(data, 0, progress, 0, Math.min(data.length, progress.length));

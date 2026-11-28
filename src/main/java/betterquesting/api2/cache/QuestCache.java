@@ -30,8 +30,10 @@ import betterquesting.api.questing.IQuest;
 import betterquesting.api.storage.BQ_Settings;
 import betterquesting.api.utils.NBTConverter;
 import betterquesting.core.BetterQuesting;
+import betterquesting.handlers.SaveLoadHandler;
 import betterquesting.network.handlers.NetCacheSync;
 import betterquesting.questing.QuestDatabase;
+import betterquesting.questing.QuestInstance;
 import bq_standard.integration.vendingmachine.VmAdapter;
 
 public class QuestCache implements IExtendedEntityProperties {
@@ -82,6 +84,10 @@ public class QuestCache implements IExtendedEntityProperties {
         return ImmutableSet.copyOf(autoClaims);
     }
 
+    public synchronized void deferAutoClaimUntilRefresh(UUID questID) {
+        autoClaims.remove(questID);
+    }
+
     public synchronized QResetTime[] getScheduledResets() // Already sorted by time
     {
         return resetSchedule.toArray(new QResetTime[0]);
@@ -126,6 +132,7 @@ public class QuestCache implements IExtendedEntityProperties {
 
         long currentTime = System.currentTimeMillis();
         for (Map.Entry<UUID, IQuest> entry : questDB) {
+            if (!SaveLoadHandler.INSTANCE.canUseQuestProgress(entry.getValue())) continue;
             if (entry.getValue()
                 .isUnlocked(uuid)
                 || entry.getValue()
@@ -145,8 +152,10 @@ public class QuestCache implements IExtendedEntityProperties {
                     tmpActive.add(entry.getKey());
                 } else if (ue != null) // These conditions only trigger after first completion
                 {
-                    if (repeat >= 0 && entry.getValue()
-                        .hasClaimed(uuid)) {
+                    // Only an actual global claim starts the server-wide repeat timer
+                    if (repeat >= 0 && !ue.getBoolean(QuestInstance.REWARD_FORFEITED)
+                        && entry.getValue()
+                            .hasClaimed(uuid)) {
                         long altTime = ue.getLong("timestamp");
                         if (altTime > currentTime) altTime = currentTime;
                         if (repeat > 1 && !entry.getValue()
@@ -262,7 +271,9 @@ public class QuestCache implements IExtendedEntityProperties {
     // TODO: Make this based on a fixed state stored on the quest instead of calculated on demand
     // TODO: Also make this thread safe
     public static boolean isQuestShown(IQuest quest, UUID uuid, EntityPlayer player) {
-        if (quest == null || uuid == null) {
+        if (quest == null || uuid == null
+            || SaveLoadHandler.INSTANCE.hasFailedProgressRead(uuid)
+            || !SaveLoadHandler.INSTANCE.canUseQuestProgress(quest)) {
             return false;
         }
 

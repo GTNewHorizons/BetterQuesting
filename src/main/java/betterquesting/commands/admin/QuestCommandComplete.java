@@ -71,7 +71,10 @@ public class QuestCommandComplete extends QuestCommandBase {
             uuid = this.findPlayerID(server, sender, sender.getCommandSenderName());
         }
 
-        String pName = uuid == null ? "NULL" : NameCache.INSTANCE.getName(uuid);
+        if (uuid == null) throw getException(command);
+        requirePlayerProgress(uuid);
+
+        String pName = NameCache.INSTANCE.getName(uuid);
 
         if (args[1].trim()
             .equalsIgnoreCase("all")) {

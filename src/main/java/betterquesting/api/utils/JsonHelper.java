@@ -7,6 +7,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.Reader;
 import java.io.Writer;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
@@ -37,6 +38,9 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.TypeAdapter;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
 
 import betterquesting.api.api.QuestingAPI;
@@ -54,6 +58,43 @@ public class JsonHelper {
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting()
         .create();
+    private static final TypeAdapter<JsonElement> JSON_ELEMENT = GSON.getAdapter(JsonElement.class);
+
+    /** Reads one complete JSON object and reports invalid input to the caller. */
+    public static JsonObject readObject(Reader source) throws IOException {
+        JsonReader reader = new JsonReader(source);
+        if (reader.peek() != JsonToken.BEGIN_OBJECT) throw new IOException("Expected a JSON object");
+        JsonObject object = readElement(reader).getAsJsonObject();
+        if (reader.peek() != JsonToken.END_DOCUMENT) throw new IOException("Unexpected data after JSON object");
+        return object;
+    }
+
+    private static JsonElement readElement(JsonReader reader) throws IOException {
+        switch (reader.peek()) {
+            case BEGIN_OBJECT:
+                JsonObject object = new JsonObject();
+                reader.beginObject();
+                while (reader.hasNext()) {
+                    String name = reader.nextName();
+                    if (object.has(name)) {
+                        throw new IOException("Duplicate JSON member '" + name + "' at " + reader);
+                    }
+                    object.add(name, readElement(reader));
+                }
+                reader.endObject();
+                return object;
+            case BEGIN_ARRAY:
+                JsonArray array = new JsonArray();
+                reader.beginArray();
+                while (reader.hasNext()) {
+                    array.add(readElement(reader));
+                }
+                reader.endArray();
+                return array;
+            default:
+                return JSON_ELEMENT.read(reader);
+        }
+    }
 
     public static JsonArray GetArray(JsonObject json, String id) {
         if (json == null) {
@@ -226,7 +267,7 @@ public class JsonHelper {
             } catch (Exception e) {
                 QuestingAPI.getLogger()
                     .error("An error occurred while saving JSON to file (Directory setup):", e);
-                return null;
+                throw e;
             }
 
             // NOTE: These are now split due to an edge case in the previous implementation where resource leaking can
@@ -239,7 +280,7 @@ public class JsonHelper {
             } catch (Exception e) {
                 QuestingAPI.getLogger()
                     .error("An error occurred while saving JSON to file (File write):", e);
-                return null;
+                throw e;
             }
 
             // NOTE: These are now split due to an edge case in the previous implementation where resource leaking can
@@ -251,7 +292,7 @@ public class JsonHelper {
             } catch (Exception e) {
                 QuestingAPI.getLogger()
                     .error("An error occurred while saving JSON to file (Validation check):", e);
-                return null;
+                throw e;
             }
 
             try {
@@ -259,6 +300,7 @@ public class JsonHelper {
             } catch (Exception e) {
                 QuestingAPI.getLogger()
                     .error("An error occurred while saving JSON to file (Temp copy):", e);
+                throw e;
             }
             return null;
         });

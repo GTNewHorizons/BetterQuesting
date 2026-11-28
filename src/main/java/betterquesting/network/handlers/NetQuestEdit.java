@@ -196,6 +196,7 @@ public class NetQuestEdit {
             }
         }
 
+        SaveLoadHandler.INSTANCE.ensureGlobalProgressLoaded();
         SaveLoadHandler.INSTANCE.markDirty();
         NetQuestSync.sendSync(null, questIDs, true, false);
     }
@@ -217,6 +218,9 @@ public class NetQuestEdit {
 
     // Serverside only
     public static void completeQuests(Collection<UUID> questIDs, boolean state, UUID playerID) {
+        if (playerID == null || !SaveLoadHandler.INSTANCE.ensurePlayerProgressLoaded(playerID)
+            || !SaveLoadHandler.INSTANCE.ensureGlobalProgressLoaded()) return;
+
         Map<UUID, IQuest> questMap = QuestDatabase.INSTANCE.filterKeys(questIDs);
 
         MinecraftServer server = FMLCommonHandler.instance()

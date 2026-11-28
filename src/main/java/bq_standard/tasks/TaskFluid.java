@@ -15,8 +15,6 @@ import javax.annotation.Nonnull;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTBase;
-import net.minecraft.nbt.NBTBase.NBTPrimitive;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.ResourceLocation;
@@ -25,12 +23,10 @@ import net.minecraftforge.fluids.FluidContainerRegistry;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.IFluidContainerItem;
 
-import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.questing.IQuest;
 import betterquesting.api.questing.tasks.IFluidTask;
 import betterquesting.api.questing.tasks.IItemTask;
 import betterquesting.api.utils.JsonHelper;
-import betterquesting.api.utils.NBTConverter;
 import betterquesting.api2.client.gui.misc.IGuiRect;
 import betterquesting.api2.client.gui.panels.IGuiPanel;
 import betterquesting.api2.utils.ParticipantInfo;
@@ -118,16 +114,6 @@ public class TaskFluid extends TaskProgressableBase<int[]> implements ITaskInven
     @SuppressWarnings("DuplicatedCode")
     @Override
     public int[] readUserProgressFromNBT(NBTTagCompound nbt) {
-        // region Legacy
-        if (nbt.hasKey("data", Constants.NBT.TAG_LIST)) {
-            int[] data = new int[requiredFluids.size()];
-            List<NBTBase> dNbt = NBTConverter.getTagList(nbt.getTagList("data", Constants.NBT.TAG_INT));
-            for (int i = 0; i < data.length && i < dNbt.size(); i++) {
-                data[i] = ((NBTPrimitive) dNbt.get(i)).func_150287_d();
-            }
-            return data;
-        }
-        // endregion Legacy
         final int[] data = nbt.getIntArray("data");
         final int[] progress = new int[requiredFluids.size()];
         System.arraycopy(data, 0, progress, 0, Math.min(data.length, progress.length));
@@ -277,8 +263,7 @@ public class TaskFluid extends TaskProgressableBase<int[]> implements ITaskInven
             return input;
         }
 
-        ParticipantInfo pInfo = new ParticipantInfo(QuestingAPI.getPlayer(owner));
-        Detector detector = new Detector(this, pInfo.ALL_UUIDS);
+        Detector detector = new Detector(this, ParticipantInfo.getSubmissionParticipants(owner));
 
         final FluidStack fluid = input.copy();
 
@@ -288,7 +273,7 @@ public class TaskFluid extends TaskProgressableBase<int[]> implements ITaskInven
             removedFluid.amount = removed;
             fluid.amount -= removed;
             return removedFluid;
-        }, pInfo.UUID);
+        }, owner);
 
         if (detector.updated) {
             setBulkProgress(detector.progress);
@@ -334,8 +319,7 @@ public class TaskFluid extends TaskProgressableBase<int[]> implements ITaskInven
     public ItemStack submitItem(UUID owner, Map.Entry<UUID, IQuest> quest, ItemStack input) {
         if (owner == null || input == null || input.stackSize != 1 || !consume || isComplete(owner)) return input;
 
-        ParticipantInfo pInfo = new ParticipantInfo(QuestingAPI.getPlayer(owner));
-        Detector detector = new Detector(this, pInfo.ALL_UUIDS);
+        Detector detector = new Detector(this, ParticipantInfo.getSubmissionParticipants(owner));
 
         final ItemStack[] wrapper = new ItemStack[] { input.copy() };
 
@@ -349,7 +333,7 @@ public class TaskFluid extends TaskProgressableBase<int[]> implements ITaskInven
                 }
                 return fluid;
             }
-        }, pInfo.UUID);
+        }, owner);
 
         if (detector.updated) {
             setBulkProgress(detector.progress);

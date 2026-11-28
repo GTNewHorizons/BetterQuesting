@@ -10,6 +10,7 @@ import javax.annotation.Nullable;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 
+import betterquesting.api.properties.NativeProps;
 import betterquesting.api.questing.IQuest;
 import betterquesting.api.questing.IQuestDatabase;
 import betterquesting.api.storage.BQ_Settings;
@@ -17,10 +18,12 @@ import betterquesting.api.utils.NBTConverter;
 import betterquesting.api.utils.UuidConverter;
 import betterquesting.api2.storage.UuidDatabase;
 import betterquesting.core.BetterQuesting;
+import betterquesting.handlers.SaveLoadHandler;
 
 public class QuestDatabase extends UuidDatabase<IQuest> implements IQuestDatabase {
 
     public static final QuestDatabase INSTANCE = new QuestDatabase();
+    private static final ThreadLocal<Boolean> LOADED_PROGRESS_ONLY = new ThreadLocal<>();
 
     @Override
     public synchronized IQuest createNew(UUID questID) {
@@ -109,7 +112,7 @@ public class QuestDatabase extends UuidDatabase<IQuest> implements IQuestDatabas
             if (questIDOptional.isPresent()) {
                 questID = questIDOptional.get();
             } else if (qTag.hasKey("questID", 99)) {
-                // This block is needed for old questbook data.
+                // Keep numeric IDs readable until supported quest definitions have been rewritten with UUIDs
                 questID = UuidConverter.convertLegacyId(qTag.getInteger("questID"));
             } else {
                 continue;
@@ -122,19 +125,63 @@ public class QuestDatabase extends UuidDatabase<IQuest> implements IQuestDatabas
     }
 
     @Override
-    public synchronized NBTTagList writeProgressToNBT(NBTTagList json, List<UUID> users) {
-        for (Map.Entry<UUID, IQuest> entry : entrySet()) {
-            NBTTagCompound jq = entry.getValue()
-                .writeProgressToNBT(new NBTTagCompound(), users);
-            NBTConverter.UuidValueType.QUEST.writeId(entry.getKey(), jq);
-            json.appendTag(jq);
-        }
+    public NBTTagList writeProgressToNBT(NBTTagList json, List<UUID> users) {
+        boolean ready = users == null ? SaveLoadHandler.INSTANCE.ensureAllProgressLoaded()
+            : SaveLoadHandler.INSTANCE.ensurePlayerProgressLoaded(users);
+        if (!ready) throw new IllegalStateException("Could not load BetterQuesting player progress");
+        return writeLoadedProgressToNBT(json, users);
+    }
 
+    /** Builds a personal progress record from the party's completions without changing its members. */
+    public NBTTagList recoverPartyCompletions(UUID player, List<UUID> members) {
+        NBTTagList recovered = new NBTTagList();
+        long now = System.currentTimeMillis();
+        for (Map.Entry<UUID, IQuest> entry : entrySet()) {
+            IQuest quest = entry.getValue();
+            if (quest == null || members.stream()
+                .noneMatch(member -> quest.getCompletionInfo(member) != null)) continue;
+            NBTTagCompound completion = new NBTTagCompound();
+            completion.setString("uuid", player.toString());
+            completion.setLong("timestamp", now);
+            completion.setBoolean("claimed", true);
+            if (quest.getProperty(NativeProps.GLOBAL) && !quest.getProperty(NativeProps.GLOBAL_SHARE)) {
+                completion.setBoolean(QuestInstance.REWARD_FORFEITED, true);
+            }
+            NBTTagList completed = new NBTTagList();
+            completed.appendTag(completion);
+            NBTTagCompound record = NBTConverter.UuidValueType.QUEST.writeId(entry.getKey());
+            record.setTag("completed", completed);
+            recovered.appendTag(record);
+        }
+        return recovered;
+    }
+
+    /** Takes a snapshot for definition reloads without hydrating dormant players. */
+    public synchronized NBTTagList writeLoadedProgressToNBT(NBTTagList json, List<UUID> users) {
+        withLoadedProgress(() -> {
+            for (Map.Entry<UUID, IQuest> entry : entrySet()) {
+                NBTTagCompound jq = entry.getValue()
+                    .writeProgressToNBT(new NBTTagCompound(), users);
+                NBTConverter.UuidValueType.QUEST.writeId(entry.getKey(), jq);
+                json.appendTag(jq);
+            }
+        });
         return json;
     }
 
     @Override
-    public synchronized void readProgressFromNBT(NBTTagList json, boolean merge) {
+    public void readProgressFromNBT(NBTTagList json, boolean merge) {
+        boolean ready = merge ? SaveLoadHandler.INSTANCE.ensureReferencedProgressLoaded(json)
+            : SaveLoadHandler.INSTANCE.ensureAllProgressLoaded();
+        if (!ready) throw new IllegalStateException("Could not load BetterQuesting player progress");
+        readLoadedProgressFromNBT(json, merge);
+    }
+
+    public synchronized void readLoadedProgressFromNBT(NBTTagList json, boolean merge) {
+        withLoadedProgress(() -> readProgressTags(json, merge));
+    }
+
+    private void readProgressTags(NBTTagList json, boolean merge) {
         // Cache tagCount to avoid repeated method calls
         final int tagCount = json.tagCount();
 
@@ -147,7 +194,7 @@ public class QuestDatabase extends UuidDatabase<IQuest> implements IQuestDatabas
             if (questIDOptional.isPresent()) {
                 questID = questIDOptional.get();
             } else if (qTag.hasKey("questID", 99)) {
-                // This block is needed for old player progress data.
+                // The public progress API still accepts numeric IDs during the transition to UUIDs
                 questID = UuidConverter.convertLegacyId(qTag.getInteger("questID"));
             }
 
@@ -158,6 +205,23 @@ public class QuestDatabase extends UuidDatabase<IQuest> implements IQuestDatabas
             if (quest != null) {
                 quest.readProgressFromNBT(qTag, merge);
             }
+        }
+    }
+
+    static boolean usesLoadedProgressOnly() {
+        return Boolean.TRUE.equals(LOADED_PROGRESS_ONLY.get());
+    }
+
+    private static void withLoadedProgress(Runnable action) {
+        if (usesLoadedProgressOnly()) {
+            action.run();
+            return;
+        }
+        LOADED_PROGRESS_ONLY.set(Boolean.TRUE);
+        try {
+            action.run();
+        } finally {
+            LOADED_PROGRESS_ONLY.remove();
         }
     }
 }

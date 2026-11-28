@@ -21,6 +21,10 @@ import betterquesting.api2.storage.INBTProgress;
 import betterquesting.api2.storage.INBTSaveLoad;
 import betterquesting.api2.utils.QuestTranslation;
 
+/**
+ * Server-side progress queries and mutations can throw {@link IllegalStateException} when required saved progress
+ * cannot be read.
+ */
 public interface IQuest extends INBTSaveLoad<NBTTagCompound>, INBTProgress<NBTTagCompound>, IPropertyContainer {
 
     EnumQuestState getState(EntityPlayer player);

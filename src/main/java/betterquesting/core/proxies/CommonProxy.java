@@ -71,7 +71,6 @@ public class CommonProxy {
     private void loadDefaultQuestDatabase(MinecraftServer server, ServerCommandManager manager, String errorMessage) {
         try {
             manager.executeCommand(server, "/bq_admin default load");
-            SaveLoadHandler.INSTANCE.resetUpdate();
         } catch (Exception e) {
             BetterQuesting.logger.error(errorMessage, e);
         }

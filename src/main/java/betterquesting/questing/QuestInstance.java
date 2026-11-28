@@ -1,6 +1,5 @@
 package betterquesting.questing;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -43,14 +42,17 @@ import betterquesting.api2.storage.IDatabaseNBT;
 import betterquesting.api2.utils.DirtyPlayerMarker;
 import betterquesting.api2.utils.ParticipantInfo;
 import betterquesting.core.BetterQuesting;
+import betterquesting.handlers.SaveLoadHandler;
+import betterquesting.questing.party.PartyManager;
 import betterquesting.questing.rewards.RewardStorage;
 import betterquesting.questing.tasks.TaskStorage;
 import betterquesting.storage.PropertyContainer;
 import betterquesting.storage.QuestSettings;
 import bq_standard.rewards.RewardChoice;
-import drethic.questbook.config.QBConfig;
 
 public class QuestInstance implements IQuest {
+
+    public static final String REWARD_FORFEITED = "rewardForfeited";
 
     private final TaskStorage tasks = new TaskStorage();
     private final RewardStorage rewards = new RewardStorage();
@@ -155,6 +157,8 @@ public class QuestInstance implements IQuest {
 
         UUID questID = QuestDatabase.INSTANCE.lookupKey(this);
 
+        if (!SaveLoadHandler.INSTANCE.canUseQuestProgress(this)
+            || !SaveLoadHandler.INSTANCE.ensurePlayerProgressLoaded(playerID)) return;
         if (isComplete(playerID) && (qInfo.getProperty(NativeProps.REPEAT_TIME) < 0 || rewards.size() <= 0)) {
             return;
         } else if (!canSubmit(player)) {
@@ -215,10 +219,18 @@ public class QuestInstance implements IQuest {
     public boolean hasClaimed(UUID uuid) {
         if (rewards.size() <= 0) return true;
 
+        boolean globallyClaimed = qInfo.getProperty(NativeProps.GLOBAL) && !qInfo.getProperty(NativeProps.GLOBAL_SHARE);
+        if (globallyClaimed) {
+            if (!SaveLoadHandler.INSTANCE.ensureAllProgressLoaded()) return true;
+        } else {
+            requireProgressLoaded(uuid);
+        }
         synchronized (completeUsers) {
-            if (qInfo.getProperty(NativeProps.GLOBAL) && !qInfo.getProperty(NativeProps.GLOBAL_SHARE)) {
+            if (globallyClaimed) {
+                NBTTagCompound own = completeUsers.get(uuid);
+                if (own != null && own.getBoolean("claimed")) return true;
                 for (NBTTagCompound entry : completeUsers.values()) {
-                    if (entry.getBoolean("claimed")) {
+                    if (entry.getBoolean("claimed") && !entry.getBoolean(REWARD_FORFEITED)) {
                         return true;
                     }
                 }
@@ -226,13 +238,14 @@ public class QuestInstance implements IQuest {
                 return false;
             }
 
-            NBTTagCompound entry = getCompletionInfo(uuid);
+            NBTTagCompound entry = completeUsers.get(uuid);
             return entry != null && entry.getBoolean("claimed");
         }
     }
 
     @Override
     public boolean canClaimBasically(EntityPlayer player) {
+        if (!SaveLoadHandler.INSTANCE.canUseQuestProgress(this)) return false;
         UUID pID = QuestingAPI.getQuestingUUID(player);
         NBTTagCompound entry = getCompletionInfo(pID);
 
@@ -254,6 +267,11 @@ public class QuestInstance implements IQuest {
 
     @Override
     public void claimReward(EntityPlayer player, boolean forceChoice) {
+        if (!SaveLoadHandler.INSTANCE.canUseQuestProgress(this)) return;
+        List<UUID> playersToMark = PartyManager.INSTANCE.getRewardClaimants(player);
+        // A shared reward must be marked claimed for every member before anyone can claim it again
+        if (!player.worldObj.isRemote && !SaveLoadHandler.INSTANCE.ensurePlayerProgressLoaded(playersToMark)) return;
+
         UUID questID = QuestDatabase.INSTANCE.lookupKey(this);
         Map.Entry<UUID, IQuest> mapEntry = Maps.immutableEntry(questID, this);
         for (DBEntry<IReward> rew : rewards.getEntries()) {
@@ -265,15 +283,13 @@ public class QuestInstance implements IQuest {
             unwrapped.claimReward(player, mapEntry);
         }
 
-        ParticipantInfo pInfo = new ParticipantInfo(player);
-        List<UUID> playersToMark = QBConfig.syncQuestRewards ? pInfo.ALL_UUIDS : Collections.singletonList(pInfo.UUID);
-
         synchronized (completeUsers) {
             for (UUID user : playersToMark) {
-                NBTTagCompound entry = getCompletionInfo(user);
+                NBTTagCompound entry = completeUsers.get(user);
                 if (entry == null) {
                     entry = new NBTTagCompound();
                 }
+                entry.removeTag(REWARD_FORFEITED);
                 entry.setBoolean("claimed", true);
                 entry.setLong("timestamp", System.currentTimeMillis());
                 this.completeUsers.put(user, entry);
@@ -294,12 +310,14 @@ public class QuestInstance implements IQuest {
 
     @Override
     public boolean canSubmit(EntityPlayer player) {
+        if (!SaveLoadHandler.INSTANCE.canUseQuestProgress(this)) return false;
         if (player == null) return false;
 
         UUID playerID = QuestingAPI.getQuestingUUID(player);
+        requireProgressLoaded(playerID);
 
         synchronized (completeUsers) {
-            NBTTagCompound entry = this.getCompletionInfo(playerID);
+            NBTTagCompound entry = completeUsers.get(playerID);
             if (entry == null) return true;
 
             if (!entry.getBoolean("claimed") && getProperty(NativeProps.REPEAT_TIME) >= 0) // Complete but repeatable
@@ -327,6 +345,7 @@ public class QuestInstance implements IQuest {
 
     @Override
     public boolean isUnlocked(UUID uuid) {
+        if (!SaveLoadHandler.INSTANCE.canUseQuestProgress(this)) return false;
         if (preRequisites.isEmpty()) {
             return true;
         }
@@ -341,14 +360,16 @@ public class QuestInstance implements IQuest {
     @Override
     public void setComplete(UUID uuid, long timestamp) {
         if (uuid == null) return;
+        requireProgressLoaded(uuid);
         synchronized (completeUsers) {
-            NBTTagCompound entry = this.getCompletionInfo(uuid);
+            NBTTagCompound entry = completeUsers.get(uuid);
 
             if (entry == null) {
                 entry = new NBTTagCompound();
                 completeUsers.put(uuid, entry);
             }
 
+            entry.removeTag(REWARD_FORFEITED);
             entry.setBoolean("claimed", false);
             entry.setLong("timestamp", timestamp);
 
@@ -367,6 +388,7 @@ public class QuestInstance implements IQuest {
 
     @Override
     public boolean isUnlockable(UUID uuid) {
+        if (!SaveLoadHandler.INSTANCE.canUseQuestProgress(this)) return false;
         // TODO: determine if we need to recursively lookup parents
         // glease: currently we do not have whole chains mutually exclusive with each other here in gtnh,
         // but this might be useful for more quest driven packs. the performance implication dissuade me from
@@ -391,7 +413,10 @@ public class QuestInstance implements IQuest {
     @Override
     public boolean isComplete(UUID uuid) {
         if (qInfo.getProperty(NativeProps.GLOBAL)) {
-            return completeUsers.size() > 0;
+            if (!SaveLoadHandler.INSTANCE.ensureAllProgressLoaded()) return false;
+            synchronized (completeUsers) {
+                return !completeUsers.isEmpty();
+            }
         } else {
             return getCompletionInfo(uuid) != null;
         }
@@ -399,6 +424,7 @@ public class QuestInstance implements IQuest {
 
     @Override
     public EnumQuestState getState(EntityPlayer player) {
+        if (!SaveLoadHandler.INSTANCE.canUseQuestProgress(this)) return EnumQuestState.LOCKED;
         UUID uuid = QuestingAPI.getQuestingUUID(player);
         if (this.isComplete(uuid)) {
             if (canClaimBasically(player)) {
@@ -416,6 +442,8 @@ public class QuestInstance implements IQuest {
 
     @Override
     public NBTTagCompound getCompletionInfo(UUID uuid) {
+        if (uuid == null) return null;
+        requireProgressLoaded(uuid);
         synchronized (completeUsers) {
             return completeUsers.get(uuid);
         }
@@ -424,6 +452,7 @@ public class QuestInstance implements IQuest {
     @Override
     public void setCompletionInfo(UUID uuid, NBTTagCompound nbt) {
         if (uuid == null) return;
+        requireProgressLoaded(uuid);
 
         synchronized (completeUsers) {
             if (nbt == null) {
@@ -441,6 +470,7 @@ public class QuestInstance implements IQuest {
      */
     @Override
     public void resetUser(@Nullable UUID uuid, boolean fullReset) {
+        requireProgressLoaded(uuid);
         synchronized (completeUsers) {
             HashSet<UUID> dirtyPlayers = new HashSet<>();
             if (uuid == null) {
@@ -461,7 +491,7 @@ public class QuestInstance implements IQuest {
                         value.setLong("timestamp", 0);
                     });
                 } else {
-                    NBTTagCompound entry = getCompletionInfo(uuid);
+                    NBTTagCompound entry = completeUsers.get(uuid);
                     if (entry != null) {
                         entry.setBoolean("claimed", false);
                         entry.setLong("timestamp", 0);
@@ -603,6 +633,11 @@ public class QuestInstance implements IQuest {
 
     @Override
     public NBTTagCompound writeProgressToNBT(NBTTagCompound json, @Nullable List<UUID> users) {
+        if (!QuestDatabase.usesLoadedProgressOnly()) {
+            boolean ready = users == null ? SaveLoadHandler.INSTANCE.ensureAllProgressLoaded()
+                : SaveLoadHandler.INSTANCE.ensurePlayerProgressLoaded(users);
+            if (!ready) throw new IllegalStateException("Could not load BetterQuesting player progress");
+        }
         synchronized (completeUsers) {
             NBTTagList comJson = new NBTTagList();
             for (Entry<UUID, NBTTagCompound> entry : completeUsers.entrySet()) {
@@ -626,6 +661,11 @@ public class QuestInstance implements IQuest {
 
     @Override
     public void readProgressFromNBT(NBTTagCompound json, boolean merge) {
+        if (!QuestDatabase.usesLoadedProgressOnly()) {
+            boolean ready = merge ? SaveLoadHandler.INSTANCE.ensureReferencedProgressLoaded(json)
+                : SaveLoadHandler.INSTANCE.ensureAllProgressLoaded();
+            if (!ready) throw new IllegalStateException("Could not load BetterQuesting player progress");
+        }
         synchronized (completeUsers) {
             if (!merge) completeUsers.clear();
             NBTTagList comList = json.getTagList("completed", 10);
@@ -647,10 +687,13 @@ public class QuestInstance implements IQuest {
 
     @Override
     public void setClaimed(UUID uuid, long timestamp) {
+        if (uuid == null) return;
+        requireProgressLoaded(uuid);
         synchronized (completeUsers) {
-            NBTTagCompound entry = this.getCompletionInfo(uuid);
+            NBTTagCompound entry = completeUsers.get(uuid);
 
             if (entry != null) {
+                entry.removeTag(REWARD_FORFEITED);
                 entry.setBoolean("claimed", true);
                 entry.setLong("timestamp", timestamp);
             } else {
@@ -664,7 +707,14 @@ public class QuestInstance implements IQuest {
         }
     }
 
+    private static void requireProgressLoaded(@Nullable UUID uuid) {
+        boolean ready = uuid == null ? SaveLoadHandler.INSTANCE.ensureAllProgressLoaded()
+            : SaveLoadHandler.INSTANCE.ensurePlayerProgressLoaded(uuid);
+        if (!ready) throw new IllegalStateException("Could not load BetterQuesting player progress");
+    }
+
     public void getUsersWithCompletionData(Set<UUID> targetSet) {
+        requireProgressLoaded(null);
         synchronized (completeUsers) {
             // Take a copy to prevent concurrent modifications to the returned Set
             targetSet.addAll(completeUsers.keySet());

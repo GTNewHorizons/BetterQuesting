@@ -27,6 +27,7 @@ import betterquesting.api.utils.NBTConverter;
 import betterquesting.api2.utils.BQThreadedIO;
 import betterquesting.api2.utils.Tuple2;
 import betterquesting.core.BetterQuesting;
+import betterquesting.handlers.SaveLoadHandler;
 import betterquesting.network.PacketSender;
 import betterquesting.network.PacketTypeRegistry;
 import betterquesting.questing.QuestDatabase;
@@ -87,6 +88,12 @@ public class NetQuestSync {
         boolean progress, boolean resetCompletion) {
         if ((!config && !progress) || (questIDs != null && questIDs.isEmpty())) {
             return;
+        }
+
+        if (progress) {
+            boolean ready = player == null ? SaveLoadHandler.INSTANCE.ensureAllProgressLoaded()
+                : SaveLoadHandler.INSTANCE.ensurePlayerProgressLoaded(QuestingAPI.getQuestingUUID(player));
+            if (!ready) return;
         }
 
         // Offload this to another thread as it could take a while to build
@@ -160,6 +167,13 @@ public class NetQuestSync {
 
     @SideOnly(Side.CLIENT)
     private static void onClient(NBTTagCompound payload) {
+        if (Minecraft.getMinecraft()
+            .isIntegratedServerRunning()) {
+            // The integrated server and client share the quest database
+            MinecraftForge.EVENT_BUS.post(new DatabaseEvent.Update(DBType.QUEST));
+            return;
+        }
+
         NBTTagList questListTag = payload.getTagList(TAG_QUEST_LIST, Constants.NBT.TAG_COMPOUND);
         boolean merge = payload.getBoolean(TAG_MERGE);
         boolean resetCompletion = payload.getBoolean(TAG_RESET_COMPLETION);
@@ -185,12 +199,7 @@ public class NetQuestSync {
             }
 
             if (quest != null && questTag.hasKey(TAG_QUEST_PROGRESS, Constants.NBT.TAG_COMPOUND)) {
-                // TODO: Fix this properly
-                // If there we're not running the LAN server off this client then we overwrite always
-                quest.readProgressFromNBT(
-                    questTag.getCompoundTag(TAG_QUEST_PROGRESS),
-                    Minecraft.getMinecraft()
-                        .isIntegratedServerRunning() || (!resetCompletion && merge));
+                quest.readProgressFromNBT(questTag.getCompoundTag(TAG_QUEST_PROGRESS), !resetCompletion && merge);
             }
         }
 
