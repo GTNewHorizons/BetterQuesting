@@ -174,8 +174,7 @@ public class QuestCommandDefaults extends QuestCommandBase {
         }
         sendChatMessage(sender, "betterquesting.cmd.default.loadarchive");
         try {
-            applyDatabase(sender, null, DefaultQuestArchive.read(archive.toPath()), loadWorldSettings);
-            return true;
+            return applyDatabase(sender, null, DefaultQuestArchive.read(archive.toPath()), loadWorldSettings);
         } catch (IOException failure) {
             QuestingAPI.getLogger()
                 .error("Failed to load default quests from {}", archive, failure);
@@ -194,8 +193,7 @@ public class QuestCommandDefaults extends QuestCommandBase {
             sendChatMessage(sender, "betterquesting.cmd.default.none");
             return false;
         }
-        loadLegacy(sender, null, legacyFile, loadWorldSettings);
-        return true;
+        return applyDatabase(sender, null, readDefinition(legacyFile), loadWorldSettings);
     }
 
     public static NBTTagCompound readDefaultSettings() throws IOException {
@@ -464,8 +462,7 @@ public class QuestCommandDefaults extends QuestCommandBase {
             return false;
         }
         try {
-            applyDatabase(sender, databaseName, readDirectory(dataDir, false), loadWorldSettings);
-            return true;
+            return applyDatabase(sender, databaseName, readDirectory(dataDir, false), loadWorldSettings);
         } catch (IOException failure) {
             QuestingAPI.getLogger()
                 .error("Failed to load default quests from {}", dataDir, failure);
@@ -583,23 +580,33 @@ public class QuestCommandDefaults extends QuestCommandBase {
         }
     }
 
-    private static void applyDatabase(@Nullable ICommandSender sender, @Nullable String databaseName,
+    private static boolean applyDatabase(@Nullable ICommandSender sender, @Nullable String databaseName,
         NBTTagCompound database, boolean loadWorldSettings) {
-        boolean editMode = QuestSettings.INSTANCE.getProperty(NativeProps.EDIT_MODE);
-        boolean hardMode = QuestSettings.INSTANCE.getProperty(NativeProps.HARDCORE);
-        NBTTagList progress = loadWorldSettings ? null
-            : QuestDatabase.INSTANCE.writeLoadedProgressToNBT(new NBTTagList(), null);
-
-        QuestSettings.INSTANCE.readFromNBT(database.getCompoundTag("questSettings"));
-        QuestDatabase.INSTANCE.readFromNBT(database.getTagList("questDatabase", Constants.NBT.TAG_COMPOUND), false);
-        QuestLineDatabase.INSTANCE.readFromNBT(database.getTagList("questLines", Constants.NBT.TAG_COMPOUND), false);
-
-        if (!loadWorldSettings) {
-            QuestDatabase.INSTANCE.readLoadedProgressFromNBT(progress, false);
-            QuestSettings.INSTANCE.setProperty(NativeProps.EDIT_MODE, editMode);
-            QuestSettings.INSTANCE.setProperty(NativeProps.HARDCORE, hardMode);
+        QuestDatabase quests = new QuestDatabase();
+        QuestLineDatabase chapters = new QuestLineDatabase();
+        QuestSettings settings = new QuestSettings();
+        try {
+            quests.readFromNBT(database.getTagList("questDatabase", Constants.NBT.TAG_COMPOUND), false);
+            chapters.readFromNBT(database.getTagList("questLines", Constants.NBT.TAG_COMPOUND), false);
+            settings.readFromNBT(database.getCompoundTag("questSettings"));
+            if (!loadWorldSettings) {
+                quests.readLoadedProgressFromNBT(
+                    QuestDatabase.INSTANCE.writeLoadedProgressToNBT(new NBTTagList(), null),
+                    false);
+                settings.setProperty(NativeProps.EDIT_MODE, QuestSettings.INSTANCE.getProperty(NativeProps.EDIT_MODE));
+                settings.setProperty(NativeProps.HARDCORE, QuestSettings.INSTANCE.getProperty(NativeProps.HARDCORE));
+            }
+        } catch (RuntimeException failure) {
+            QuestingAPI.getLogger()
+                .error("Could not apply quest definitions", failure);
+            sendChatMessage(sender, "betterquesting.cmd.error");
+            return false;
         }
 
+        QuestLineDatabase.INSTANCE.setOrderedEntries(chapters.getOrderedEntries());
+        QuestDatabase.INSTANCE.clear();
+        QuestDatabase.INSTANCE.putAll(quests);
+        QuestSettings.INSTANCE.readFromNBT(settings.writeToNBT(new NBTTagCompound()));
         if (databaseName != null && !databaseName.equalsIgnoreCase(DEFAULT_FILE)) {
             sendChatMessage(sender, "betterquesting.cmd.default.load2", databaseName);
         } else {
@@ -613,6 +620,7 @@ public class QuestCommandDefaults extends QuestCommandBase {
         NetQuestSync.quickSync(null, true, true);
         NetChapterSync.sendSync(null, null);
         SaveLoadHandler.INSTANCE.markDirty();
+        return true;
     }
 
     public static void set(@Nullable ICommandSender sender, @Nullable String databaseName, File dataDir) {

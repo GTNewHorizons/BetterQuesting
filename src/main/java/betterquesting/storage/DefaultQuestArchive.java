@@ -45,8 +45,9 @@ public final class DefaultQuestArchive {
             for (int index = 0; index < quests.tagCount(); index++) {
                 NBTTagCompound quest = quests.getCompoundTagAt(index);
                 if (!NBTConverter.UuidValueType.QUEST.tryReadId(quest)
-                    .isPresent() && !quest.hasKey("questID", NBT.TAG_ANY_NUMERIC)) {
-                    throw new IOException("Missing quest ID at questDatabase[" + index + "]");
+                    .isPresent()
+                    && (!quest.hasKey("questID", NBT.TAG_ANY_NUMERIC) || quest.getInteger("questID") < 0)) {
+                    throw new IOException("Invalid quest ID at questDatabase[" + index + "]");
                 }
             }
             return database;
