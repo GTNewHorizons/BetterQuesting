@@ -7,6 +7,7 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -620,42 +621,63 @@ public class QuestCommandDefaults extends QuestCommandBase {
             return;
         }
 
-        if (defaultArchive().isFile()) {
-            try {
-                if (refreshDefaultArchive(sender, readDirectory(dataDir, true))) {
-                    sendChatMessage(sender, "betterquesting.cmd.default.set", databaseName);
-                }
-            } catch (IOException failure) {
-                QuestingAPI.getLogger()
-                    .error("Failed to set default quests from {}", dataDir, failure);
-                sendChatMessage(sender, "betterquesting.cmd.default.invalidsource", failure.getMessage());
-            }
-            return;
-        }
-
-        File defDir = new File(BQ_Settings.defaultDir, DEFAULT_FILE);
-
-        if (defDir.exists()) {
-            try {
-                FileUtils.deleteDirectory(defDir);
-            } catch (IOException e) {
-                QuestingAPI.getLogger()
-                    .log(Level.ERROR, "Failed to delete directory\n" + defDir, e);
-                sendChatMessage(sender, "betterquesting.cmd.error");
-                return;
-            }
-        }
-
         try {
-            FileUtils.copyDirectory(dataDir, defDir);
-        } catch (IOException e) {
+            installDefaults(dataDir);
+        } catch (IOException | RuntimeException failure) {
             QuestingAPI.getLogger()
-                .log(Level.ERROR, "Failed to copy directory\n" + dataDir, e);
-            sendChatMessage(sender, "betterquesting.cmd.error");
+                .error("Failed to set default quests from {}", dataDir, failure);
+            sendChatMessage(sender, "betterquesting.cmd.default.invalidsource", failure.getMessage());
             return;
         }
 
         sendChatMessage(sender, "betterquesting.cmd.default.set", databaseName);
+    }
+
+    private static void installDefaults(File source) throws IOException {
+        Path target = defaultDirectory().toPath();
+        Path archive = defaultArchive().toPath();
+        boolean updateArchive = Files.isRegularFile(archive);
+        Path staging = Files.createTempDirectory(target.getParent(), ".default-quests-");
+        Path next = staging.resolve("next");
+        Path previous = staging.resolve("previous");
+        boolean keepBackup = false;
+        try {
+            FileUtils.copyDirectory(source, next.toFile());
+            NBTTagCompound database = readDirectory(next.toFile(), true);
+            Path nextArchive = staging.resolve(DefaultQuestArchive.FILE_NAME);
+            if (updateArchive) DefaultQuestArchive.write(nextArchive, database);
+            if (Files.exists(target)) Files.move(target, previous, StandardCopyOption.ATOMIC_MOVE);
+            try {
+                Files.move(next, target, StandardCopyOption.ATOMIC_MOVE);
+                if (updateArchive) {
+                    Files.move(
+                        nextArchive,
+                        archive,
+                        StandardCopyOption.ATOMIC_MOVE,
+                        StandardCopyOption.REPLACE_EXISTING);
+                }
+            } catch (IOException failure) {
+                try {
+                    if (!Files.exists(next)) Files.move(target, next, StandardCopyOption.ATOMIC_MOVE);
+                    if (Files.exists(previous)) Files.move(previous, target, StandardCopyOption.ATOMIC_MOVE);
+                } catch (IOException rollbackFailure) {
+                    keepBackup = true;
+                    failure.addSuppressed(rollbackFailure);
+                    QuestingAPI.getLogger()
+                        .error("Could not restore default quest files. Backup in {}", staging);
+                }
+                throw failure;
+            }
+        } finally {
+            if (!keepBackup) {
+                try {
+                    FileUtils.deleteDirectory(staging.toFile());
+                } catch (IOException cleanupFailure) {
+                    QuestingAPI.getLogger()
+                        .warn("Could not remove {}", staging, cleanupFailure);
+                }
+            }
+        }
     }
 
     public static void exportLang(@Nullable ICommandSender sender, @Nullable String databaseName, File dataDir) {
